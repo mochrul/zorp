@@ -1,0 +1,20 @@
+Index: zorp-3.9.0/lib/proxyssl.c
+===================================================================
+--- zorp-3.9.0.orig/lib/proxyssl.c	2011-05-10 21:57:33.000000000 +0200
++++ zorp-3.9.0/lib/proxyssl.c	2011-05-10 21:59:42.000000000 +0200
+@@ -1231,6 +1231,7 @@
+       else
+         ctx = SSL_CTX_new(SSLv23_client_method());
+     }
++#ifndef OPENSSL_NO_SSL2
+   else if (strcmp(self->ssl_opts.ssl_method[side]->str, "SSLv2") == 0)
+     {
+       if (side == EP_CLIENT)
+@@ -1238,6 +1239,7 @@
+       else
+         ctx = SSL_CTX_new(SSLv2_client_method());
+     }
++#endif
+   else if (strcmp(self->ssl_opts.ssl_method[side]->str, "SSLv3") == 0)
+     {
+       if (side == EP_CLIENT)

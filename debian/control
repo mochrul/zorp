@@ -1,0 +1,104 @@
+Source: zorp
+Section: net
+Priority: optional
+Maintainer: SZALAY Attila <sasa@debian.org>
+Standards-Version: 3.9.2
+Build-Depends: python-dev, libssl-dev (>=0.9.8), libglib2.0-dev (>= 2.2.1), libzorpll-dev (>=3.9.0.1), python-dns, python-support (>= 0.4), gperf, debhelper (>= 7)
+
+Package: zorp
+Section: net
+Architecture: linux-any
+Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dns, python-kzorp (=${source:Version}), ${misc:Depends},
+	 adduser, ${python:Depends}
+Suggests: zorp-doc, zorp-modules (= ${binary:Version})
+Description: Advanced protocol analyzing firewall
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ Zorp has been successfully deployed in demanding environments like the
+ protection of high traffic web sites, or the protection of large intranets.
+ Since the protocol analysis is strict and many of the common exploits
+ violate the application protocol they are injected into, a large percentage
+ of the attacks do not cross a Zorp based firewall even if the given service
+ is permitted.
+
+Package: zorp-dbg
+Architecture: linux-any
+Section: debug
+Priority: extra
+Depends: zorp (= ${binary:Version}), ${misc:Depends}
+Description: Advanced protocol analyzing firewall
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ Debug symbols.
+
+Package: libzorp3.9-0
+Section: libs
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: zorp-dev, libzorp0, libzorp2
+Replaces: libzorp2, libzorp0
+Description: Runtime library of Zorp
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ Shared libraries of the Zorp system.
+
+Package: libzorp-dev
+Section: libdevel
+Architecture: linux-any
+Depends: python-dev (>=2.6), libzorpll-dev, libzorp3.9-0 (= ${binary:Version}), ${misc:Depends}
+Conflicts: zorp-dev, libzorp0-dev
+Description: Development files needed to compile Zorp modules
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ These are the files you need to compile a zorp module.
+
+Package: zorp-modules
+Section: net
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}
+Recommends: zorp (= ${binary:Version})
+Description: Default proxy modules for Zorp
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ This package includes proxies for the protocols: FINGER, FTP, HTTP,
+ SSL, TELNET, WHOIS, and two general modules ANYPY and PLUG.
+
+
+Package: zorp-modules-dbg
+Architecture: linux-any
+Section: debug
+Priority: extra
+Depends: zorp-modules (= ${binary:Version}), ${misc:Depends}
+Description: Default proxy modules for Zorp
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ This package includes debug symbol of proxies.
+
+Package: python-kzorp
+Architecture: all
+Section: python
+Depends: ${python:Depends}, ${misc:Depends}
+Description: Python bindings for kzorp.
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ .
+ General python bindings for kzorp.
