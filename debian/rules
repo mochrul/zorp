@@ -27,6 +27,8 @@ build-indep: build-stamp
 build-stamp: debfiles-stamp
 	dh_testdir
 
+	[ ! -f configure ] && ./autogen.sh
+
 	ZORP_PACKAGE_LICENSE="gpl" CFLAGS=$(DTEST) ./configure \
 		--prefix=/usr \
 		--mandir=\$${prefix}/share/man \
