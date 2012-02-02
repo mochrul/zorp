@@ -1,0 +1,30 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Thu, 2 Feb 2012 22:18:55 +0100
+Subject: openssl_1.0.diff
+
+===================================================================
+---
+ lib/proxyssl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/lib/proxyssl.c b/lib/proxyssl.c
+index e7c8eba..58d63b9 100644
+--- a/lib/proxyssl.c
++++ b/lib/proxyssl.c
+@@ -1282,6 +1282,7 @@ z_proxy_ssl_setup_handshake(ZProxySSLHandshake *handshake)
+       else
+         ctx = SSL_CTX_new(SSLv23_client_method());
+     }
++#ifndef OPENSSL_NO_SSL2
+   else if (strcmp(self->ssl_opts.ssl_method[side]->str, "SSLv2") == 0)
+     {
+       if (side == EP_CLIENT)
+@@ -1289,6 +1290,7 @@ z_proxy_ssl_setup_handshake(ZProxySSLHandshake *handshake)
+       else
+         ctx = SSL_CTX_new(SSLv2_client_method());
+     }
++#endif
+   else if (strcmp(self->ssl_opts.ssl_method[side]->str, "SSLv3") == 0)
+     {
+       if (side == EP_CLIENT)
+-- 

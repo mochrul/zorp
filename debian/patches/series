@@ -1,4 +1,5 @@
-zorpconfig_man.diff
-openssl_1.0.diff
-compile_problems
-compile_problems2
+0001-Added-directory-to-make-configure-happy.patch
+0002-zorpconfig_man.diff.patch
+0003-openssl_1.0.diff.patch
+0004-compile_problems.patch
+0005-compile_problems2.patch

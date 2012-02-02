@@ -1,0 +1,17 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Thu, 2 Feb 2012 22:06:07 +0100
+Subject: Added directory to make configure happy.
+
+---
+ tests/functional/anypy/info |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+ create mode 100644 tests/functional/anypy/info
+
+diff --git a/tests/functional/anypy/info b/tests/functional/anypy/info
+new file mode 100644
+index 0000000..14d9a62
+--- /dev/null
++++ b/tests/functional/anypy/info
+@@ -0,0 +1 @@
++Base-Class: AnyPyProxy
+-- 

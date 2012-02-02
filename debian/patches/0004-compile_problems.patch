@@ -1,0 +1,341 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Thu, 2 Feb 2012 22:18:55 +0100
+Subject: compile_problems
+
+===================================================================
+---
+ lib/proxyssl.c          |    2 +-
+ lib/proxystack.c        |    5 +----
+ lib/pyattach.c          |    4 ++--
+ lib/pycore.c            |   10 +++++-----
+ lib/pydict.c            |    2 +-
+ lib/pydispatch.c        |    4 ++--
+ lib/pyproxygroup.c      |    2 +-
+ lib/pystream.c          |    4 ++--
+ lib/pyx509.c            |    8 ++++----
+ lib/zorp/policy.h       |    2 ++
+ modules/anypy/anypy.c   |    2 +-
+ modules/finger/finger.c |    6 ++----
+ modules/ftp/ftpcmd.c    |    4 ++--
+ modules/http/http.c     |    4 ++--
+ 14 files changed, 28 insertions(+), 31 deletions(-)
+
+diff --git a/lib/proxyssl.c b/lib/proxyssl.c
+index 58d63b9..61fba65 100644
+--- a/lib/proxyssl.c
++++ b/lib/proxyssl.c
+@@ -588,7 +588,7 @@ z_proxy_ssl_load_local_ca_list(ZProxySSLHandshake *handshake)
+       if (!sk)
+         z_proxy_return(self, FALSE);
+ 
+-      n = sk_X509_NAME_num(self->ssl_opts.local_ca_list[ndx]);
++      n = sk_X509_num(self->ssl_opts.local_ca_list[ndx]);
+       for (i = 0; i < n; i++)
+         sk_X509_NAME_push(sk, X509_NAME_dup(X509_get_subject_name(sk_X509_value(self->ssl_opts.local_ca_list[ndx],
+                                                                                 i))));
+diff --git a/lib/proxystack.c b/lib/proxystack.c
+index 41e099d..836c29e 100644
+--- a/lib/proxystack.c
++++ b/lib/proxystack.c
+@@ -126,7 +126,7 @@ z_proxy_stack_proxy(ZProxy *self, ZPolicyObj *proxy_class, ZStackedProxy **stack
+     }
+   else
+     {
+-      Py_XINCREF(Py_None);
++      Py_INCREF(Py_None);
+       stack_info_obj = Py_None;
+     }
+ 
+@@ -235,8 +235,6 @@ z_proxy_control_stream_read(ZStream *stream, GIOCondition cond G_GNUC_UNUSED, gp
+   if (strcmp(request->command->str, "SETVERDICT") == 0
+      )
+     {
+-      ZProxyStackIface *siface;
+-      
+       iface = z_proxy_find_iface(proxy, Z_CLASS(ZProxyStackIface));
+       if (!iface)
+         {
+@@ -244,7 +242,6 @@ z_proxy_control_stream_read(ZStream *stream, GIOCondition cond G_GNUC_UNUSED, gp
+           goto error;
+         }
+         
+-      siface = (ZProxyBasicIface *) iface;
+       if (strcmp(request->command->str, "SETVERDICT") == 0)
+         {
+           ZVerdict verdict;
+diff --git a/lib/pyattach.c b/lib/pyattach.c
+index 863c736..967000f 100644
+--- a/lib/pyattach.c
++++ b/lib/pyattach.c
+@@ -93,7 +93,7 @@ z_policy_attach_start_method(ZPolicyAttach *self, PyObject *args G_GNUC_UNUSED)
+     }
+   else
+     {
+-      Py_XINCREF(Py_None);
++      Py_INCREF(Py_None);
+       res = Py_None;
+     }
+   z_leave();
+@@ -136,7 +136,7 @@ z_policy_attach_getattr(PyObject *o, char *name)
+         }
+       else
+         {
+-          Py_XINCREF(Py_None);
++          Py_INCREF(Py_None);
+           z_leave();
+           return Py_None;
+         }
+diff --git a/lib/pycore.c b/lib/pycore.c
+index 5702e54..f6d80c1 100644
+--- a/lib/pycore.c
++++ b/lib/pycore.c
+@@ -111,7 +111,7 @@ z_py_log(PyObject *self G_GNUC_UNUSED, PyObject *args)
+         }
+       if (!z_log_enabled(class, verbosity))
+         {
+-          Py_XINCREF(Py_None);
++          Py_INCREF(Py_None);
+           return Py_None;
+         }
+       if (log_args != Py_None)
+@@ -133,7 +133,7 @@ z_py_log(PyObject *self G_GNUC_UNUSED, PyObject *args)
+   /*NOLOG*/
+   z_log(session_id, class, verbosity, "%s", msg);
+   Py_XDECREF(log_msg);
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   return Py_None;
+ }
+  
+@@ -148,7 +148,7 @@ z_py_quit(PyObject *self G_GNUC_UNUSED, PyObject *args)
+   if (!PyArg_ParseTuple(args, "i", &exit_code))
+     z_return(NULL);
+   z_main_loop_quit(exit_code);
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   z_return(Py_None);
+ }
+ 
+@@ -335,7 +335,7 @@ z_py_szig_event(PyObject *self G_GNUC_UNUSED, PyObject *args)
+       z_return(NULL);
+     }
+   z_szig_event(event, sv);
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   z_return(Py_None);
+ }
+ 
+@@ -347,7 +347,7 @@ z_policy_notify_event(PyObject *self G_GNUC_UNUSED,
+                       PyObject *args G_GNUC_UNUSED
+                      )
+ {
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   return Py_None;
+ }
+ 
+diff --git a/lib/pydict.c b/lib/pydict.c
+index 9f9e16d..13f9327 100644
+--- a/lib/pydict.c
++++ b/lib/pydict.c
+@@ -394,7 +394,7 @@ z_policy_dict_string_parse_args(ZPolicyDict *self G_GNUC_UNUSED, ZPolicyDictEntr
+             }
+           else
+             {
+-              gsize tmp;
++              G_GNUC_UNUSED gsize tmp;
+               g_assert((e->flags & (Z_VF_WRITE+Z_VF_CFG_WRITE)) == 0);
+ 
+               e->value = va_arg(args, gchar *);
+diff --git a/lib/pydispatch.c b/lib/pydispatch.c
+index 6330953..96bb2d2 100644
+--- a/lib/pydispatch.c
++++ b/lib/pydispatch.c
+@@ -411,7 +411,7 @@ z_policy_dispatch_destroy_method(ZPolicyDispatch *self, PyObject *args G_GNUC_UN
+   Py_XDECREF(self->handler);
+   self->handler = NULL;
+ 
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   return Py_None;
+ }
+ 
+@@ -665,7 +665,7 @@ z_policy_dispatch_get_kzorp_result(PyObject *o G_GNUC_UNUSED, PyObject *args)
+   memset(&buf, 0, sizeof(buf));
+ 
+   if (!z_kzorp_get_lookup_result(fd, &buf)) {
+-    Py_XINCREF(Py_None);
++    Py_INCREF(Py_None);
+     return Py_None;
+   }
+ 
+diff --git a/lib/pyproxygroup.c b/lib/pyproxygroup.c
+index 2b03314..7ba685f 100644
+--- a/lib/pyproxygroup.c
++++ b/lib/pyproxygroup.c
+@@ -65,7 +65,7 @@ z_policy_proxy_group_start(gpointer user_data, ZPolicyObj *args, ZPolicyObj *kw
+       return PyInt_FromLong(1);
+     }
+ 
+-  z_policy_var_ref(z_policy_none);
++  z_policy_none_ref();
+   return z_policy_none;
+ }
+ 
+diff --git a/lib/pystream.c b/lib/pystream.c
+index 0af67b9..d5061a6 100644
+--- a/lib/pystream.c
++++ b/lib/pystream.c
+@@ -412,7 +412,7 @@ z_policy_stream_write(PyObject *o, PyObject *args)
+       return NULL;
+     }
+   
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   return Py_None;
+ }
+ 
+@@ -430,7 +430,7 @@ z_policy_stream_close(PyObject *o, PyObject *args G_GNUC_UNUSED)
+   ZPolicyStream *self = (ZPolicyStream *) o;
+ 
+   z_stream_close(self->stream, NULL);
+-  Py_XINCREF(Py_None);
++  Py_INCREF(Py_None);
+   return Py_None;
+ }
+ 
+diff --git a/lib/pyx509.c b/lib/pyx509.c
+index bd8b5d1..7f1b39c 100644
+--- a/lib/pyx509.c
++++ b/lib/pyx509.c
+@@ -62,7 +62,7 @@ z_py_zorp_certificate_new(X509 *cert)
+     }
+   else
+     {
+-      Py_XINCREF(Py_None);
++      Py_INCREF(Py_None);
+       return Py_None;
+     }
+ }
+@@ -333,7 +333,7 @@ z_py_zorp_cert_list_ass_subscript(ZorpCertList *self, PyObject *ndx, PyObject *n
+ 
+   if (i != -1)
+     {
+-      X509 *tmp;
++      G_GNUC_UNUSED X509 *tmp;
+       X509 *p = sk_X509_value(self->certs, i);
+       tmp = sk_X509_delete(self->certs, i);
+       X509_free(p);
+@@ -415,7 +415,7 @@ z_py_zorp_cert_name_list_free(ZorpCertNameList *self)
+ static Py_ssize_t
+ z_py_zorp_cert_name_list_length(ZorpCertNameList *self)
+ {
+-  return sk_X509_num(self->cert_names);
++  return sk_X509_NAME_num(self->cert_names);
+ }
+ 
+ static int
+@@ -598,7 +598,7 @@ z_py_zorp_crl_list_ass_subscript(ZorpCRLList *self, PyObject *ndx, PyObject *new
+ 
+   if (i != -1)
+     {
+-      X509_CRL *tmp;
++      G_GNUC_UNUSED X509_CRL *tmp;
+       X509_CRL *p = sk_X509_CRL_value(self->crls, i);
+       tmp = sk_X509_CRL_delete(self->crls, i);
+       X509_CRL_free(p);
+diff --git a/lib/zorp/policy.h b/lib/zorp/policy.h
+index 5f2b21d..eeeed2e 100644
+--- a/lib/zorp/policy.h
++++ b/lib/zorp/policy.h
+@@ -113,6 +113,8 @@ const gchar *z_verdict_str(ZVerdict verdict);
+ #define Z_ERROR    ZV_ERROR
+ 
+ #define z_policy_none Py_None
++#define z_policy_none_ref()   do { Py_INCREF(Py_None); } while (0)
++#define z_policy_none_unref() do { Py_DECREF(Py_None); } while (0)
+ 
+ #define z_policy_var_build(format, args...) Py_BuildValue(format, ##args)
+ #define z_policy_var_str(v) PyObject_Str(v)
+diff --git a/modules/anypy/anypy.c b/modules/anypy/anypy.c
+index f285f95..c22903a 100644
+--- a/modules/anypy/anypy.c
++++ b/modules/anypy/anypy.c
+@@ -108,7 +108,7 @@ anypy_set_verdict(AnyPyProxy * self, ZPolicyObj *args)
+           z_object_unref(&iface->super);
+         }
+     }
+-  z_policy_var_ref(z_policy_none);
++  z_policy_none_ref();
+   res = z_policy_none;
+   z_proxy_leave(self);
+   return res;
+diff --git a/modules/finger/finger.c b/modules/finger/finger.c
+index 39997de..d0e3fcd 100644
+--- a/modules/finger/finger.c
++++ b/modules/finger/finger.c
+@@ -223,8 +223,8 @@ finger_init_server_stream(FingerProxy *self)
+ static gboolean
+ finger_fetch_request(FingerProxy *self)
+ {
+-  gchar *p, *line, *user;
+-  gint left, hop_count, userlen;
++  gchar *p, *line;
++  gint left, hop_count;
+   gsize line_length;
+   gint res;
+   gboolean fetch_user = TRUE;
+@@ -278,8 +278,6 @@ finger_fetch_request(FingerProxy *self)
+       left--;
+     }
+   hop_count = 0;
+-  user = p;
+-  userlen = left;
+   g_string_truncate(self->username, 0);
+   g_string_truncate(self->hostnames, 0);
+   while (*p && left)
+diff --git a/modules/ftp/ftpcmd.c b/modules/ftp/ftpcmd.c
+index 74db493..6269418 100644
+--- a/modules/ftp/ftpcmd.c
++++ b/modules/ftp/ftpcmd.c
+@@ -1481,7 +1481,7 @@ ftp_command_parse_PASV(FtpProxy *self)
+       SET_ANSWER(MSG_COMMAND_NOT_ALLOWED_HERE);
+       z_proxy_return(self, FTP_REQ_REJECT);
+     }
+-  z_proxy_return(self, FTP_REQ_ACCEPT);
++  z_proxy_return(self, res);
+ }
+ 
+ guint
+@@ -1872,7 +1872,7 @@ ftp_command_parse_EPSV(FtpProxy *self)
+       SET_ANSWER(MSG_COMMAND_NOT_ALLOWED_HERE);
+       z_proxy_return(self, FTP_REQ_REJECT);
+     }
+-  z_proxy_return(self, FTP_REQ_ACCEPT);
++  z_proxy_return(self, res);
+ }
+ 
+ guint
+diff --git a/modules/http/http.c b/modules/http/http.c
+index 906378e..5b32af2 100644
+--- a/modules/http/http.c
++++ b/modules/http/http.c
+@@ -381,7 +381,7 @@ http_policy_header_manip(HttpProxy *self, ZPolicyObj *args)
+         }
+       else
+         {
+-          z_policy_var_ref(z_policy_none);
++          z_policy_none_ref();
+           res = z_policy_none;
+         }
+       break;
+@@ -395,7 +395,7 @@ http_policy_header_manip(HttpProxy *self, ZPolicyObj *args)
+         p = http_add_header(&self->headers[side], header, strlen(header), new_value, strlen(new_value));
+       g_string_assign(p->value, new_value);
+       p->present = TRUE;
+-      z_policy_var_ref(z_policy_none);
++      z_policy_none_ref();
+       res = z_policy_none;
+       break;
+ 
+-- 
