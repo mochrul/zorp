@@ -1,0 +1,27 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Fri, 3 Feb 2012 00:21:55 +0100
+Subject: Changed zorp program install dir name to pkglibexec.
+
+---
+ zorp/Makefile.am |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/zorp/Makefile.am b/zorp/Makefile.am
+index 522a0ca..e1814d5 100644
+--- a/zorp/Makefile.am
++++ b/zorp/Makefile.am
+@@ -1,11 +1,12 @@
+ pkglibdir=$(libdir)/zorp
++pkglibexecdir=$(libdir)/zorp
+ LIBS=@ZORP_LIBS@
+ 
+ if PRO
+ SUBDIRS = urlfilter
+ endif
+ 
+-pkglib_PROGRAMS = zorp
++pkglibexec_PROGRAMS = zorp
+ 
+ zorp_SOURCES = main.c 
+ 
+-- 

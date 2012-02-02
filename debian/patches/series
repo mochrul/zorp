@@ -1,5 +1,6 @@
-0001-Added-directory-to-make-configure-happy.patch
-0002-zorpconfig_man.diff.patch
-0003-openssl_1.0.diff.patch
-0004-compile_problems.patch
-0005-compile_problems2.patch
+0001-Changed-zorp-program-install-dir-name-to-pkglibexec.patch
+0002-Added-directory-to-make-configure-happy.patch
+0003-zorpconfig_man.diff.patch
+0004-openssl_1.0.diff.patch
+0005-compile_problems.patch
+0006-compile_problems2.patch
