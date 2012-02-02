@@ -11,6 +11,8 @@ Architecture: linux-any
 Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dns, python-kzorp (=${source:Version}), ${misc:Depends},
 	 adduser, ${python:Depends}
 Suggests: zorp-doc, zorp-modules (= ${binary:Version})
+Replaces: zorp-modules (<< 3.9.0-1)
+Breaks: zorp-modules (<< 3.9.0-1)
 Description: Advanced protocol analyzing firewall
  Zorp is a new generation firewall. It is essentially a transparent proxy
  firewall, with strict protocol analyzing proxies, a modular architecture,
