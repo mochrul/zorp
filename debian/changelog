@@ -1,5 +1,8 @@
-zorp (3.9.3-1) unstable; urgency=low
+zorp (3.9.3-1~1.gbp91b446) UNRELEASED; urgency=low
 
+  ** SNAPSHOT build @91b446aee68100b48483986d1dd367cf2656a8be **
+
+  * Added anypy directory to make configure happy.
   * New upstream version
 
  -- SZALAY Attila <sasa@debian.org>  Thu, 02 Feb 2012 17:58:28 +0100
