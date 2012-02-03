@@ -4,3 +4,7 @@
 0004-openssl_1.0.diff.patch
 0005-compile_problems.patch
 0006-compile_problems2.patch
+0007-Changed-zorp-program-install-dir-name-to-pkglibexec.patch
+0008-Prepared-for-a-new-snapshot-version.patch
+0009-Removed-some-more-upstream-debianization.patch
+0010-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch

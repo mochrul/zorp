@@ -1,0 +1,27 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Fri, 3 Feb 2012 00:29:18 +0100
+Subject: Prepared for a new snapshot version
+
+Git-Dch: Ignore
+---
+ debian/changelog |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/debian/changelog b/debian/changelog
+index ef3dc8d..12a8ee0 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,8 +1,9 @@
+-zorp (3.9.3-1~1.gbp91b446) UNRELEASED; urgency=low
++zorp (3.9.3-1~1.gbp9399c4) UNRELEASED; urgency=low
+ 
+-  ** SNAPSHOT build @91b446aee68100b48483986d1dd367cf2656a8be **
++  ** SNAPSHOT build @9399c40ccdb9612d02a928a9d54a9ff92caa6caa **
+ 
+-  * Added anypy directory to make configure happy.
++  * Changed zorp program install dir name to pkglibexec
++  * Added anypy directory to make configure happy
+   * New upstream version
+ 
+  -- SZALAY Attila <sasa@debian.org>  Thu, 02 Feb 2012 17:58:28 +0100
+-- 

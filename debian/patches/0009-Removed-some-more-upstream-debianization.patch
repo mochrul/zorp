@@ -1,0 +1,48 @@
+From: SZALAY Attila <sasa@debian.org>
+Date: Fri, 3 Feb 2012 00:53:28 +0100
+Subject: Removed some more upstream debianization
+
+---
+ modules/pop3/Makefile.am        |    2 +-
+ modules/pop3/debian/Makefile.am |    1 -
+ modules/smtp/Makefile.am        |    2 +-
+ modules/smtp/debian/Makefile.am |    1 -
+ 4 files changed, 2 insertions(+), 4 deletions(-)
+ delete mode 100644 modules/pop3/debian/Makefile.am
+ delete mode 100644 modules/smtp/debian/Makefile.am
+
+diff --git a/modules/pop3/Makefile.am b/modules/pop3/Makefile.am
+index e219d39..77eb92a 100644
+--- a/modules/pop3/Makefile.am
++++ b/modules/pop3/Makefile.am
+@@ -1,4 +1,4 @@
+-SUBDIRS = debian messages
++SUBDIRS = messages
+ 
+ pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkglibdir = @libdir@/zorp
+diff --git a/modules/pop3/debian/Makefile.am b/modules/pop3/debian/Makefile.am
+deleted file mode 100644
+index fea2b02..0000000
+--- a/modules/pop3/debian/Makefile.am
++++ /dev/null
+@@ -1 +0,0 @@
+-EXTRA_DIST=zorp-pro-modules.files
+diff --git a/modules/smtp/Makefile.am b/modules/smtp/Makefile.am
+index c31fb09..d44066f 100644
+--- a/modules/smtp/Makefile.am
++++ b/modules/smtp/Makefile.am
+@@ -1,4 +1,4 @@
+-SUBDIRS = . debian tests
++SUBDIRS = . tests
+ 
+ pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkglibdir = @libdir@/zorp
+diff --git a/modules/smtp/debian/Makefile.am b/modules/smtp/debian/Makefile.am
+deleted file mode 100644
+index fea2b02..0000000
+--- a/modules/smtp/debian/Makefile.am
++++ /dev/null
+@@ -1 +0,0 @@
+-EXTRA_DIST=zorp-pro-modules.files
+-- 
