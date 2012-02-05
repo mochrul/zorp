@@ -24,7 +24,7 @@ build-arch: build-stamp
 
 build-indep: build-stamp
 
-build-stamp: debfiles-stamp
+build-stamp:
 	dh_testdir
 
 	[ ! -f configure ] && ./autogen.sh
@@ -45,42 +45,17 @@ build-stamp: debfiles-stamp
 
 	touch build-stamp
 
-debfiles: debfiles-stamp
-
-debfiles-stamp:
-	echo -n "" > debian/zorp-modules.conffiles
-	echo -n "" > debian/zorp-modules.files
-	for i in `cat module.list` x; do \
-		if test "$$i" != "x"; then \
-			if test -r modules/$$i/debian/zorp-pro-modules.files; then \
-				cat modules/$$i/debian/zorp-pro-modules.files >> debian/zorp-modules.files; \
-			fi; \
-			if test -r modules/$$i/debian/zorp-pro-modules.conffiles; then \
-				cat modules/$$i/debian/zorp-pro-modules.conffiles >> debian/zorp-modules.conffiles; \
-			fi; \
-		fi; \
-	done;
-
-	if [ ! -s debian/zorp-modules.conffiles ]; then \
-		rm debian/zorp-modules.conffiles; \
-	fi;
-	touch debfiles-stamp
-
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
 	rm -f modules/config-stamp
-	rm -f debfiles-stamp
-	-rm debian/zorp-modules.files
-	-rm debian/zorp-modules.conffiles
-	-rm -rf debian/zorp-tests
+	#-rm -rf debian/zorp-tests
 
 	-rm config.log
 
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) distclean
-	-rm pylib/kznf/Makefile pylib/kznf/kznf/Makefile
 
 	dh_clean
 
@@ -94,8 +69,8 @@ install: build
 	$(MAKE) install DESTDIR=`pwd`/debian/tmp/
 	mv `pwd`/debian/tmp/etc/zorp/zorpctl.conf.sample `pwd`/debian/tmp/etc/zorp/zorpctl.conf
 	dh_movefiles
-	mkdir -p `pwd`/debian/zorp-tests/usr/share/zorp/testdb
-	cp -r tests/functional/* `pwd`/debian/zorp-tests/usr/share/zorp/testdb/
+	#mkdir -p `pwd`/debian/zorp-tests/usr/share/zorp/testdb
+	#cp -r tests/functional/* `pwd`/debian/zorp-tests/usr/share/zorp/testdb/
 	(cd pylib/kznf && python setup.py install --prefix ../../debian/python-kzorp/usr --install-layout=deb)
 
 # Build architecture-independent files here.
@@ -142,7 +117,6 @@ binary-arch: build install
 	dh_pysupport -a /usr/share/zorp
 	dh_pysupport -p zorp-modules
 	dh_installdeb -a
-#	dh_shlibdeps -a -l`pwd`/debian/zorp-lib/usr/lib:`pwd`/debian/zorp/usr/lib
 	dh_shlibdeps -a -Llibzorp3.9-0 -l`pwd`/debian/libzorp3.9-0/usr/lib
 	dh_gencontrol -a
 	dh_md5sums -a
