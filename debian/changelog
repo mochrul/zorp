@@ -1,15 +1,20 @@
-zorp (3.9.3-1~2.gbp639e52) UNRELEASED; urgency=low
+zorp (3.9.3-1~3.gbp070b1e) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @639e52ef0bf77142974c44a938e4133bd637dff8 **
+  ** SNAPSHOT build @070b1ec4fead58d4c981cb636f7dc125ef978b5e **
 
   * New upstream version
   * Added anypy directory to make configure happy
   * Changed zorp program install dir name to pkglibexec
   * Fixed some more compilation problem.
-  * Fixed patches
   * Fixed packaging after upstream removed all debian-related files.
+  * Remove .la files from zorp-modules package.
+  * Reverted zorp-modules.conffiles addition.
+  * Moved from dh_movefiles to dh_install
+  * Added fail-missing option to dh_install
+  * Added exclude list for dh_install
+  * Removed zorp-config from libzorp3.9-0.
 
- -- SZALAY Attila <sasa@debian.org>  Sun, 05 Feb 2012 14:43:27 +0100
+ -- SZALAY Attila <sasa@debian.org>  Sun, 05 Feb 2012 22:21:42 +0100
 
 zorp (3.9.2-4) unstable; urgency=medium
 
