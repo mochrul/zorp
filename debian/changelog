@@ -1,12 +1,15 @@
-zorp (3.9.3-1~1.gbp9399c4) UNRELEASED; urgency=low
+zorp (3.9.3-1~2.gbp639e52) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @9399c40ccdb9612d02a928a9d54a9ff92caa6caa **
+  ** SNAPSHOT build @639e52ef0bf77142974c44a938e4133bd637dff8 **
 
-  * Changed zorp program install dir name to pkglibexec
-  * Added anypy directory to make configure happy
   * New upstream version
+  * Added anypy directory to make configure happy
+  * Changed zorp program install dir name to pkglibexec
+  * Fixed some more compilation problem.
+  * Fixed patches
+  * Fixed packaging after upstream removed all debian-related files.
 
- -- SZALAY Attila <sasa@debian.org>  Thu, 02 Feb 2012 17:58:28 +0100
+ -- SZALAY Attila <sasa@debian.org>  Sun, 05 Feb 2012 14:43:27 +0100
 
 zorp (3.9.2-4) unstable; urgency=medium
 
