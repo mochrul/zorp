@@ -68,7 +68,7 @@ install: build
 	# Add here commands to install the package into debian/tmp.
 	$(MAKE) install DESTDIR=`pwd`/debian/tmp/
 	mv `pwd`/debian/tmp/etc/zorp/zorpctl.conf.sample `pwd`/debian/tmp/etc/zorp/zorpctl.conf
-	dh_movefiles
+	dh_install
 	#mkdir -p `pwd`/debian/zorp-tests/usr/share/zorp/testdb
 	#cp -r tests/functional/* `pwd`/debian/zorp-tests/usr/share/zorp/testdb/
 	(cd pylib/kznf && python setup.py install --prefix ../../debian/python-kzorp/usr --install-layout=deb)
