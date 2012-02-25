@@ -1,3 +1,10 @@
+zorp (3.9.3-2) unstable; urgency=low
+
+  * Added Breaks clause to instrument dpkg to upgrade libzorp3.9-0 first
+    (Closes: #659187)
+
+ -- SZALAY Attila <sasa@debian.org>  Sat, 25 Feb 2012 14:39:50 +0100
+
 zorp (3.9.3-1) unstable; urgency=low
 
   * New upstream version
