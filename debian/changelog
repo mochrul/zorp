@@ -1,3 +1,13 @@
+zorp (3.9.5-1~1.gbp2b02da) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @2b02da8efe690630dbba77f7ae4690bba6b339ec **
+
+  * New upstream version
+  * Re-generated quilt patches after rebasing to the new upstream.
+  * Use the newly implemented --disable-werror option
+
+ -- SZALAY Attila <sasa@debian.org>  Sun, 11 Mar 2012 00:07:14 +0100
+
 zorp (3.9.3-2) unstable; urgency=low
 
   * Added Breaks clause to instrument dpkg to upgrade libzorp3.9-0 first
