@@ -1,6 +1,6 @@
 From: SZALAY Attila <sasa@debian.org>
 Date: Thu, 2 Feb 2012 22:18:55 +0100
-Subject: zorpconfig_man.diff
+Subject: [PATCH] zorpconfig_man.diff
 
 ===================================================================
 ---

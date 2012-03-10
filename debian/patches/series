@@ -1,8 +1,3 @@
-0001-Changed-zorp-program-install-dir-name-to-pkglibexec.patch
-0002-Added-directory-to-make-configure-happy.patch
-0003-zorpconfig_man.diff.patch
-0004-openssl_1.0.diff.patch
-0005-compile_problems.patch
-0006-compile_problems2.patch
-0007-Removed-some-more-upstream-debianization.patch
-0008-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch
+0001-zorpconfig_man.diff.patch
+0002-compile_problems.patch
+0003-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch
