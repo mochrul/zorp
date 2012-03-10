@@ -12,11 +12,6 @@ DDEBUG=`if (echo $(DEB_BUILD_OPTIONS) | grep -q debug) then \
 	else \
 		echo ""; \
 	fi`
-DTEST=`if (echo $(DEB_BUILD_OPTIONS) | grep -q ztest) then \
-		echo "-Werror"; \
-	else \
-		echo ""; \
-	fi`
 
 build: build-arch build-indep
 
@@ -29,7 +24,7 @@ build-stamp:
 
 	[ ! -f configure ] && ./autogen.sh
 
-	ZORP_PACKAGE_LICENSE="gpl" CFLAGS=$(DTEST) ./configure \
+	./configure \
 		--prefix=/usr \
 		--mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info \
@@ -38,7 +33,8 @@ build-stamp:
 		--with-pidfiledir=/var/run/zorp/ \
 		--disable-dmalloc \
 		$(DDEBUG) \
-		--enable-tproxy=netfilter
+		--enable-tproxy=netfilter \
+		--disable-werror
 
 	# Add here commands to compile the package.
 	$(MAKE)
