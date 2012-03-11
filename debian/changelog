@@ -1,6 +1,4 @@
-zorp (3.9.5-1~2.gbp3a988c) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @3a988c9c59ee610ac6a8861ace0839a269baf3c0 **
+zorp (3.9.5-1) unstable; urgency=low
 
   * New upstream version
   * Re-generated quilt patches after rebasing to the new upstream.
@@ -11,7 +9,7 @@ zorp (3.9.5-1~2.gbp3a988c) UNRELEASED; urgency=low
   * Adjusted debian packaging to the upstream changes.
   * Library version changed from 3.9-0 to 3.9-5
 
- -- SZALAY Attila <sasa@debian.org>  Sun, 11 Mar 2012 17:33:43 +0100
+ -- SZALAY Attila <sasa@debian.org>  Sun, 11 Mar 2012 17:51:40 +0100
 
 zorp (3.9.3-2) unstable; urgency=low
 
