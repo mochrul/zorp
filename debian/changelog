@@ -1,12 +1,17 @@
-zorp (3.9.5-1~1.gbp2b02da) UNRELEASED; urgency=low
+zorp (3.9.5-1~2.gbp3a988c) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @2b02da8efe690630dbba77f7ae4690bba6b339ec **
+  ** SNAPSHOT build @3a988c9c59ee610ac6a8861ace0839a269baf3c0 **
 
   * New upstream version
   * Re-generated quilt patches after rebasing to the new upstream.
   * Use the newly implemented --disable-werror option
+  * Added changelog entry for the new release.
+  * Removed bogus compile_problems patch.
+  * Removed bogus and unimportant upstream Makefiles
+  * Adjusted debian packaging to the upstream changes.
+  * Library version changed from 3.9-0 to 3.9-5
 
- -- SZALAY Attila <sasa@debian.org>  Sun, 11 Mar 2012 00:07:14 +0100
+ -- SZALAY Attila <sasa@debian.org>  Sun, 11 Mar 2012 17:33:43 +0100
 
 zorp (3.9.3-2) unstable; urgency=low
 
