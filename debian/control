@@ -39,7 +39,7 @@ Description: Advanced protocol analyzing firewall
  .
  Debug symbols.
 
-Package: libzorp3.9-0
+Package: libzorp3.9-5
 Section: libs
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -56,7 +56,7 @@ Description: Runtime library of Zorp
 Package: libzorp-dev
 Section: libdevel
 Architecture: linux-any
-Depends: python-dev (>=2.6), libzorpll-dev, libzorp3.9-0 (= ${binary:Version}), ${misc:Depends}
+Depends: python-dev (>=2.6), libzorpll-dev, libzorp3.9-5 (= ${binary:Version}), ${misc:Depends}
 Conflicts: zorp-dev, libzorp0-dev
 Breaks: libzorp3.9-0 (<= 3.9.2-4)
 Description: Development files needed to compile Zorp modules
