@@ -1,2 +1,3 @@
-0001-zorpconfig_man.diff.patch
-0002-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch
+0001-Removed-unneeded-and-bogus-Makefiles.patch
+0002-zorpconfig_man.diff.patch
+0003-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch
