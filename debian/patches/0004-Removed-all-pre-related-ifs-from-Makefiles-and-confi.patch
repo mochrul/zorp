@@ -109,7 +109,7 @@ index cf5a259..4d4101c 100644
  AC_SUBST(PYTHON_MIN_VERSION)
  AC_SUBST(CURRDATE)
 diff --git a/libproxy/Makefile.am b/libproxy/Makefile.am
-index a6af997..03544c1 100644
+index 5ca68e8..3e4295d 100644
 --- a/libproxy/Makefile.am
 +++ b/libproxy/Makefile.am
 @@ -3,13 +3,6 @@ SUBDIRS = zorp
@@ -123,9 +123,9 @@ index a6af997..03544c1 100644
 -libzorpproxy_la_PRO_SOURCES =
 -endif
 -
- libzorpproxy_la_SOURCES = 		\
- 	dottransfer.c			\
- 	errorloader.c			\
+ libzorpproxy_la_LDFLAGS = \
+ 	-release $(LIBZORP_LT_RELEASE) \
+ 	-export-dynamic	
 diff --git a/zorp/Makefile.am b/zorp/Makefile.am
 index 9f445fd..9f99958 100644
 --- a/zorp/Makefile.am
