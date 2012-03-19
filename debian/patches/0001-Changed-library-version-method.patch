@@ -1,0 +1,37 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Mon, 19 Mar 2012 22:12:57 +0100
+Subject: [PATCH] Changed library version method.
+
+---
+ lib/Makefile.am      |    1 -
+ libproxy/Makefile.am |    4 ++++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/lib/Makefile.am b/lib/Makefile.am
+index 401c4fc..40736d8 100644
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
+@@ -5,7 +5,6 @@ LIBS = @LIBZORP_LIBS@
+ lib_LTLIBRARIES = libzorp.la
+ 
+ libzorp_la_LDFLAGS = \
+-	-version-info $(LIBZORP_LT_CURRENT):0:$(LIBZORP_LT_AGE) \
+ 	-release $(LIBZORP_LT_RELEASE) \
+ 	-export-dynamic
+ 
+diff --git a/libproxy/Makefile.am b/libproxy/Makefile.am
+index a6af997..5ca68e8 100644
+--- a/libproxy/Makefile.am
++++ b/libproxy/Makefile.am
+@@ -10,6 +10,10 @@ else
+ libzorpproxy_la_PRO_SOURCES =
+ endif
+ 
++libzorpproxy_la_LDFLAGS = \
++	-release $(LIBZORP_LT_RELEASE) \
++	-export-dynamic	
++
+ libzorpproxy_la_SOURCES = 		\
+ 	dottransfer.c			\
+ 	errorloader.c			\
+-- 
