@@ -1,11 +1,10 @@
-zorp (3.9.5-2~1.gbp036e8b) UNRELEASED; urgency=low
+zorp (3.9.5-2) unstable; urgency=low
 
-  ** SNAPSHOT build @036e8bb7ab7f052de66127e29742a451841bd168 **
+  * With upstream approve library versioning scheme changed.
+    Closes: #663686, #663549
+  * Changed package name to follow library version change.
 
-  * Prepared to release 3.9.5-1
-  * Library versioning scheme changed
-
- -- SZALAY Attila <sasa@debian.org>  Mon, 19 Mar 2012 22:24:24 +0100
+ -- SZALAY Attila <sasa@debian.org>  Tue, 20 Mar 2012 20:14:45 +0100
 
 zorp (3.9.5-1) unstable; urgency=low
 
