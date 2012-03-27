@@ -1,3 +1,14 @@
+zorp (3.9.5-3) unstable; urgency=low
+
+  * [811fb06] Fixed a typo what installed the same file into two
+    package. Hopefully no other install problem will appear because I
+    created a test system where I test the package install and upgrade
+    from test and stable systems. (Closes: #665336)
+  * [ffbc012] Added replace lines to ease the upgrade from stable
+    system.
+
+ -- SZALAY Attila <sasa@debian.org>  Mon, 26 Mar 2012 01:21:49 +0200
+
 zorp (3.9.5-2) unstable; urgency=low
 
   * With upstream approve library versioning scheme changed.
