@@ -9,7 +9,7 @@ Package: zorp
 Section: net
 Architecture: linux-any
 Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dns, python-kzorp (=${source:Version}), ${misc:Depends},
-	 adduser, ${python:Depends}
+	 adduser, ${python:Depends}, python-radix
 Suggests: zorp-doc, zorp-modules (= ${binary:Version})
 Replaces: zorp-modules (<< 3.9.0-1)
 Breaks: zorp-modules (<< 3.9.0-1)
