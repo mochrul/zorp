@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/zorp-$1\.tar\.gz/ \
+  https://github.com/balabit/zorp/tags .*/v?(\d\S*)\.tar\.gz
