@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: SZALAY Attila <sasa@debian.org>
 Standards-Version: 3.9.2
-Build-Depends: python-dev, libssl-dev (>=0.9.8), libglib2.0-dev (>= 2.2.1), libzorpll-dev (>=3.9.0.1), python-dns, gperf, debhelper (>=9), automake, autoconf, libtool
+Build-Depends: python-dev, libssl-dev (>=0.9.8), libglib2.0-dev (>= 2.2.1), libzorpll-dev (>=3.9.0.1), python-dns, gperf, debhelper (>=9), automake, autoconf, libtool, dh-autoreconf
 
 Package: zorp
 Section: net
