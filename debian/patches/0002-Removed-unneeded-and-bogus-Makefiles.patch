@@ -1,6 +1,6 @@
 From: SZALAY Attila <sasa@ubainba.hu>
 Date: Sun, 11 Mar 2012 16:05:41 +0100
-Subject: [PATCH] Removed unneeded and bogus Makefiles.
+Subject: Removed unneeded and bogus Makefiles.
 
 ---
  configure.in            |    1 -
@@ -43,4 +43,3 @@ index d2e3b94..a8c30cc 100644
  
  get_kzorp_result_SOURCES = get_kzorp_result.c
  
--- 

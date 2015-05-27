@@ -1,11 +1,11 @@
 From: SZALAY Attila <sasa@ubainba.hu>
 Date: Mon, 19 Mar 2012 22:12:57 +0100
-Subject: [PATCH] Changed library version method.
+Subject: Changed library version method.
 
 ---
  lib/Makefile.am      |    1 -
  libproxy/Makefile.am |    4 ++++
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/lib/Makefile.am b/lib/Makefile.am
 index 401c4fc..40736d8 100644
@@ -34,4 +34,3 @@ index a6af997..5ca68e8 100644
  libzorpproxy_la_SOURCES = 		\
  	dottransfer.c			\
  	errorloader.c			\
--- 

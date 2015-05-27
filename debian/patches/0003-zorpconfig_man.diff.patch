@@ -1,11 +1,11 @@
 From: SZALAY Attila <sasa@debian.org>
 Date: Thu, 2 Feb 2012 22:18:55 +0100
-Subject: [PATCH] zorpconfig_man.diff
+Subject: zorpconfig_man.diff
 
 ===================================================================
 ---
  doc/man/zorp-config.1 |   60 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 60 insertions(+), 0 deletions(-)
+ 1 file changed, 60 insertions(+)
  create mode 100644 doc/man/zorp-config.1
 
 diff --git a/doc/man/zorp-config.1 b/doc/man/zorp-config.1
@@ -74,4 +74,3 @@ index 0000000..9b6ef36
 +.SH AUTHOR
 +This manual page was written by Árpád Magosányi <mag@debian.org> and Balázs
 +Scheidler <bazsi@balabit.hu>.
--- 

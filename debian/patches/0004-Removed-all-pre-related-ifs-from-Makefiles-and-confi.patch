@@ -1,12 +1,12 @@
 From: SZALAY Attila <sasa@debian.org>
 Date: Fri, 3 Feb 2012 01:22:31 +0100
-Subject: [PATCH] Removed all pre-related ifs from Makefiles and configure.in
+Subject: Removed all pre-related ifs from Makefiles and configure.in
 
 ---
  configure.in         |   47 +----------------------------------------------
  libproxy/Makefile.am |    7 -------
  zorp/Makefile.am     |    4 ----
- 3 files changed, 1 insertions(+), 57 deletions(-)
+ 3 files changed, 1 insertion(+), 57 deletions(-)
 
 diff --git a/configure.in b/configure.in
 index cf5a259..4d4101c 100644
@@ -141,4 +141,3 @@ index 9f445fd..9f99958 100644
  pkglibexec_PROGRAMS = zorp
  
  zorp_SOURCES = main.c 
--- 

@@ -1,0 +1,19 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Tue, 26 May 2015 21:44:11 +0200
+Subject: tests/Makefile.am: Removed python directory because of a missing
+ file
+
+---
+ tests/Makefile.am |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index 51c7ac8..adc6ec4 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -1,4 +1,4 @@
+ 
+-SUBDIRS = python unit kzorp
++SUBDIRS = unit kzorp
+ 
+ EXTRA_DIST = functional/README.txt @TESTCASES@

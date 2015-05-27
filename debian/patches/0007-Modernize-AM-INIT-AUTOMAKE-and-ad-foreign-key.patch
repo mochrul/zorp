@@ -1,0 +1,31 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Thu, 21 May 2015 21:06:57 +0200
+Subject: Modernize AM?INIT?AUTOMAKE and ad foreign key
+
+---
+ configure.ac |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 4d4101c..8755c7a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -8,7 +8,6 @@ dnl SNAPSHOT_VERSION   - snapshot version to add to version number
+ dnl SOURCE_REVISION    - Revision of the source-tree, will added to the version string
+ dnl
+ 
+-AC_INIT(zorp/main.c)
+ 
+ dnl ***************************************************************************
+ dnl Definitions
+@@ -47,7 +46,9 @@ if test -r $srcdir/dist.conf; then
+         source $srcdir/dist.conf
+ fi
+ 
+-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
++AC_INIT($PACKAGE, $VERSION)
++AC_CONFIG_SRCDIR(zorp/main.c)
++AM_INIT_AUTOMAKE([no-define foreign])
+ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES])
+ 
+ if test -n "$SNAPSHOT_VERSION"; then

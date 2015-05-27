@@ -2,3 +2,11 @@
 0002-Removed-unneeded-and-bogus-Makefiles.patch
 0003-zorpconfig_man.diff.patch
 0004-Removed-all-pre-related-ifs-from-Makefiles-and-confi.patch
+0005-Rename-configure.in-to-configure.ac.patch
+0006-Do-not-use-CPPFLAGS.patch
+0007-Modernize-AM-INIT-AUTOMAKE-and-ad-foreign-key.patch
+0008-Did-some-more-transformation-to-compile.patch
+0009-Removed-test-subdir-because-of-missing-files.patch
+0010-tests-Makefile.am-Removed-python-directory-because-o.patch
+0011-tests-Makefile.am-Removed-kzorp-directory-too-becaus.patch
+0012-Makefile.am-Removed-test-directory-because-of-an-err.patch
