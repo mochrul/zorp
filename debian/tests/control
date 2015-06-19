@@ -1,0 +1,3 @@
+Tests: basic
+Restrictions: needs-root
+Depends: netcat, @

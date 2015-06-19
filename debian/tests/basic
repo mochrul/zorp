@@ -1,0 +1,60 @@
+#!/bin/bash -e
+
+#Check if the zorp process is already running
+ZORPRUN=$(ps uaxw | grep zorp | grep -v grep | wc -l)
+
+if [ $ZORPRUN -gt 0 ]
+then
+    echo "A process called zorp is already running"
+    echo "No further test possible"
+    exit 0
+fi
+
+CURRENT_DIR=$(pwd)
+
+#FIXME: This is just a temporaly hack
+#mkdir /var/run/zorp
+
+echo "Starting Zorp"
+/usr/lib/zorp/zorp -p $CURRENT_DIR/debian/tests/policies/basic.py --foreground --no-syslog 2>$ADTTMP/zorp_stderr &
+
+ZORP_PID=$!
+
+sleep 10
+
+ZORPRUN=$(ps uaxw | grep zorp | grep -v grep | wc -l)
+
+if [ $ZORPRUN -lt 1 ]
+then
+    echo "A zorp process cannot started"
+    cat $ADTTMP/zorp_stderr 
+    echo "Interfaces"
+    /sbin/ifconfig -a
+    exit 1
+fi
+
+echo "Zorp is started. Starting the server process"
+
+nc -l -p 50081 -c "echo almafa" &
+
+echo "Server process is started. Now connect to the proxy from a client"
+
+nc 127.0.0.2 50080 > $ADTTMP/nc.output
+
+OUTPUT=`cat $ADTTMP/nc.output`
+
+if [ $OUTPUT != "almafa" ]
+then
+    echo "The client does not received the expected string"
+    echo $OUTPUT
+    exit 1
+fi
+
+echo "Connections are closed. Checking the stderr"
+
+cat $ADTTMP/zorp_stderr | grep -v -f $CURRENT_DIR/debian/tests/stderr_noerror >&2 || true
+
+echo "Zorp test finished"
+cat $ADTTMP/zorp_stderr
+
+exit 0

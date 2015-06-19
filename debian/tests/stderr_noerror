@@ -1,0 +1,6 @@
+Starting up; verbose_level
+bind() failed; bind='AF_UNIX(/var/run/zorp/zorpctl.zorp)', error='No such file or directory'
+Error pinging KZorp, it is probably unavailable;
+zorp: Error creating pid file; file='/var/run/zorp//zorp-zorp.pid', error='No such file or directory'
+Starting proxy instance;
+Server connection established;
