@@ -1,7 +1,7 @@
 ############################################################################
 ##
-## Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-## 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+##
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,10 +13,9 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
+## You should have received a copy of the GNU General Public License along
+## with this program; if not, write to the Free Software Foundation, Inc.,
+## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
 """
@@ -26,10 +25,29 @@
     <para>
     </para>
   </description>
+  <metainfo>
+    <constants>
+      <constantgroup maturity="stable" id="cont.zorp.log_message">
+        <description>Zorp exception types</description>
+        <item><name>ZoneException</name><value>"Zone not found"</value></item>
+        <item><name>ServiceException</name><value>"Service"</value></item>
+        <item><name>DACException</name><value>"DAC policy violation"</value></item>
+        <item><name>MACException</name><value>"MAC policy violation"</value></item>
+        <item><name>AAException</name><value>"Authentication or authorization failed"</value></item>
+        <item><name>LimitException</name><value>"Limit error"</value></item>
+        <item><name>InternalException</name><value>"Internal error occurred"</value></item>
+        <item><name>UserException</name><value>"Incorrect, or unspecified parameter"</value></item>
+        <item><name>LicenseException</name><value>"Attempt to use unlicensed components"</value></item>
+      </constantgroup>
+    </constants>
+  </metainfo>
 </module>
 """
 
 class ZorpException(Exception):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -38,9 +56,14 @@ class ZorpException(Exception):
         self.detail = detail
 
     def __str__(self):
+        """<method internal="yes">
+        </method>"""
         return '%s: %s' % (self.what, self.detail)
 
 class ZoneException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -48,6 +71,9 @@ class ZoneException(ZorpException):
         self.what = 'Zone not found'
 
 class ServiceException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -55,6 +81,9 @@ class ServiceException(ZorpException):
         self.what = 'Service'
 
 class DACException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -62,6 +91,9 @@ class DACException(ZorpException):
         self.what = 'DAC policy violation'
 
 class MACException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -69,6 +101,9 @@ class MACException(ZorpException):
         self.what = 'MAC policy violation'
 
 class AAException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -79,6 +114,9 @@ class AAException(ZorpException):
 AuthException = AAException
 
 class LimitException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -86,6 +124,9 @@ class LimitException(ZorpException):
         self.what = 'Limit error'
 
 class InternalException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -93,6 +134,9 @@ class InternalException(ZorpException):
         self.what = 'Internal error occured'
 
 class UserException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -100,6 +144,9 @@ class UserException(ZorpException):
         self.what = 'Incorrect, or unspecified parameter'
 
 class LicenseException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -107,6 +154,9 @@ class LicenseException(ZorpException):
         self.what = 'Attempt to use unlicensed components'
 
 class MatcherException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""
@@ -114,6 +164,9 @@ class MatcherException(ZorpException):
         self.what = 'Matcher error'
 
 class ConfigException(ZorpException):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self, detail):
         """<method internal="yes">
         </method>"""

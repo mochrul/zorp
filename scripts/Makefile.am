@@ -1,2 +1,1 @@
-sbin_SCRIPTS=kzorp
-EXTRA_DIST=kzorp genlutable.sh
+EXTRA_DIST=genlutable.sh

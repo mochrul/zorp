@@ -1,26 +1,20 @@
 /***************************************************************************
  *
- * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
- * 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
- * Note that this permission is granted for only version 2 of the GPL.
- *
- * As an additional exemption you are allowed to compile & link against the
- * OpenSSL libraries as published by the OpenSSL project. See the file
- * COPYING for details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
@@ -36,6 +30,11 @@
 #include <zorp/poll.h>
 #include <zorp/attach.h>
 #include <zorp/blob.h>
+#include <zorp/proxy/transfer2.h>
+#include <zorp/policy.h>
+
+#include "httpcommon.h"
+
 
 /* general limits applied to headers, etc. */
 #define HTTP_MAX_LINE           32768
@@ -54,18 +53,25 @@
 
 
 /* request specific constants */
-#define HTTP_REQ_ACCEPT       1
-#define HTTP_REQ_DENY         2
-#define HTTP_REQ_REJECT       3
-#define HTTP_REQ_ABORT        4
-#define HTTP_REQ_POLICY       6
+typedef enum _HttpRequestVerdict
+{
+  HTTP_REQ_ACCEPT = 1,
+  HTTP_REQ_DENY = 2,
+  HTTP_REQ_REJECT = 3,
+  HTTP_REQ_ABORT = 4,
+  HTTP_REQ_POLICY = 6,
+  HTTP_REQ_CUSTOM_RESPONSE = 7,
+} HttpRequestVerdict;
 
 /* response specific constants */
-#define HTTP_RSP_ACCEPT       1
-#define HTTP_RSP_DENY         2
-#define HTTP_RSP_REJECT       3
-#define HTTP_RSP_ABORT        4
-#define HTTP_RSP_POLICY       6
+typedef enum _HttpResponseVerdict
+{
+  HTTP_RSP_ACCEPT = 1,
+  HTTP_RSP_DENY = 2,
+  HTTP_RSP_REJECT = 3,
+  HTTP_RSP_ABORT = 4,
+  HTTP_RSP_POLICY = 6,
+} HttpResponseVerdict;
 
 /* header specific constants */
 #define HTTP_HDR_ACCEPT        1
@@ -137,25 +143,29 @@
 #define HTTP_HDR_CF_TILDE           (1 << 26)
 #define HTTP_HDR_CF_EXCLAM          (1 << 27)
 
-/* error codes */
-#define HTTP_MSG_OK             0
-#define HTTP_MSG_CLIENT_SYNTAX  1
-#define HTTP_MSG_SERVER_SYNTAX  2
-#define HTTP_MSG_POLICY_SYNTAX  3
-#define HTTP_MSG_POLICY_VIOLATION 4
-#define HTTP_MSG_INVALID_URL    5
-#define HTTP_MSG_CONNECT_ERROR  6
-#define HTTP_MSG_IO_ERROR	7
-#define HTTP_MSG_AUTH_REQUIRED  8
-#define HTTP_MSG_CLIENT_TIMEOUT 9
-#define HTTP_MSG_SERVER_TIMEOUT 10
-#define HTTP_MSG_BAD_CONTENT	11
-#define HTTP_MSG_FTP_ERROR	12
-#define HTTP_MSG_REDIRECT	13
+typedef enum _HttpMessageCode
+{
+  HTTP_MSG_NOT_ASSIGNED     = -1,
+  HTTP_MSG_OK               =  0,
+  HTTP_MSG_CLIENT_SYNTAX    =  1,
+  HTTP_MSG_SERVER_SYNTAX    =  2,
+  HTTP_MSG_POLICY_SYNTAX    =  3,
+  HTTP_MSG_POLICY_VIOLATION =  4,
+  HTTP_MSG_INVALID_URL      =  5,
+  HTTP_MSG_CONNECT_ERROR    =  6,
+  HTTP_MSG_IO_ERROR         =  7,
+  HTTP_MSG_AUTH_REQUIRED    =  8,
+  HTTP_MSG_CLIENT_TIMEOUT   =  9,
+  HTTP_MSG_SERVER_TIMEOUT   = 10,
+  HTTP_MSG_BAD_CONTENT      = 11,
+  HTTP_MSG_FTP_ERROR        = 12,
+  HTTP_MSG_REDIRECT         = 13,
+} HttpMessageCode;
 
 /* protocol to pull data on the server side */
 #define HTTP_PROTO_HTTP		0
-#define HTTP_PROTO_FTP		1
+#define HTTP_PROTO_HTTPS	1
+#define HTTP_PROTO_FTP		2
 
 /* special HTTP lengths, values >= 0 are the exact length of the chunk */
 #define HTTP_LENGTH_NONE		-2
@@ -165,17 +175,13 @@
 #define HTTP_TRANSFER_TO_BLOB            1
 #define HTTP_TRANSFER_FROM_BLOB          2
 
-typedef struct _HttpProxy HttpProxy;
-typedef struct _HttpTransfer HttpTransfer;
 typedef struct _HttpHeader HttpHeader;
 typedef struct _HttpHeaders HttpHeaders;
 typedef struct _HttpURL HttpURL;
 
-typedef gboolean (*HttpTransferPreambleFunc)(HttpProxy *self, gboolean stacked, GString *preamble);
-
 /* this structure represents an HTTP header, it can easily be added to our
  * header structure without having to also include it in the protocol when
- * reconstructing the list of headers by using the 'present' member field. 
+ * reconstructing the list of headers by using the 'present' member field.
  * When present is TRUE the header will be sent to the peers, when it is
  * FALSE it will not.
  */
@@ -195,10 +201,10 @@ struct _HttpHeaders
 {
   /* linked list of HttpHeader structures */
   GList *list;
-  
+
   /* hash table for quick lookups */
   GHashTable *hash;
-  
+
   /* flattened representation of the headers */
   GString *flat;
 };
@@ -221,7 +227,7 @@ struct _HttpURL
 
 typedef struct _HttpElementInfo
 {
-  gchar *name;
+  const gchar *name;
   guint32 flags;
   gssize max_len; /* only used for headers */
 } HttpElementInfo;
@@ -230,16 +236,16 @@ typedef struct _HttpElementInfo
 struct _HttpProxy
 {
   ZProxy super;
-  
+
   /* poll is used during transfers */
   ZPoll *poll;
-  
+
   /* stacked proxy */
   ZStackedProxy *stacked;
-  
+
   /* general I/O timeout */
   guint timeout;
-  
+
   /* timeout we wait for a request */
   guint timeout_request;
 
@@ -252,31 +258,31 @@ struct _HttpProxy
 
   /* request/response header-sets */
   HttpHeaders headers[EP_MAX];
-  
+
   /* maximum number of headers in a single request/response */
   guint max_header_lines;
-  
+
   /* these values can be used to change the actual header name/value while
    * iterating through the set of headers */
   GString *current_header_name, *current_header_value;
-  
+
   /* borrowed reference to the request or response connection header
    * modifyable as long as the request/response headers are not
    * reconstructed */
   HttpHeader *connection_hdr;
-  
+
   /* inband authentication provider */
   ZAuthProvider *auth;
-  
+
   /* dummy, exported variable to indicate that we are able to deal with inband authentication */
   gboolean auth_inband_supported;
-  
+
   /* whether to forward authentication requests */
   gboolean auth_forward;
-  
+
   /* authentication realm to show to our clients */
   GString *auth_realm;
-  
+
   /* the value in the authentication header, used when forwarding
    * credentials (see auth_forward) */
   GString *auth_header_value;
@@ -287,121 +293,122 @@ struct _HttpProxy
 
   /* request method, like GET or POST */
   GString *request_method;
-  
+
   /* request flags (one of HTTP_REQ_FLG_*)  */
   guint request_flags;
-  
+
   /* request url as sent by the client */
   GString *request_url;
   HttpURL request_url_parts;
-  
+
   /* HTTP version as presented in the client request */
   gchar request_version[16];
-  
+
   /* proxy or server type request was received, HTTP_REQ_PROXY or HTTP_REQ_SERVER */
   guint request_type;
-  
+
   /* the protocol used to retrieve data HTTP/FTP */
   guint server_protocol;
-  
+
   /* port range permitted in non-transparent mode */
   GString *target_port_range;
 
   /* server we are connected to, a new connection is established once this
    * changes */
   GString *connected_server;
-  
+
   /* port we are connected to */
   guint connected_port;
 
   /* the target server as derived from the request (URL and Host header) */
   GString *remote_server;
-  
+
   /* the target port as dervied from the request */
   guint remote_port;
-  
+
   gboolean use_default_port_in_transparent_mode;
-  
+
   /* whether to use canonicalized URLs by default */
   gboolean use_canonicalized_urls;
 
   /* specifies the default HTTP port, which is used when the port is not
    * specified in the URL */
   guint default_http_port;
-  
+
+  /* specifies the default HTTPS port, which is used when the port is not
+   * specified in the URL */
+  guint default_https_port;
+
   /* specifies the default FTP port, which is used when the port is not
    * specified in the URL */
   guint default_ftp_port;
-  
+
   /* HTTP version as presented in the server's response */
   gchar response_version[16];
-  
+
   /* response status code, represented by 3 digits and a trailing NUL character */
   gchar response[4];
-  
+
   /* response flags, HTTP_RESP_FLG_* */
   guint response_flags;
-  
+
   /* parsed representation of response */
   gint response_code;
-  
+
   /* response message at the tail of the HTTP status line */
   GString *response_msg;
-  
+
   /* client connection persistency, one of HTTP_CONNECTION_* */
   guint connection_mode;
   guint server_connection_mode;
   gboolean keep_persistent;
-  
+
   /* whether we are transparent, e.g. leave request type intact */
-  gboolean transparent_mode;       
-  
+  gboolean transparent_mode;
+
   /* whether to allow incoming server requests */
   gboolean permit_server_requests;
-  
+
   /* whether to allow incoming proxy requests */
   gboolean permit_proxy_requests;
-  
+
   /* whether to allow %uXXXX encoding in URLs */
   gboolean permit_unicode_url;
-  
+
   /* whether to care about hexadecimal encoded characters validity */
   gboolean permit_invalid_hex_escape;
-  
+
   /* whether to permit HTTP/0.9 responses at all */
   gboolean permit_http09_responses;
-  
-  /* whether to permit both Proxy-Connection and Connection headers in requests */
-  gboolean permit_both_connection_headers;
-  
+
   /* whether to permit FTP requests over non-transparent HTTP */
   gboolean permit_ftp_over_http;
-  
+
   /* FTP over HTTP variables */
   ZAttach *ftp_data_attach;
 
   /* address, or hostname of the parent proxy, if empty direct connection is used */
   GString *parent_proxy;
-  
+
   /* port of the parent proxy */
   guint parent_proxy_port;
 
   /* rewrite host header when redirection is done */
-  gboolean rewrite_host_header;   
+  gboolean rewrite_host_header;
   gboolean reset_on_close;
-  
+
   /* require the existance of the Host: header */
-  gboolean require_host_header;   
-  
+  gboolean require_host_header;
+
   /* permit responses with no terminating CRLF and data */
-  gboolean permit_null_response;  
-  
+  gboolean permit_null_response;
+
   /* 0: accept rfc incompliant headers, 1: require rfc compliance */
-  gboolean strict_header_checking; 
+  gboolean strict_header_checking;
   guint strict_header_checking_action;
 
   /* parsed protocol version: 0x major minor (0x0009 0x0100 0x0101) */
-  guint proto_version[EP_MAX];          
+  guint proto_version[EP_MAX];
 
   /* user tunable protocol limits */
   guint max_line_length;
@@ -416,56 +423,66 @@ struct _HttpProxy
 
   /* policy hash to process on request methods */
   GHashTable *request_method_policy;
-  
+
   /* policy hash to process on request headers */
-  GHashTable *request_header_policy;     
-  
+  GHashTable *request_header_policy;
+
   /* policy hash to process on response codes */
-  ZDimHashTable *response_policy;           
-  
+  ZDimHashTable *response_policy;
+
   /* policy hash to process on response headers */
-  GHashTable *response_header_policy;    
+  GHashTable *response_header_policy;
 
   /* hack: when transfer feels the connection to the server should be
    * reestablished, it sets this value to TRUE */
-  
+
   gboolean reattempt_connection;
   gboolean force_reconnect;
-  
+
   /* transfer object */
   HttpTransfer *transfer;
-  
+
   /* buffer size used while copying the blobs */
   guint buffer_size;
 
   /* information used when generating the built in error pages */
-  
+
   /* internal error codes, HTTP_MSG_* */
   gint error_code;
-  
+
   /* status code to send to the client (e.g. 500 */
   guint error_status;
-  
+
   /* whether to generate error pages at all, or simply return an empty page */
   gboolean error_silent;
-  
+
   /* additional information to be shown to the client (included in the error pages as @INFO@) */
   GString *error_info;
-  
+
   /* error message sent on the HTTP status line */
   GString *error_msg;
-  
+
   /* headers sent together with the error page */
   GString *error_headers;
-  
+
   /* the directory where error file templates are stored */
   GString *error_files_directory;
+
+  /* send a locally constructed reponse immediately to client without the server being involved */
+  gboolean send_custom_response;
+
+  /* body to send to client as an immediate response */
+  GString *custom_response_body;
 
   /* Maximum allowed time between two forced authentication request */
   gint max_auth_time;
 
   /* Enable authentication cache based on Cookies. */
   gboolean auth_by_cookie;
+
+  /* Enable authentication based on html form (captive portal). */
+  gboolean auth_by_form;
+  GString *login_page_path;
 
   /* Do not authenticate this amount of sec. */
   gint auth_cache_time;
@@ -478,29 +495,28 @@ struct _HttpProxy
   ZPolicyObj *request_categories;
 
   GString *append_cookie;
+
 };
 
 extern ZClass HttpProxy__class;
 
-
 typedef guint (*HttpHeaderFilter)(HttpProxy *self, GString *header_name, GString *header_value);
 
-guint http_write(HttpProxy *self, guint side, gchar *buf, size_t buflen);
+GIOStatus http_write(HttpProxy *self, guint side, gchar *buf, size_t buflen);
 gboolean http_connect_server(HttpProxy *self);
 
-gboolean http_data_transfer(HttpProxy *self, gint transfer_type, guint from, ZStream *from_stream, guint to, ZStream *to_stream, gboolean expect_data, gboolean suppress_data, HttpTransferPreambleFunc format_preamble);
-
+gboolean http_data_transfer(HttpProxy *self, gint transfer_type, ZEndpoint from, ZStream *from_stream, ZEndpoint to, ZStream *to_stream, gboolean expect_data, gboolean suppress_data, HttpTransferPreambleFunc format_preamble);
 
 gboolean
-http_lookup_header(HttpHeaders *headers, gchar *what, HttpHeader **p);
+http_lookup_header(HttpHeaders *headers, const gchar *what, HttpHeader **p);
 
 GHashTable *http_parse_header_cookie(HttpHeaders *hdrs);
 
 gboolean
-http_fetch_headers(HttpProxy *self, int side);
+http_fetch_headers(HttpProxy *self, ZEndpoint side);
 
 gboolean
-http_filter_headers(HttpProxy *self, guint side, HttpHeaderFilter filter);
+http_filter_headers(HttpProxy *self, ZEndpoint side, HttpHeaderFilter filter);
 
 gboolean
 http_flat_headers(HttpHeaders *hdrs);
@@ -518,11 +534,10 @@ void
 http_destroy_headers(HttpHeaders *hdrs);
 
 HttpHeader *
-http_add_header(HttpHeaders *hdrs, gchar *name, gint name_len, gchar *value, gint value_len);
+http_add_header(HttpHeaders *hdrs, const gchar *name, gint name_len, gchar *value, gint value_len);
 
 void
-http_log_headers(HttpProxy *self, gint side, gchar *tag);
-
+http_log_headers(HttpProxy *self, ZEndpoint side, const gchar *tag);
 
 gint http_filter_hash_compare(gconstpointer a, gconstpointer b);
 gint http_filter_hash_bucket(gconstpointer a);
@@ -536,6 +551,8 @@ gboolean http_format_url(HttpURL *url, GString *encode_buf, gboolean format_abso
 void http_init_url(HttpURL *url);
 void http_destroy_url(HttpURL *url);
 
+gboolean http_string_assign_url_decode(GString *part, gboolean permit_invalid_hex_escape, const gchar *src, gint len, const gchar **reason);
+
 /* request/response processing */
 
 gboolean
@@ -545,7 +562,7 @@ http_split_response(HttpProxy *self, gchar *line, gint line_length);
 gboolean
 http_parse_version(HttpProxy *self, gint side, gchar *version_str);
 
-gboolean 
+gboolean
 http_handle_ftp_request(HttpProxy *self);
 
 void http_proto_init(void);
@@ -563,7 +580,7 @@ http_proto_lookup_hash(GHashTable *hash, const gchar *index)
 {
   HttpElementInfo *e;
 
-  e = g_hash_table_lookup(hash, index);
+  e = static_cast<HttpElementInfo *>(g_hash_table_lookup(hash, index));
   if (e)
     return e->flags;
   return 0;
@@ -584,15 +601,14 @@ http_proto_response_lookup(const gchar *resp)
 static inline HttpElementInfo *
 http_proto_request_hdr_lookup(const gchar *req)
 {
-  return g_hash_table_lookup(request_hdr_proto_hash, req);
+  return static_cast<HttpElementInfo *>(g_hash_table_lookup(request_hdr_proto_hash, req));
 }
 
 static inline HttpElementInfo *
 http_proto_response_hdr_lookup(const gchar *resp)
 {
-  return g_hash_table_lookup(response_hdr_proto_hash, resp);
+  return static_cast<HttpElementInfo *>(g_hash_table_lookup(response_hdr_proto_hash, resp));
 }
-
 
 
 #endif

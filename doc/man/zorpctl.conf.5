@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: zorpctl.conf
-.\"    Author: [see the "Author" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 03/06/2012
-.\"    Manual: [FIXME: manual]
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 10/03/2016
+.\"    Manual: The Zorp Authentication Server manual page
 .\"    Source: [FIXME: source]
 .\"  Language: English
 .\"
-.TH "ZORPCTL\&.CONF" "5" "03/06/2012" "[FIXME: source]" "[FIXME: manual]"
+.TH "ZORPCTL\&.CONF" "5" "10/03/2016" "[FIXME: source]" "The Zorp Authentication Server"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -39,7 +39,6 @@ file describes various global options ifluencing the behavior of
 processes the file line by line, each line having the structure described below\&. Empty lines and lines beginning with \*(Aq#\*(Aq are comments and are ignored\&.
 .SH "STRUCTURE"
 .PP
-
 \fBvariable name = variable value\fR
 .PP
 Each non\-empty line specifies a variable name and its value separated by the equal sign (\*(Aq=\*(Aq)\&. The following variables are available:
@@ -93,18 +92,6 @@ seconds and assumes that Zorp loaded successfully if it did not exit within this
 In
 \fIno\-auto\-restart\fR
 mode the successful loading of a Zorp instance can be verified by instructing Zorp to daemonize itself and waiting for the parent to exit\&. This parameter specifies the number of seconds to wait for Zorp to daemonize itself\&. Default value: 60 seconds\&.
-.RE
-.PP
-\fBPROCESS_LIMIT_MIN\fR
-.RS 4
-The minimum process limit (\fIulimit \-u\fR) used by Zorp in the case when the process limit (calculated from the
-\fI\-\-threads\fR
-parameter) would result a lower value\&. Default value: 256\&.
-.RE
-.PP
-\fBPROCESS_LIMIT_RESERVE\fR
-.RS 4
-The number of extra processes to be allocated (e\&.g\&.: for proxy modules that are known to spawn new processes)\&. Default value: 64\&. This parameter is added to the regular (calculated as the sum of the processes of a program allowed to run per user) process limit\&.
 .RE
 .PP
 \fBFD_LIMIT_THRESHOLD\fR
@@ -182,10 +169,4 @@ The default location for
 zorpctl\&.conf
 is
 /etc/zorp/zorpctl\&.conf\&.
-.SH "AUTHOR"
-.PP
-This manual page was written by the BalaBit Documentation Team <documentation@balabit\&.com>\&.
-.SH "COPYRIGHT"
-.PP
-Copyright \(co 2006 BalaBit IT Security Ltd\&. All rights reserved\&. For more information about the legal status of this document please read:
-\m[blue]\fBhttp://www\&.balabit\&.com/products/zorp/docs/legal_notice\&.bbq\fR\m[]
+<xi:include></xi:include><xi:include></xi:include>

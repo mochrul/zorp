@@ -1,26 +1,20 @@
 /***************************************************************************
  *
- * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
- * 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
- * Note that this permission is granted for only version 2 of the GPL.
- *
- * As an additional exemption you are allowed to compile & link against the
- * OpenSSL libraries as published by the OpenSSL project. See the file
- * COPYING for details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
@@ -62,26 +56,27 @@ enum
 #define Z_SZIG_MAX_PROPS 16
 
 typedef gint ZSzigEvent;
-typedef struct _ZSzigValue ZSzigValue;
-typedef struct _ZSzigNode ZSzigNode;
-typedef struct _ZSzigProps ZSzigProps;
-typedef struct _ZSzigServiceProps ZSzigServiceProps;
+struct ZSzigValue;
+struct ZSzigNode;
+struct ZSzigProps;
+struct ZSzigServiceProps;
+struct ZProxy;
 
 /*
  * NOTE: this could be represented as a nested structure of ZSzigProps,
  * however it is special cased for speed.
  */
-struct _ZSzigServiceProps
+struct ZSzigServiceProps
 {
   gchar *name;
   gint instance_id;
-  gushort sec_conn_id;
-  gushort related_id; 
+  gint sec_conn_id;
+  gushort related_id;
   gint string_count;
   gchar *string_list[Z_SZIG_MAX_PROPS * 2];
 };
 
-struct _ZSzigProps
+struct ZSzigProps
 {
   gchar *name;
   gint value_count;
@@ -89,8 +84,7 @@ struct _ZSzigProps
   ZSzigValue *value_list[Z_SZIG_MAX_PROPS];
 };
 
-
-struct _ZSzigValue
+struct ZSzigValue
 {
   gint type;
   union
@@ -108,7 +102,7 @@ struct _ZSzigValue
  *
  * A node in the result tree.
  **/
-struct _ZSzigNode
+struct ZSzigNode
 {
   gchar *name;
 
@@ -129,11 +123,13 @@ ZSzigValue *z_szig_value_new_long(glong val);
 ZSzigValue *z_szig_value_new_time(GTimeVal *val);
 ZSzigValue *z_szig_value_new_string(const gchar *val);
 void z_szig_value_add_connection_prop(ZSzigValue *v, const gchar *name, const gchar *value);
-ZSzigValue *z_szig_value_new_connection_props(const gchar *service, gint instance_id, gushort sec_conn_id, gushort related_id, const gchar *name, ...);
+ZSzigValue *z_szig_value_new_connection_props(const gchar *service, gint instance_id, gint sec_conn_id, gushort related_id, const gchar *name, ...);
 void z_szig_value_add_prop(ZSzigValue *v, const gchar *name, ZSzigValue *value);
 ZSzigValue *z_szig_value_new_props(const gchar *name, const gchar *first_prop, ...);
 void z_szig_value_free(ZSzigValue *v, gboolean free_inst);
 
 ZSzigNode *z_szig_tree_lookup(const gchar *node_name, gboolean create, ZSzigNode **parent, gint *parent_ndx);
+
+void z_szig_value_add_thread_id(ZProxy *proxy);
 
 #endif

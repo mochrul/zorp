@@ -1,9 +1,8 @@
-LIBS=@MODULETESTS_LIBS@
-CPPFLAGS = @MODULES_CPPFLAGS@
+LIBS = @MODULETESTS_LIBS@ @DEPS_LIBS@
+LDADD = ../libsmtp.la -lboost_unit_test_framework
+CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
 
-check_PROGRAMS = smtp_sanitize_addr
+AM_DEFAULT_SOURCE_EXT = .cc
 
-smtp_sanitize_addr_SOURCES = smtp_sanitize_addr.c
-smtp_sanitize_addr_LDADD = ../smtpcmd.lo ../smtp.lo ../smtppolicy.lo ../smtpdata.lo ../smtpmsg.lo
-
-TESTS = smtp_sanitize_addr
+check_PROGRAMS = smtp_sanitize_addr smtp_parse smtp_request
+TESTS = smtp_sanitize_addr smtp_parse smtp_request

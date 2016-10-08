@@ -1,5 +1,8 @@
-check_SCRIPTS = test_ftp_parse_inband_auth.sh
+check_SCRIPTS = test_ftp_parse_inband_auth.py
 
-TESTS = test_ftp_parse_inband_auth.sh
+TEST_EXTENSIONS = .py
+PY_LOG_COMPILER = $(PYTHON)
 
-EXTRA_DIST = test_ftp_parse_inband_auth.py
+TESTS = ${check_SCRIPTS}
+
+EXTRA_DIST = $(check_SCRIPTS)
