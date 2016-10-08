@@ -1,0 +1,40 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Sat, 8 Oct 2016 17:50:03 +0200
+Subject: Removed all variables related to the profession release
+
+---
+ configure.ac | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index acca7e4..8f0be53 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -374,10 +374,6 @@ AC_SUBST(BROCHURE_VERSION)
+ AC_SUBST(SNAPSHOT_VERSION)
+ AC_SUBST(SOURCE_REVISION)
+ 
+-AC_SUBST(ZORP_PACKAGE_LICENSE)
+-AC_SUBST(PACKAGE_SUFFIX)
+-
+-AC_DEFINE_UNQUOTED(ZORP_LICENSE_VERSION, "$ZORP_LICENSE_VERSION", [Required license version])
+ AC_DEFINE_UNQUOTED(ZORP_PRODUCT_NAME, "$ZORP_PRODUCT_NAME", [Required product name in license])
+ AC_SUBST(ZORP_PRODUCT_NAME)
+ 
+@@ -464,7 +460,6 @@ coverage: $enable_coverage
+ ipoptions: $enable_ip_options
+ ipv6: $enable_ipv6
+ prefork: $enable_prefork
+-License: $ZORP_PACKAGE_LICENSE
+ 
+ 
+ EOF
+@@ -475,8 +470,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
+ 
+ AC_SUBST(GLIB_MIN_VERSION)
+ AC_SUBST(ZORPLL_MIN_VERSION)
+-AC_SUBST(ZORPLIC_MIN_VERSION)
+-AC_SUBST(ZORPMISC_MIN_VERSION)
+ AC_SUBST(OPENSSL_MIN_VERSION)
+ AC_SUBST(PYTHON_MIN_VERSION)
+ AC_SUBST(CURRDATE)

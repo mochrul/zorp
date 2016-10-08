@@ -4,7 +4,7 @@ Subject: zorpconfig_man.diff
 
 ===================================================================
 ---
- doc/man/zorp-config.1 |   60 +++++++++++++++++++++++++++++++++++++++++++++++++
+ doc/man/zorp-config.1 | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 60 insertions(+)
  create mode 100644 doc/man/zorp-config.1
 

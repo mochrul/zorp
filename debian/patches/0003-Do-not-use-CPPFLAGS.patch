@@ -1,27 +1,29 @@
 From: SZALAY Attila <sasa@ubainba.hu>
-Date: Thu, 21 May 2015 20:02:53 +0200
+Date: Sat, 8 Oct 2016 17:58:24 +0200
 Subject: Do not use CPPFLAGS
 
-Use AM_CPPFLAGS instead.
+Use AM_CPPFLAGS instead. This patch is needed to be able to
+inject CPP options from the debian build system (ie.: fortify)
 ---
- modules/anypy/Makefile.am      |    2 +-
- modules/finger/Makefile.am     |    2 +-
- modules/ftp/Makefile.am        |    2 +-
- modules/http/Makefile.am       |    2 +-
- modules/plug/Makefile.am       |    2 +-
- modules/pop3/Makefile.am       |    2 +-
- modules/smtp/Makefile.am       |    2 +-
- modules/smtp/tests/Makefile.am |    2 +-
- modules/telnet/Makefile.am     |    2 +-
- modules/whois/Makefile.am      |    2 +-
- 10 files changed, 10 insertions(+), 10 deletions(-)
+ modules/anypy/Makefile.am      | 2 +-
+ modules/apr/Makefile.am        | 2 +-
+ modules/finger/Makefile.am     | 2 +-
+ modules/ftp/Makefile.am        | 2 +-
+ modules/http/Makefile.am       | 2 +-
+ modules/plug/Makefile.am       | 2 +-
+ modules/pop3/Makefile.am       | 2 +-
+ modules/smtp/Makefile.am       | 2 +-
+ modules/smtp/tests/Makefile.am | 2 +-
+ modules/telnet/Makefile.am     | 2 +-
+ modules/whois/Makefile.am      | 2 +-
+ 11 files changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/modules/anypy/Makefile.am b/modules/anypy/Makefile.am
-index 382917e..3fa7cb8 100644
+index 8271d13..d9146e9 100644
 --- a/modules/anypy/Makefile.am
 +++ b/modules/anypy/Makefile.am
 @@ -1,7 +1,7 @@
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -29,12 +31,25 @@ index 382917e..3fa7cb8 100644
  
  pkgdata_DATA = AnyPy.py
  
+diff --git a/modules/apr/Makefile.am b/modules/apr/Makefile.am
+index 963f7a4..7805b28 100644
+--- a/modules/apr/Makefile.am
++++ b/modules/apr/Makefile.am
+@@ -3,7 +3,7 @@
+ pkgdatadir = @ZORP_PYTHON_DIR@
+ pkglibdir = @libdir@/zorp
+ LIBS = @MODULES_LIBS@
+-CPPFLAGS = @MODULES_CPPFLAGS@
++AM_CPPFLAGS = @MODULES_CPPFLAGS@
+ 
+ pkgdata_DATA = APR.py
+ 
 diff --git a/modules/finger/Makefile.am b/modules/finger/Makefile.am
-index 76f237b..74e4373 100644
+index 29fd09b..6760ed2 100644
 --- a/modules/finger/Makefile.am
 +++ b/modules/finger/Makefile.am
 @@ -1,7 +1,7 @@
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -43,11 +58,11 @@ index 76f237b..74e4373 100644
  pkgdata_DATA = Finger.py
  
 diff --git a/modules/ftp/Makefile.am b/modules/ftp/Makefile.am
-index e2adcc7..79cb316 100644
+index 66da8b0..04dfb88 100644
 --- a/modules/ftp/Makefile.am
 +++ b/modules/ftp/Makefile.am
 @@ -3,7 +3,7 @@ SUBDIRS = tests
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -56,11 +71,11 @@ index e2adcc7..79cb316 100644
  pkgdata_DATA = Ftp.py
  
 diff --git a/modules/http/Makefile.am b/modules/http/Makefile.am
-index d413094..34f041b 100644
+index b794c83..56050c8 100644
 --- a/modules/http/Makefile.am
 +++ b/modules/http/Makefile.am
-@@ -3,7 +3,7 @@ SUBDIRS = . messages  tests
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+@@ -8,7 +8,7 @@ DIST_SUBDIRS += . messages tests
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -69,11 +84,11 @@ index d413094..34f041b 100644
  
  pkgdata_DATA = Http.py
 diff --git a/modules/plug/Makefile.am b/modules/plug/Makefile.am
-index 8e8c0ed..f664ade 100644
+index 6683db2..eca4c06 100644
 --- a/modules/plug/Makefile.am
 +++ b/modules/plug/Makefile.am
 @@ -1,7 +1,7 @@
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -82,11 +97,11 @@ index 8e8c0ed..f664ade 100644
  pkgdata_DATA = Plug.py
  
 diff --git a/modules/pop3/Makefile.am b/modules/pop3/Makefile.am
-index 8622637..dbdec9d 100644
+index 74e7b9c..b53bd48 100644
 --- a/modules/pop3/Makefile.am
 +++ b/modules/pop3/Makefile.am
-@@ -3,7 +3,7 @@ SUBDIRS = . messages
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+@@ -3,7 +3,7 @@ SUBDIRS = messages
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -95,11 +110,11 @@ index 8622637..dbdec9d 100644
  pkgdata_DATA = Pop3.py
  
 diff --git a/modules/smtp/Makefile.am b/modules/smtp/Makefile.am
-index d44066f..89b6026 100644
+index e240807..7928941 100644
 --- a/modules/smtp/Makefile.am
 +++ b/modules/smtp/Makefile.am
 @@ -3,7 +3,7 @@ SUBDIRS = . tests
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
@@ -108,35 +123,36 @@ index d44066f..89b6026 100644
  pkgdata_DATA = Smtp.py
  
 diff --git a/modules/smtp/tests/Makefile.am b/modules/smtp/tests/Makefile.am
-index 93682ab..55dfba9 100644
+index 5e796b2..94db606 100644
 --- a/modules/smtp/tests/Makefile.am
 +++ b/modules/smtp/tests/Makefile.am
-@@ -1,5 +1,5 @@
- LIBS=@MODULETESTS_LIBS@
--CPPFLAGS = @MODULES_CPPFLAGS@
-+AM_CPPFLAGS = @MODULES_CPPFLAGS@
+@@ -1,6 +1,6 @@
+ LIBS = @MODULETESTS_LIBS@ @DEPS_LIBS@
+ LDADD = ../libsmtp.la -lboost_unit_test_framework
+-CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
++AM_CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
  
- check_PROGRAMS = smtp_sanitize_addr
+ AM_DEFAULT_SOURCE_EXT = .cc
  
 diff --git a/modules/telnet/Makefile.am b/modules/telnet/Makefile.am
-index 6421a84..b638991 100644
+index ab0e6b3..3826331 100644
 --- a/modules/telnet/Makefile.am
 +++ b/modules/telnet/Makefile.am
-@@ -1,7 +1,7 @@
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+@@ -4,7 +4,7 @@ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
- LIBS = @MODULES_LIBS@
+ 
+ LIBS     = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
 +AM_CPPFLAGS = @MODULES_CPPFLAGS@
  
- pkgdata_DATA = Telnet.py
  
+ pkgdata_DATA = Telnet.py
 diff --git a/modules/whois/Makefile.am b/modules/whois/Makefile.am
-index 34867b4..e283c2f 100644
+index f8d0997..7704aa9 100644
 --- a/modules/whois/Makefile.am
 +++ b/modules/whois/Makefile.am
 @@ -1,7 +1,7 @@
- pkgdatadir = @datadir@/zorp/pylib/Zorp
+ pkgdatadir = @ZORP_PYTHON_DIR@
  pkglibdir = @libdir@/zorp
  LIBS = @MODULES_LIBS@
 -CPPFLAGS = @MODULES_CPPFLAGS@
