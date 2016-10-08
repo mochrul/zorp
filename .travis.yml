@@ -1,0 +1,54 @@
+language: cpp
+sudo: required
+dist: trusty
+
+compiler:
+  - gcc
+
+branches:
+  only:
+    - /^6\.0\.[0-9]*$/
+
+before_install:
+  - source ci/obs_common.sh
+  - source ci/obs_before_install.sh
+
+before_script:
+  - sudo add-apt-repository -y ppa:dns/gnu
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq devscripts equivs
+  - sudo mk-build-deps -i -r -t " apt-get --no-install-recommends --yes"
+
+script:
+  - ./autogen.sh
+  - ./configure --prefix=$HOME
+  - make
+  - source ci/obs_prepare.sh
+
+after_success:
+  - source ci/obs_common.sh
+  - source ci/obs_commit.sh
+
+env:
+  global:
+    - secure: "PQgMMu9MKGqFxcSnO9TmhCt00WV/p5/5l9CUxkkSt64AjbQpjg8S1zchmZ9k/M6bvk4Oa6TlGFypP8mLLFC2SGap/uWQxxNPGOfQalFex3nBt8szl6ELz4p2sR3EaFpuAU092+bVNAboN3sdPJ/cqfpb4mxynu58+ShwOqGL/dIrjo1kjWM0087MBXRHHBeH9cUpDHMQKnvyt9gEL85jY/pXrUOJo0jzCBb9l1FGClCzKmdIdaYLUifn/H5oMzIXWnLK6sSjeLhKeEuIvRbZI0GkG7PLg9bdfLk6HrZX8jYxJE4Ao9GAJ5x5PZ4KtALpqgt0PS8oB7NVOzRk2fNgV1FUZ+dCaEyRTCzSYZe9LRpPSMLKCYATSqkebGxKxR8hM9Aunu2nMEEbHLwkTBVB97TMRgTqeyMWr3vKq2PbaaP9rBayH6qZKP9QYFvx6QaXcSpzch21sfV2y1vJW5JyQE2bsaQbqcszi497jh8ELO1ZyVeQS6BUTb03+RNUVmskgYRDVkVHYDqEmFdKFdQjmPa6GZkdias/EG+JsG5C9SFezHn5Kzv8S8CMzmoDN7X1nq0Z09lEErfgKHzXqVjja9jNTeZSNUHEmfZbzH2nHC8s14gbl1FQgl9m90ChpjMMHQCa7lOgW4qxTCFUzXgfPTaYGc+bDQ7zZSEWp+FTidw="
+    - OBS_HOME=security
+    - OBS_PROJECT=Zorp
+    - OBS_MAJOR_VERSION=6
+    - OBS_MINOR_VERSION=0
+    - OBS_MAINTENANCE_VERSION=8
+    - OBS_PACKAGE=zorp
+    - TEST_OS=Ubuntu
+    - TEST_OS_VERSION=14.04
+    - secure: "z/KGg63JAwjmi41y2Q3cb4DHVpCPPkmu0gqP54OuXnVewDh+duAmAXveu9pVzTJEX3ZJH+YTL63Lvih2HNmNmhtdoBArgRxlPeRUH85nVCymz3LfRFeoZXhvOpd9iWI9U5wQDu4RyJ5lxpkAvRZGG106pvdaOREDGqO6U4CFl79o6VYJntQxc713ZtNE+4f/OMatSqiOGHoMNdPFR/XVStzanzaItSkOM5f8ujouw7fatUhCEJ3XInCNzjHNUEHh1CsKsXYIaRQj31lVJGryeZOOMyj1WjMYvKmwqO0Gj/VrhpCwNpEUdswD5pNjj7jMJx1z1xYevrAqkwywFsM9JDF3gjlcVsSxSFm5vsSnOl1mLPEHJMxmmxP2fYoEM4Z00tb9wjDSsDzleHIaJzLXujv1L0mTr5bSy7jYa/fUELeV1uE2NzgUQ5iLTAbhbzQpu/pEz3g9OSnkQ8fYM9xmlp049ZbpJ5uTKWUCL1KnB5ohYgwxaCU++hV3vIhqE/AcjamVAwmnytyml+6jWayGQNYGUw+bbvyoYdDFwvcqvZVTBiI5az0K3MPS0+IxnoUFCo0FfbVvz5cjea+bjy+QthrN8OG/p6QmN4zrmUR2HP9LtQOjpOl61MKevtEiM72qUZ5veKfN8J1bi9xzhjJSri1PyqE8YGZLmpCIBuC/gnQ="
+
+addons:
+  coverity_scan:
+    project:
+      name: "Balasys/zorp"
+      version: 6.0.8
+      description: "Build submitted via Travis CI"
+    notification_email: github@pfeifferszilard.hu
+    build_command_prepend: "./autogen.sh; ./configure"
+    build_command:   "make -j4"
+    branch_pattern: 6.0.8

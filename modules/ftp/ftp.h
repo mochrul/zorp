@@ -1,26 +1,20 @@
 /***************************************************************************
  *
- * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
- * 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
- * Note that this permission is granted for only version 2 of the GPL.
- *
- * As an additional exemption you are allowed to compile & link against the
- * OpenSSL libraries as published by the OpenSSL project. See the file
- * COPYING for details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
@@ -111,7 +105,7 @@ enum ftp_state_enum {
   FTP_STATE_MAX
 };
 
-static gchar *ftp_state_names[] = {
+static const gchar *ftp_state_names[] = {
   "CONNECT",
   "LOGIN",
   "LOGIN_U",
@@ -141,12 +135,12 @@ static gchar *ftp_state_names[] = {
 #define FTP_NT_SERVER_TO_PROXY      6
 #define FTP_QUIT                    7
 
-#define FTP_DATA_COMMAND_START      (0x001)
-#define FTP_DATA_SERVER_START       (0x002)
-#define FTP_DATA_SERVER_READY       (0x004)
-#define FTP_DATA_SERVER_SAID        (0x008)
-#define FTP_DATA_CLIENT_START       (0x010)
-#define FTP_DATA_CLIENT_READY       (0x020)
+#define FTP_DATA_COMMAND_START      (0x001) /* a command needing data connection was accepted */
+#define FTP_DATA_SERVER_START       (0x002) /* server-side data connection was started */
+#define FTP_DATA_SERVER_READY       (0x004) /* server-side data connection was established */
+#define FTP_DATA_SERVER_SAID        (0x008) /* server responded to the command */
+#define FTP_DATA_CLIENT_START       (0x010) /* client-side data connection was started */
+#define FTP_DATA_CLIENT_READY       (0x020) /* client-side data connection was established */
 #define FTP_DATA_CONVERSATION       (0x040)
 #define FTP_DATA_CANCEL             (0x080)
 #define FTP_DATA_DESTROY            (0x100)
@@ -169,7 +163,7 @@ static gchar *ftp_state_names[] = {
 typedef struct _FtpProxy
 {
   ZProxy super;
-  
+
   int state;		/* I/O state in the proxy */
   int oldstate;         /* Where to go out from both side listening */
   enum ftp_state_enum ftp_state; /* our state in the FTP protocol */
@@ -179,7 +173,7 @@ typedef struct _FtpProxy
   /* local permitted command & answer tables */
   GHashTable *policy_command_hash;
   ZDimHashTable *policy_answer_hash;
-  
+
   /* feature policy hash */
   GHashTable *policy_features;
 
@@ -199,7 +193,7 @@ typedef struct _FtpProxy
   GString *answer_cmd;
   GString *answer_param;
   gboolean answer_cont;
-  
+
   /* protocol state variables */
   GString *username;
   guint max_username_length;
@@ -220,21 +214,21 @@ typedef struct _FtpProxy
   GString *masq_address[EP_MAX];
 
   guint active_connection_mode;
-  
+
   ZSockAddr *data_local_buf[EP_MAX];
 
   ZSockAddr *data_remote[EP_MAX];
   ZSockAddr *data_local[EP_MAX];
 
   guint server_port;
-  
+
   ZDispatchEntry *data_listen[EP_MAX];
   ZAttach *data_connect[EP_MAX];
-  
+
   ZStream *data_stream[EP_MAX];
-  
+
   ZStackedProxy *stacked_proxy;
-  
+
   guint data_port_min;
   guint data_port_max;
 
@@ -249,7 +243,7 @@ typedef struct _FtpProxy
   gboolean permit_unknown_command;
 
   gboolean response_strip_msg;
-  
+
   GString *valid_chars_username;
   ZCharSet username_charset;
 
@@ -259,9 +253,9 @@ typedef struct _FtpProxy
   GString *target_port_range;
 
   guint max_continuous_line;
-  
+
   /* Data connection protect */
-  GMutex *lock;
+  GMutex lock;
 
   gboolean ftp_data_hangup;
 
@@ -270,10 +264,10 @@ typedef struct _FtpProxy
   gsize buffer_size;
 
   gboolean drop_answer;
-  
+
   gchar *preamble;
 
-} FtpProxy;  
+} FtpProxy;
 
 extern ZClass FtpProxy__class;
 
@@ -323,7 +317,8 @@ extern ZClass FtpProxy__class;
 
 extern Ftp_message ftp_know_messages[];
 
-gboolean ftp_data_prepare(FtpProxy *self, gint side, gchar mode);
+gboolean ftp_data_prepare_listen(FtpProxy *self, ZEndpoint side);
+gboolean ftp_data_prepare_connect(FtpProxy *self, ZEndpoint side);
 void ftp_data_start(FtpProxy *self);
 void ftp_data_reset(FtpProxy *self);
 
@@ -332,12 +327,12 @@ void ftp_state_both(FtpProxy *self);
 gboolean ftp_data_transfer(FtpProxy *self, ZStream *from_stream, ZStream *to_stream);
 
 gchar *ftp_answer_setup(FtpProxy *self, gchar *answer_c, gchar *answer_p);
-gboolean ftp_answer_write(FtpProxy *self, gchar *msg);
+gboolean ftp_answer_write(FtpProxy *self, const gchar *msg);
 gboolean ftp_answer_write_with_setup(FtpProxy *self, gchar *answer_c, gchar *answer_p);
 
 void ftp_state_set(FtpProxy *self, guint order);
 
-static inline gchar *
+static inline const gchar *
 ftp_proto_state_name(const enum ftp_state_enum state)
 {
   return ftp_state_names[state];

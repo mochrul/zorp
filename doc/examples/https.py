@@ -1,6 +1,7 @@
 ############################################################################
 ##
-## Copyright (c) 2000 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+##
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,11 +13,9 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: https.py,v 1.2 2003/09/15 17:40:22 bazsi Exp $
+## You should have received a copy of the GNU General Public License along
+## with this program; if not, write to the Free Software Foundation, Inc.,
+## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
 # This example demonstrates the use of a transparent HTTPS (HTTP embedded
@@ -28,35 +27,34 @@ from Zorp.Http import *
 
 Zorp.firewall_name = 'bzorp@balabit'
 
-InetZone('site-net', '192.168.1.0/24', 
-	 inbound_services=["*"], 
-	 outbound_services=["*"])
+InetZone('site-net', '192.168.1.0/24',
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 InetZone('local', '127.0.0.0/8',
-	 inbound_services=["*"],
-	 outbound_services=["*"])
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 InetZone('internet', '0.0.0.0/0',
-	 inbound_services=["*"],
-	 outbound_services=["*"])
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 # transparent Https proxy
 class MyHttpsProxy(PsslProxy):
 
-	class EmbeddedHttpProxy(HttpProxy):
-		def config(self):
-			HttpProxy.config(self)
-			self.request_headers["User-Agent"] = (Http.HTTP_CHANGE_VALUE, "Lynx 2.8,1")
-			
-	def config(self):
-		self.server_need_ssl = TRUE
-		self.client_need_ssl = TRUE
-		self.client_key = '/etc/zorp/server.key'
-		self.client_cert = '/etc/zorp/server.crt'
-		self.stack_proxy = EmbeddedHttpProxy
+    class EmbeddedHttpProxy(HttpProxy):
+        def config(self):
+            HttpProxy.config(self)
+            self.request_headers["User-Agent"] = (Http.HTTP_CHANGE_VALUE, "Lynx 2.8,1")
+
+    def config(self):
+        self.server_need_ssl = TRUE
+        self.client_need_ssl = TRUE
+        self.client_key = '/etc/zorp/server.key'
+        self.client_cert = '/etc/zorp/server.crt'
+        self.stack_proxy = EmbeddedHttpProxy
 
 def zorp():
- 	Service("https", MyHttpsProxy, 
-		router=TransparentRouter())
- 	Listener(SockAddrInet("0.0.0.0", 8080), "https")
-
+    Service("https", MyHttpsProxy,
+            router=TransparentRouter())
+    Listener(SockAddrInet("0.0.0.0", 8080), "https")

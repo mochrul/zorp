@@ -1,7 +1,7 @@
 ############################################################################
 ##
-## Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-## 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+##
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,10 +13,9 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
+## You should have received a copy of the GNU General Public License along
+## with this program; if not, write to the Free Software Foundation, Inc.,
+## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
 
@@ -97,9 +96,9 @@
       </item>
       <item>
         <name>Z_PORT_RANDOM</name>
-	<description>
-	  Select a random port using a cryptographically secure function.
-	</description>
+        <description>
+          Select a random port using a cryptographically secure function.
+        </description>
       </item>
       </enum>
       <enum maturity="stable" id="enum.zorp.bacl">
@@ -119,6 +118,7 @@
         <item><name>Z_STACK_PROGRAM</name></item>
         <item><name>Z_STACK_REMOTE</name></item>
         <item><name>Z_STACK_PROVIDER</name></item>
+        <item><name>Z_STACK_PROXY_IN_SESSION</name></item>
       </enum>
       <enum maturity="stable" id="enum.zorp.logical">
         <description>logical operators</description>
@@ -188,18 +188,7 @@
         <item><name>CORE_POLICY</name><value>"core.policy"</value></item>
         <item><name>CORE_MESSAGE</name><value>"core.message"</value></item>
         <item><name>CORE_AUTH</name><value>"core.auth"</value></item>
-      </constantgroup>
-      <constantgroup maturity="stable" id="cont.zorp.log_message">
-        <description>Zorp exception types</description>
-        <item><name>ZoneException</name><value>"Zone not found"</value></item>
-        <item><name>ServiceException</name><value>"Service"</value></item>
-        <item><name>DACException</name><value>"DAC policy violation"</value></item>
-        <item><name>MACException</name><value>"MAC policy violation"</value></item>
-        <item><name>AAException</name><value>"Authentication or authorization failed"</value></item>
-        <item><name>LimitException</name><value>"Limit error"</value></item>
-        <item><name>InternalException</name><value>"Internal error occured"</value></item>
-        <item><name>UserException</name><value>"Incorrect, or unspecified parameter"</value></item>
-        <item><name>LicenseException</name><value>"Attempt to use unlicensed components"</value></item>
+        <item><name>CORE_SUMMARY</name><value>"core.summary"</value></item>
       </constantgroup>
     </constants>
   </metainfo>
@@ -216,13 +205,17 @@ import Config
 
 config = Config
 
-CORE_SESSION = "core.session"
-CORE_DEBUG = "core.debug"
-CORE_ERROR = "core.error"
-CORE_POLICY = "core.policy"
-CORE_MESSAGE = "core.message"
-CORE_AUTH = "core.auth"
-CORE_INFO = "core.info"
+import Common
+
+CORE_SESSION = Common.CORE_SESSION
+CORE_DEBUG = Common.CORE_DEBUG
+CORE_ERROR = Common.CORE_ERROR
+CORE_POLICY = Common.CORE_POLICY
+CORE_MESSAGE = Common.CORE_MESSAGE
+CORE_AUTH = Common.CORE_AUTH
+CORE_INFO = Common.CORE_INFO
+CORE_ALERTING = Common.CORE_ALERTING
+CORE_SUMMARY = Common.CORE_SUMMARY
 
 # return values returned by event handlers
 ZV_UNSPEC         = 0
@@ -271,6 +264,7 @@ Z_STACK_PROGRAM = 2
 Z_STACK_REMOTE = 3
 Z_STACK_PROVIDER = 4
 Z_STACK_CUSTOM = 5
+Z_STACK_PROXY_IN_SESSION = 6
 
 # proxy priorities
 Z_PROXY_PRI_LOW = 0
@@ -320,243 +314,321 @@ Z_KEEPALIVE_CLIENT = 1
 Z_KEEPALIVE_SERVER = 2
 Z_KEEPALIVE_BOTH   = 3
 
-Z_SSL_VERIFY_NONE		= 0
-Z_SSL_VERIFY_OPTIONAL_UNTRUSTED	= 1
-Z_SSL_VERIFY_OPTIONAL_TRUSTED	= 2
-Z_SSL_VERIFY_REQUIRED_UNTRUSTED	= 3
-Z_SSL_VERIFY_REQUIRED_TRUSTED	= 4
+Z_SSL_VERIFY_NONE               = 0
+Z_SSL_VERIFY_OPTIONAL_UNTRUSTED = 1
+Z_SSL_VERIFY_OPTIONAL_TRUSTED   = 2
+Z_SSL_VERIFY_REQUIRED_UNTRUSTED = 3
+Z_SSL_VERIFY_REQUIRED_TRUSTED   = 4
+
+class ConnectionVerdict(object):
+    __MIN_VALUE               = 0
+    ACCEPTED                  = 0
+    DENIED_BY_POLICY          = 1
+    DENIED_BY_LIMIT           = 2
+    DENIED_BY_CONNECTION_FAIL = 3
+    DENIED_BY_UNKNOWN_FAIL    = 4
+    __MAX_VALUE               = 4
+
+    __str_rep = {
+        ACCEPTED                  : "ACCEPTED",
+        DENIED_BY_POLICY          : "DENIED_BY_POLICY",
+        DENIED_BY_LIMIT           : "DENIED_BY_LIMIT",
+        DENIED_BY_CONNECTION_FAIL : "DENIED_BY_CONNECTION_FAIL",
+        DENIED_BY_UNKNOWN_FAIL    : "DENIED_BY_UNKNOWN_FAIL",
+    }
+
+    def __init__(self, verdict_value):
+        if verdict_value < ConnectionVerdict.__MIN_VALUE or \
+           verdict_value > ConnectionVerdict.__MAX_VALUE:
+            raise ValueError
+
+        self.value = verdict_value
+
+    def __str__(self):
+        return ConnectionVerdict.__str_rep[self.value]
+
+    def __eq__(self, other):
+        if other is not None and \
+           isinstance(other, ConnectionVerdict) and \
+           self.value == other.value:
+            return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 import Globals
 
 def init(names, virtual_name, is_master):
-        """
-        <function internal="yes">
-          <summary>
-            Default init() function provided by Zorp
-          </summary>
-          <description>
-            This function is a default <function>init()</function> calling the init function
-            identified by the <parameter>name</parameter> argument. This way several Zorp
-            instances can use the same policy file.
-          </description>
-          <metainfo>
-            <attributes>
-              <attribute maturity="stable">
-                <name>names</name>
-                <type></type>
-                <description>Names (instance name and also-as names) of this instance.</description>
-              </attribute>
-              <attribute maturity="stable">
-                <name>virtual_name</name>
-                <type>string</type>
-                <description>
-                  Virtual instance name of this process. If a Zorp instance is backed by multiple
-                  Zorp processes using the same configuration each process has a unique virtual
-                  instance name that is used for SZIG communication, PID file creation, etc.
-                </description>
-              </attribute>
-              <attribute>
-                <name>is_master</name>
-                <type>int</type>
-                <description>
-                  TRUE if Zorp is running in master mode, FALSE for slave processes. Each Zorp instance
-                  should have exactly one master process and an arbitrary number of slaves.
-                </description>
-              </attribute>
-            </attributes>
-          </metainfo>
-        </function>
-	"""
-	import __main__
-	import SockAddr, KZorp, Rule
-        import kznf.nfnetlink
-        import kznf.kznfnetlink
-        import errno
+    """
+    <function internal="yes">
+      <summary>
+        Default init() function provided by Zorp
+      </summary>
+      <description>
+        This function is a default <function>init()</function> calling the init function
+        identified by the <parameter>name</parameter> argument. This way several Zorp
+        instances can use the same policy file.
+      </description>
+      <metainfo>
+        <attributes>
+          <attribute maturity="stable">
+            <name>names</name>
+            <type></type>
+            <description>Names (instance name and also-as names) of this instance.</description>
+          </attribute>
+          <attribute maturity="stable">
+            <name>virtual_name</name>
+            <type>string</type>
+            <description>
+              Virtual instance name of this process. If a Zorp instance is backed by multiple
+              Zorp processes using the same configuration each process has a unique virtual
+              instance name that is used for SZIG communication, PID file creation, etc.
+            </description>
+          </attribute>
+          <attribute>
+            <name>is_master</name>
+            <type>int</type>
+            <description>
+              TRUE if Zorp is running in master mode, FALSE for slave processes. Each Zorp instance
+              should have exactly one master process and an arbitrary number of slaves.
+            </description>
+          </attribute>
+        </attributes>
+      </metainfo>
+    </function>
+    """
+    import __main__
+    import SockAddr, Matcher, Rule
+    import errno
+    from Encryption import NoneEncryption
 
-	# miscelanneous initialization
-	if config.audit.encrypt_certificate_file:
-		try:
-			config.audit.encrypt_certificate = open(config.audit.encrypt_certificate_file, 'r').read()
-		except IOError:
-			log(None, CORE_ERROR, 1, "Error reading audit encryption certificate; file='%s'", (config.audit.encrypt_certificate_file))
+    Globals.virtual_instance_name = virtual_name
+    Globals.none_encryption = NoneEncryption()
 
-        if config.audit.encrypt_certificate_list_file:
-                try:
-                        config.audit.encrypt_certificate_list = [ ]
-                        for list in config.audit.encrypt_certificate_list_file:
-                                newlist = [ ]
-                                for file in list:
-                                        try:
-                                                newlist.append( open(file, 'r').read() )
-                                        except IOError:
-                                                log(None, CORE_ERROR, 1, "Error reading audit encryption certificate; file='%s'", (file))
-                                config.audit.encrypt_certificate_list.append( newlist )
-                except TypeError:
-                        log(None, CORE_ERROR, 1, "Error iterating encryption certificate file list;")
+    # miscelanneous initialization
+    if config.audit.encrypt_certificate_file:
+        try:
+            config.audit.encrypt_certificate = open(config.audit.encrypt_certificate_file, 'r').read()
+        except IOError:
+            log(None, CORE_ERROR, 1, "Error reading audit encryption certificate; file='%s'", (config.audit.encrypt_certificate_file))
 
-        if config.audit.encrypt_certificate_list == None and config.audit.encrypt_certificate:
-               config.audit.encrypt_certificate_list = [ [ config.audit.encrypt_certificate ] ]
-
-        if config.audit.sign_private_key_file:
-		try:
-			config.audit.sign_private_key = open(config.audit.sign_private_key_file, 'r').read()
-		except IOError:
-			log(None, CORE_ERROR, 1, "Error reading audit signature's private key; file='%s'", (config.audit.sign_private_key_file))
-
-        if config.audit.sign_certificate_file:
-		try:
-			config.audit.sign_certificate = open(config.audit.sign_certificate_file, 'r').read()
-		except IOError:
-			log(None, CORE_ERROR, 1, "Error reading audit signature's certificate; file='%s'", (config.audit.sign_certificate_file))
-
-        Globals.rules = Rule.RuleSet()
-
-        Globals.instance_name = names[0]
-        for i in names:
-                try:
-                        func = getattr(__main__, i)
-                except AttributeError:
-                        ## LOG ##
-                        # This message indicates that the initialization function of
-                        # the given instance was not found in the policy file.
-                        ##
-                        log(None, CORE_ERROR, 0, "Instance definition not found in policy; instance='%s'", (names,))
-                        return FALSE
-                func()
-
-        Globals.kzorp_responds_to_ping = False
-        if config.options.kzorp_enabled:
-            # ping kzorp to see if it's there
-            try:
-                    h = KZorp.openHandle()
-                    m = h.create_message(kznf.nfnetlink.NFNL_SUBSYS_KZORP, kznf.kznfnetlink.KZNL_MSG_GET_ZONE,
-                                         kznf.nfnetlink.NLM_F_REQUEST)
-                    m.set_nfmessage(kznf.kznfnetlink.create_get_zone_msg("__nonexistent_zone__"))
-                    result = h.talk(m, (0, 0), KZorp.netlinkmsg_handler)
-                    if result < 0 and result != -errno.ENOENT:
-                            log(None, CORE_ERROR, 0, "Error pinging KZorp, it is probably unavailable; result='%d'" % (result))
-                    else:
-                            Globals.kzorp_responds_to_ping = True
-            except:
-                    log(None, CORE_ERROR, 0, "Error pinging KZorp, it is probably unavailable; exc_value='%s'" % (sys.exc_value))
-
-            if Globals.kzorp_responds_to_ping:
+    if config.audit.encrypt_certificate_list_file:
+        try:
+            config.audit.encrypt_certificate_list = [ ]
+            for list in config.audit.encrypt_certificate_list_file:
+                newlist = [ ]
+                for file in list:
                     try:
-                            KZorp.downloadKZorpConfig(names[0], is_master)
-                    except:
-                            ## LOG ##
-                            # This message indicates that downloading the necessary information to the
-                            # kernel-level KZorp subsystem has failed.
-                            ##
-                            log(None, CORE_ERROR, 0, "Error downloading KZorp configuration, Python traceback follows; error='%s'" % (sys.exc_value))
-                            for s in traceback.format_tb(sys.exc_traceback):
-                                    for l in s.split("\n"):
-                                            if l:
-                                                    log(None, CORE_ERROR, 0, "Traceback: %s" % (l))
+                        newlist.append( open(file, 'r').read() )
+                    except IOError:
+                        log(None, CORE_ERROR, 1, "Error reading audit encryption certificate; file='%s'", (file))
+                config.audit.encrypt_certificate_list.append( newlist )
+        except TypeError:
+            log(None, CORE_ERROR, 1, "Error iterating encryption certificate file list;")
 
-                            # if kzorp did respond to the ping, the configuration is erroneous -- we die here so the user finds out
-                            return FALSE
+    if config.audit.encrypt_certificate_list == None and config.audit.encrypt_certificate:
+        config.audit.encrypt_certificate_list = [ [ config.audit.encrypt_certificate ] ]
 
-        return TRUE
+    if config.audit.sign_private_key_file:
+        try:
+            config.audit.sign_private_key = open(config.audit.sign_private_key_file, 'r').read()
+        except IOError:
+            log(None, CORE_ERROR, 1, "Error reading audit signature's private key; file='%s'", (config.audit.sign_private_key_file))
+
+    if config.audit.sign_certificate_file:
+        try:
+            config.audit.sign_certificate = open(config.audit.sign_certificate_file, 'r').read()
+        except IOError:
+            log(None, CORE_ERROR, 1, "Error reading audit signature's certificate; file='%s'", (config.audit.sign_certificate_file))
+
+    Globals.rules = Rule.RuleSet()
+
+    if config.options.kzorp_enabled:
+        import kzorp.communication
+        # ping kzorp to see if it's there
+        try:
+            h = kzorp.communication.Handle()
+            Globals.kzorp_available = True
+        except:
+            Globals.kzorp_available = False
+            log(None, CORE_ERROR, 0, "Error pinging KZorp, it is probably unavailable; exc_value='%s'" % (sys.exc_value))
+
+    Globals.instance_name = names[0]
+    for i in names:
+        try:
+            func = getattr(__main__, i)
+        except AttributeError:
+            ## LOG ##
+            # This message indicates that the initialization function of
+            # the given instance was not found in the policy file.
+            ##
+            log(None, CORE_ERROR, 0, "Instance definition not found in policy; instance='%s'", (names,))
+            return FALSE
+        func()
+
+    Matcher.validateMatchers()
+
+    if Globals.kzorp_available:
+        import KZorp
+        try:
+            KZorp.downloadKZorpConfig(names[0], is_master)
+        except:
+            ## LOG ##
+            # This message indicates that downloading the necessary information to the
+            # kernel-level KZorp subsystem has failed.
+            ##
+            log(None, CORE_ERROR, 0, "Error downloading KZorp configuration, Python traceback follows; error='%s'" % (sys.exc_value))
+            for s in traceback.format_tb(sys.exc_traceback):
+                for l in s.split("\n"):
+                    if l:
+                        log(None, CORE_ERROR, 0, "Traceback: %s" % (l))
+
+            # if kzorp did respond to the ping, the configuration is erroneous -- we die here so the user finds out
+            return FALSE
+
+    return TRUE
 
 
 def deinit(names, virtual_name):
-	"""
-        <function internal="yes">
-        </function>
-	"""
-	## LOG ##
-	# This message reports that the given instance is stopping.
-	##
-        log(None, CORE_DEBUG, 6, "Deinitialization requested for instance; name='%s'", (names[0],))
-	for i in Globals.deinit_callbacks:
-		i()
+    """
+    <function internal="yes">
+    </function>
+    """
+    ## LOG ##
+    # This message reports that the given instance is stopping.
+    ##
+    log(None, CORE_DEBUG, 6, "Deinitialization requested for instance; name='%s'", (names[0],))
+    for i in Globals.deinit_callbacks:
+        i()
 
 def purge():
-        """
-        <function internal="yes">
-        </function>
-	"""
-        pass
+    """
+    <function internal="yes">
+    </function>
+    """
+    pass
 
 def cleanup(names, virtual_name, is_master):
-	"""
-        <function internal="yes">
-        </function>
-	"""
-	import KZorp
-	## LOG ##
-	# This message reports that the given instance is freeing its external
-        # resources (for example its kernel-level policy objects).
-	##
-	log(None, CORE_DEBUG, 6, "Cleaning up instance; name='%s'", (names,))
+    """
+    <function internal="yes">
+    </function>
+    """
 
-        if is_master and Globals.kzorp_responds_to_ping and config.options.kzorp_enabled:
-                try:
-                        KZorp.flushKZorpConfig(names[0])
-                except:
-                        ## LOG ##
-                        # This message indicates that flushing the instance-related information in the
-                        # kernel-level KZorp subsystem has failed.
-                        ##
-                        log(None, CORE_ERROR, 0, "Error flushing KZorp configuration; error='%s'" % (sys.exc_value))
-                        for s in traceback.format_tb(sys.exc_traceback):
-                                for l in s.split("\n"):
-                                        if l:
-                                                log(None, CORE_ERROR, 4, "Traceback: %s" % (l))
+    ## LOG ##
+    # This message reports that the given instance is freeing its external
+    # resources (for example its kernel-level policy objects).
+    ##
+    log(None, CORE_DEBUG, 6, "Cleaning up instance; name='%s'", (names,))
+
+    if is_master and Globals.kzorp_available and config.options.kzorp_enabled:
+        import KZorp
+        try:
+            KZorp.flushKZorpConfig(names[0])
+        except:
+            ## LOG ##
+            # This message indicates that flushing the instance-related information in the
+            # kernel-level KZorp subsystem has failed.
+            ##
+            log(None, CORE_ERROR, 0, "Error flushing KZorp configuration; error='%s'" % (sys.exc_value))
+            for s in traceback.format_tb(sys.exc_traceback):
+                for l in s.split("\n"):
+                    if l:
+                        log(None, CORE_ERROR, 4, "Traceback: %s" % (l))
 
 def notify(event, params):
-	"""<function internal="yes">
-        </function>
-        """
-        if Globals.notification_policy:
-                return Globals.notification_policy.notify(event, params)
+    """<function internal="yes">
+    </function>
+    """
+    if Globals.notification_policy:
+        return Globals.notification_policy.notify(event, params)
 
 
 
 ## NOLOG ##
-		
+
 def log(sessionid, logclass, verbosity, msg, args=None):
-	"""
-	<function maturity="stable">
-          <summary>
-            Function to send a message to the system log.
-          </summary>
-          <description>
-            <para>
-              This function can be used to send a message to the system log.
-            </para>
-          </description>
-          <metainfo>
-            <arguments>
-              <argument>
-               <name>sessionid</name>
-               <type><string/></type>
-               <description>The ID of the session the message belongs to.</description>
-              </argument>
-              <argument>
-                <name>logclass</name>
-                <type><string/></type>
-                <description>Hierarchical log class as described in the <emphasis>zorp(8)</emphasis> manual page</description>
-              </argument>
-              <argument>
-                <name>verbosity</name>
-                <type><integer/></type>
-                <description>Verbosity level of the message.</description>
-              </argument>
-              <argument>
-                <name>msg</name>
-                <type><string/></type>
-                <description>The message text.</description>
-              </argument>
-              <argument>
-                <name>args</name>
-                <type><string/></type>
-                <description>Optional printf-style argument tuple added to the message.</description>
-              </argument>
-            </arguments>
-          </metainfo>
-        </function>
-        """
-        pass
+    """
+    <function maturity="stable">
+      <summary>
+        Function to send a message to the system log.
+      </summary>
+      <description>
+        <para>
+          This function can be used to send a message to the system log.
+        </para>
+      </description>
+      <metainfo>
+        <arguments>
+          <argument>
+           <name>sessionid</name>
+           <type><string/></type>
+           <description>The ID of the session the message belongs to.</description>
+          </argument>
+          <argument>
+            <name>logclass</name>
+            <type><string/></type>
+            <description>Hierarchical log class as described in the <emphasis>zorp(8)</emphasis> manual page</description>
+          </argument>
+          <argument>
+            <name>verbosity</name>
+            <type><integer/></type>
+            <description>Verbosity level of the message.</description>
+          </argument>
+          <argument>
+            <name>msg</name>
+            <type><string/></type>
+            <description>The message text.</description>
+          </argument>
+          <argument>
+            <name>args</name>
+            <type><string/></type>
+            <description>Optional printf-style argument tuple added to the message.</description>
+          </argument>
+        </arguments>
+      </metainfo>
+    </function>
+    """
+    Common.log(sessionid, logclass, verbosity, msg, args=None)
+
+class ConnectionVerdict(object):
+    """<class internal="yes"/>"""
+    __MIN_VALUE               = 0
+    ACCEPTED                  = 0
+    DENIED_BY_POLICY          = 1
+    DENIED_BY_LIMIT           = 2
+    DENIED_BY_CONNECTION_FAIL = 3
+    DENIED_BY_UNKNOWN_FAIL    = 4
+    ABORTED_BY_POLICY_ACTION  = 5
+    INVALID_POLICY_CALL       = 6
+    __MAX_VALUE               = 6
+
+    __str_rep = {
+        ACCEPTED                  : "ACCEPTED",
+        DENIED_BY_POLICY          : "DENIED_BY_POLICY",
+        DENIED_BY_LIMIT           : "DENIED_BY_LIMIT",
+        DENIED_BY_CONNECTION_FAIL : "DENIED_BY_CONNECTION_FAIL",
+        DENIED_BY_UNKNOWN_FAIL    : "DENIED_BY_UNKNOWN_FAIL",
+        ABORTED_BY_POLICY_ACTION  : "ABORTED_BY_POLICY_ACTION",
+        INVALID_POLICY_CALL       : "INVALID_POLICY_CALL",
+    }
+
+    def __init__(self, verdict_value):
+        if verdict_value < ConnectionVerdict.__MIN_VALUE or \
+           verdict_value > ConnectionVerdict.__MAX_VALUE:
+            raise ValueError
+
+        self.value = verdict_value
+
+    def __str__(self):
+        return ConnectionVerdict.__str_rep[self.value]
+
+    def __eq__(self, other):
+        if other is not None and \
+           isinstance(other, ConnectionVerdict) and \
+           self.value == other.value:
+            return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 

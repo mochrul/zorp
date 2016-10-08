@@ -1,26 +1,20 @@
 /***************************************************************************
  *
- * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
- * 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
- * Note that this permission is granted for only version 2 of the GPL.
- *
- * As an additional exemption you are allowed to compile & link against the
- * OpenSSL libraries as published by the OpenSSL project. See the file
- * COPYING for details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
@@ -49,6 +43,11 @@ typedef enum
   SMTP_STATE_DATA       = 1 << 5,
   SMTP_STATE_QUIT       = 1 << 6
 }SmtpStateTypes;
+
+inline SmtpStateTypes operator|(SmtpStateTypes lhs, SmtpStateTypes rhs)
+{
+  return SmtpStateTypes(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
 
 /* smtp proxy states */
 typedef enum
@@ -85,6 +84,18 @@ typedef enum
   SMTP_EXT_DROP   = 5
 }SmtpActionTypes;
 
+inline SmtpActionTypes& operator|=(SmtpActionTypes &lhs, int rhs)
+{
+  lhs = static_cast<SmtpActionTypes>(lhs | rhs);
+  return lhs;
+}
+
+inline SmtpActionTypes& operator&=(SmtpActionTypes &lhs, int rhs)
+{
+  lhs = static_cast<SmtpActionTypes>(lhs & rhs);
+  return lhs;
+}
+
 typedef enum
 {
   SMTP_REQ_ACCEPT = 1,
@@ -115,37 +126,38 @@ typedef enum
 typedef struct _SmtpProxy SmtpProxy;
 typedef struct _SmtpTransfer SmtpTransfer;
 
-typedef guint (*SmtpCmdFunction)(struct _SmtpProxy *);
+typedef SmtpRequestTypes (*SmtpRequestFunction)(struct _SmtpProxy *);
+typedef SmtpResponseTypes (*SmtpResponseFunction)(struct _SmtpProxy *);
 
 typedef struct _SmtpCommandDesc
 {
-  gchar *name;
-  SmtpCmdFunction command_parse;
-  SmtpCmdFunction response_parse;
-  SmtpCmdFunction action_do;
+  const gchar *name;
+  SmtpRequestFunction command_parse;
+  SmtpResponseFunction response_parse;
+  SmtpRequestFunction action_do;
   SmtpStateTypes smtp_state;
 } SmtpCommandDesc;
 
 typedef struct _SmtpExtensionDesc
 {
-  gchar *name;
-  guint32 extension_mask;
+  const gchar *name;
+  SmtpExtensionTypes extension_mask;
 } SmtpExtensionDesc;
 
 struct _SmtpProxy
 {
   ZProxy super;
 
-  /* general I/O timeout */  
+  /* general I/O timeout */
   glong timeout;
   glong interval_transfer_noop;
-  
+
   /* specifies which command is allowed, SMTP_STATE_* */
   SmtpStateTypes smtp_state;
-  
+
   /* whether we should process requests/responses or data SMTP_PROXY_* */
   SmtpProxyStateTypes proxy_state;
-  
+
   /* permitted SMTP extension */
   GHashTable *extensions;
   /* compatibility: permitted extension set via bitmask */
@@ -157,7 +169,7 @@ struct _SmtpProxy
   GHashTable *request_policy;
   ZDimHashTable *response_policy;
 
-  /* I/O buffer size for data transfer */  
+  /* I/O buffer size for data transfer */
   gsize buffer_size;
 
   /* whether to permit commands not explicitly allowed */
@@ -174,7 +186,7 @@ struct _SmtpProxy
   guint max_line_length;
   gboolean require_crlf;
   gint unconnected_response_code;
-  
+
   /* stores whether or not processing a STARTTLS request is allowed */
   gboolean start_tls_ok[EP_MAX];
 
@@ -183,7 +195,7 @@ struct _SmtpProxy
   ZPlugSessionData start_tls_fallback_data;
 
   /* error information to be returned to the client */
-  
+
   /* reply code */
   GString *error_code;
   /* whether to abort the connection */
@@ -191,23 +203,23 @@ struct _SmtpProxy
   /* string info appended to the error code */
   GString *error_info;
   GString *append_domain;
-  
+
   /* proxy state */
-  
+
   /* current request descriptor */
   SmtpCommandDesc *request_cmd;
-  
+
   /* current request as string */
   GString *request;
   /* current request parameter */
   GString *request_param;
-  
+
   /* sender/recipient logging */
   GString *sender;
   /* last, canonicalized recipient */
   GString *sanitized_recipient;
   GString *recipients;
-  
+
   GString *auth_request;
 
   /* Add receive line */
@@ -215,23 +227,23 @@ struct _SmtpProxy
 
   /* Received string as parameter or HELO/EHLO */
   GString *helo_string;
-  
+
   /* Protocol in use (SMTP/ESMTP) */
   GString *protocol;
-  
+
   /* current response as string */
   GString *response;
-  /* current response parameter */  
+  /* current response parameter */
   GString *response_param;
   /* when an extended reply is received additional lines are stored here */
   GList *response_lines;
-  
+
   ZTransfer2 *transfer;
   /* set to TRUE when a data transfer begins right after response processing */
   gboolean data_transfer;
 
   ZPoll *poll;
-  
+
 };
 
 extern ZClass SmtpProxy__class;
@@ -239,11 +251,9 @@ extern SmtpMessage smtp_known_messages[SMTP_N_MSGS];
 
 gboolean smtp_sanitize_address(SmtpProxy *self, GString *result, gchar *path, gboolean empty_path_ok, gchar **final_end);
 
-
 gboolean smtp_sanitize_address(SmtpProxy *self, GString *result, gchar *path, gboolean empty_path_ok, gchar **final_end);
 
 gboolean smtp_generate_received(SmtpProxy *self, GString **dst_string);
-
 
 void smtp_reset_state(SmtpProxy *self);
 
@@ -268,7 +278,6 @@ gboolean smtp_copy_response(SmtpProxy *self);
 void smtp_clear_response(SmtpProxy *self);
 
 ZPolicyObj *smtp_policy_sanitize_address(SmtpProxy *self, ZPolicyObj *args);
-
 
 #define SMTP_SET_RESPONSE(smtp_msg_type) \
 G_STMT_START{ \

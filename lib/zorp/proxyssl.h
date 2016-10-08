@@ -1,27 +1,27 @@
 /***************************************************************************
  *
- * Copyright (c) 2009, 2010 BalaBit IT Ltd, Budapest, Hungary
- * All rights reserved.
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * Author: Laszlo Attila Toth
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
 #ifndef ZORP_PROXY_SSL_H_INCLUDED
 #define ZORP_PROXY_SSL_H_INCLUDED
 
-#include <zorp/proxycommon.h>
-#include <zorp/ssl.h>
-
-typedef enum
-{
-  PROXY_SSL_VERIFY_NONE                = 0,
-  PROXY_SSL_VERIFY_OPTIONAL_UNTRUSTED  = 1,
-#define PROXY_SSL_VERIFY_OPTIONAL PROXY_SSL_VERIFY_OPTIONAL_UNTRUSTED
-  PROXY_SSL_VERIFY_OPTIONAL_TRUSTED    = 2,
-  PROXY_SSL_VERIFY_REQUIRED_UNTRUSTED  = 3,
-  PROXY_SSL_VERIFY_REQUIRED_TRUSTED    = 4,
-} proxy_ssl_verify_type;
+#include <zorp/pyencryption.h>
 
 #define PROXY_SSL_HS_CLIENT_SERVER 0
 #define PROXY_SSL_HS_SERVER_CLIENT 1
@@ -30,68 +30,23 @@ typedef enum
 #define PROXY_SSL_HS_ACCEPT ZV_ACCEPT
 #define PROXY_SSL_HS_VERIFIED 10
 
-typedef enum
-{
-  PROXY_SSL_SEC_NONE                    = 0,
-  PROXY_SSL_SEC_FORCE_SSL               = 1,
-  PROXY_SSL_SEC_ACCEPT_STARTTLS         = 2,
-  PROXY_SSL_SEC_FORWARD_STARTTLS        = 3,
-} proxy_ssl_security_type;
-
-typedef struct _ZProxySsl {
-  ZPolicyDict *dict;
-  ZPolicyObj *ssl_struct;
-
-  proxy_ssl_security_type security[EP_MAX];
-
-  GString *ssl_method[EP_MAX];
-  GString *ssl_cipher[EP_MAX];
-
+typedef struct _ZProxyTls {
+  gboolean handshake_pending[EP_MAX];
   ZSSLSession *ssl_sessions[EP_MAX];
+  gboolean force_connect_at_handshake;
 
-  ZPolicyObj *server_setup_key_cb, *server_setup_ca_list_cb, *server_setup_crl_list_cb, *server_verify_cert_cb;
-  ZPolicyObj *client_setup_key_cb, *client_setup_ca_list_cb, *client_setup_crl_list_cb, *client_verify_cert_cb;
+  GString *tlsext_server_host_name;
+  X509 *peer_cert[EP_MAX];
 
   EVP_PKEY *local_privkey[EP_MAX];
-  X509 *peer_cert[EP_MAX];
-  X509 *local_cert[EP_MAX];
-  STACK_OF(X509) *local_ca_list[EP_MAX];
-  STACK_OF(X509_NAME) *server_peer_ca_list;
-  STACK_OF(X509_CRL) *local_crl_list[EP_MAX];
-
-  GString *verify_ca_directory[EP_MAX];
-  GString *verify_crl_directory[EP_MAX];
-
-  gboolean force_connect_at_handshake;
-  gint handshake_timeout;
-  gint handshake_seq;
-  gboolean handshake_pending[EP_MAX];
-  GHashTable *handshake_hash[EP_MAX];
-
-  proxy_ssl_verify_type verify_type[EP_MAX];
-  int verify_depth[EP_MAX];
-  gboolean disable_proto_sslv2[EP_MAX];
-  gboolean disable_proto_sslv3[EP_MAX];
-  gboolean disable_proto_tlsv1[EP_MAX];
-
-  gboolean permit_invalid_certificates;
-  gboolean permit_missing_crl;
-  gboolean server_check_subject;
   GString  *local_privkey_passphrase[EP_MAX];
+  ZCertificateChain *local_cert[EP_MAX];
+  STACK_OF(X509_NAME) *server_peer_ca_list;
+  gboolean certificate_trusted[EP_MAX];
 
-  /* List of handshake objects. Unfortunately OpenSSL callbacks cannot be
-   * handed a destroy_notify callback so we generally cannot use
-   * refcounting to manage the lifetime of handshake objects.
-   *
-   * Instead, we do store all handshake objects in this linked list in the
-   * associated proxy and make sure we delete these when we can guarantee that
-   * the handshake is no longer needed (referenced).
-   *
-   * Right now this means we delete handshake objects only from the proxy
-   * destroy method.
-   */
-  GList *handshakes;
-} ZProxySsl;
+  ZPolicyDict *tls_dict;
+  ZPolicyObj *tls_struct;
+} ZProxyTls;
 
 struct _ZProxySSLHandshake;
 typedef void (*ZProxySSLCallbackFunc)(struct _ZProxySSLHandshake *hs, gpointer user_data);
@@ -99,7 +54,7 @@ typedef struct _ZProxySSLHandshake {
   ZSSLSession *session;
   ZStream *stream;
   ZProxy *proxy;
-  gint side;
+  ZEndpoint side;
 
   /* result */
   gint ssl_err;
@@ -112,20 +67,23 @@ typedef struct _ZProxySSLHandshake {
   ZProxySSLCallbackFunc completion_cb;
   gpointer completion_user_data;
   GDestroyNotify completion_user_data_notify;
-
-  SSL_CTX *ssl_context;
 } ZProxySSLHandshake;
 
-ZProxySSLHandshake *z_proxy_ssl_handshake_new(ZProxy *proxy, ZStream *stream, gint side);
+ZProxySSLHandshake *z_proxy_ssl_handshake_new(ZProxy *proxy, ZStream *stream, ZEndpoint side);
 
 void z_proxy_ssl_config_defaults(ZProxy *self);
 void z_proxy_ssl_register_vars(ZProxy *self);
 void z_proxy_ssl_free_vars(ZProxy *self);
 gboolean z_proxy_ssl_perform_handshake(ZProxySSLHandshake *handshake);
-gboolean z_proxy_ssl_init_stream(ZProxy *self, gint side);
-gboolean z_proxy_ssl_init_stream_nonblocking(ZProxy *self, gint side);
-gboolean z_proxy_ssl_request_handshake(ZProxy *self, gint side, gboolean forced);
-void z_proxy_ssl_clear_session(ZProxy *self, gint side);
+gboolean z_proxy_ssl_init_stream(ZProxy *self, ZEndpoint side);
+gboolean z_proxy_ssl_init_stream_nonblocking(ZProxy *self, ZEndpoint side);
+gboolean z_proxy_ssl_request_handshake(ZProxy *self, ZEndpoint side, gboolean forced);
+void z_proxy_ssl_clear_session(ZProxy *self, ZEndpoint side);
 void z_proxy_ssl_set_force_connect_at_handshake(ZProxy *self, gboolean val);
+void z_proxy_ssl_get_sni_from_client(ZProxy *self);
+int z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx);
+int z_proxy_ssl_client_cert_cb(SSL *ssl, X509 **cert, EVP_PKEY **pkey);
+int z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data);
+int z_proxy_ssl_tlsext_servername_cb(SSL *ssl, int *_ad G_GNUC_UNUSED, void *_arg G_GNUC_UNUSED);
 
 #endif

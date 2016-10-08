@@ -1,6 +1,7 @@
 ############################################################################
 ##
-## Copyright (c) 2000 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+##
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,11 +13,9 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: plug.py,v 1.3 2003/09/15 17:40:22 bazsi Exp $
+## You should have received a copy of the GNU General Public License along
+## with this program; if not, write to the Free Software Foundation, Inc.,
+## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
 # Demonstrates the usage of the built-in plug proxy. It listens on
@@ -25,21 +24,20 @@
 from Zorp.Core import *
 from Zorp.Plug import PlugProxy
 
-InetZone('site-net', '192.168.1.0/24', 
-	 inbound_services=["*"], 
-	 outbound_services=["*"])
+InetZone('site-net', '192.168.1.0/24',
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 InetZone('local', '127.0.0.0/8',
-	 inbound_services=["*"],
-	 outbound_services=["*"])
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 InetZone('internet', '0.0.0.0/0',
-	 inbound_services=["*"],
-	 outbound_services=["*"])
+         inbound_services=["*"],
+         outbound_services=["*"])
 
 def zorp():
 
- 	Service("plug", PlugProxy,
-		router=DirectedRouter(SockAddrInet('127.0.0.1', 25)))
- 	Listener(SockAddrInet("0.0.0.0", 1999), "plug")
-
+    Service("plug", PlugProxy,
+            router=DirectedRouter(SockAddrInet('127.0.0.1', 25)))
+    Listener(SockAddrInet("0.0.0.0", 1999), "plug")

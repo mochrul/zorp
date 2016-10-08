@@ -1,26 +1,20 @@
 /***************************************************************************
  *
- * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
- * 2010, 2011 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
- * Note that this permission is granted for only version 2 of the GPL.
- *
- * As an additional exemption you are allowed to compile & link against the
- * OpenSSL libraries as published by the OpenSSL project. See the file
- * COPYING for details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ***************************************************************************/
 
@@ -45,7 +39,6 @@
 
 
 #define ZORP_POLICY_FILE	ZORP_SYSCONFDIR "/policy.py"
-#define ZORP_POLICY_BOOT_FILE	ZORP_DATADIR "/policy.boot"
 #define ZORP_AUTH_CERT_FILE	ZORP_SYSCONFDIR "/zorp.crt"
 #define ZORP_AUTH_KEY_FILE	ZORP_SYSCONFDIR "/zorp.key"
 #define ZORP_STATE_DIR          ZORP_STATEDIR
@@ -76,6 +69,7 @@ extern guint32 startup_id;
 extern const gchar *instance_name;
 extern const gchar *virtual_instance_name;
 extern gboolean zorp_process_master_mode;
+extern gboolean is_kzorp_enabled;
 
 
 void z_main_loop_initiate_reload(gboolean called_from_sighandler);
@@ -93,6 +87,8 @@ void z_main_loop_init(void);
 void z_main_loop_destroy(void);
 
 void z_log_set_fake_session_id(const gchar *instance_name G_GNUC_UNUSED);
+
+gboolean z_main_loop_is_initial_policy_load(void);
 
 #if GLIB_MINOR_VERSION < 8
 # define G_GNUC_NULL_TERMINATED

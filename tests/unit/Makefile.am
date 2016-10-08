@@ -1,13 +1,18 @@
-LIBS = @ZORP_LIBS@ @MODULES_LIBS@
+LIBS = @ZORP_LIBS@ @MODULES_LIBS@ @DEPS_LIBS@
+LDADD = -lboost_unit_test_framework
+CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
 
-check_PROGRAMS = pystruct test_audit test_szig test_dynexpect test_ipv6_radix
+check_PROGRAMS = test_pystruct test_szig test_proxy
 
-pystruct_SOURCES = pystruct.c
-test_audit_SOURCES = test_audit.c
-test_szig_SOURCES = test_szig.c
-test_dynexpect_SOURCES = test_dynexpect.c
-test_ipv6_radix_SOURCES = test_ipv6_radix.c
 
-TESTS = pystruct test_audit test_szig test_ipv6_radix
+test_pystruct_SOURCES = test_pystruct.cc
+test_szig_SOURCES = test_szig.cc
+test_dynexpect_SOURCES = test_dynexpect.cc
+test_proxy_SOURCES = helpers/zproxy.cc test_proxy.cc
 
-EXTRA_DIST = pystruct.py
+AM_TESTS_ENVIRONMENT = G_DEBUG='fatal_warnings gc-friendly'; G_SLICE='always-malloc'; PYTHONPATH=${top_srcdir}/pylib:${top_builddir}/pylib/Zorp; export G_DEBUG; export G_SLICE; export PYTHONPATH;
+
+
+TESTS = $(check_PROGRAMS)
+
+EXTRA_DIST = pystruct.py helpers/zproxy.h

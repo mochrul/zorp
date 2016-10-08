@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: instances.conf
-.\"    Author: [see the "Author" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 03/06/2012
-.\"    Manual: [FIXME: manual]
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 10/03/2016
+.\"    Manual: The Zorp instances database manual page
 .\"    Source: [FIXME: source]
 .\"  Language: English
 .\"
-.TH "INSTANCES\&.CONF" "5" "03/06/2012" "[FIXME: source]" "[FIXME: manual]"
+.TH "INSTANCES\&.CONF" "5" "10/03/2016" "[FIXME: source]" "The Zorp instances database ma"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,10 +41,8 @@ line by line, each line having the structure described below\&. Empty lines and 
 \fBzorpctl\fR\&.
 .SH "STRUCTURE"
 .PP
-
 \fBinstance\-name parameters [\-\- zorpctl\-options]\fR
 .PP
-
 \fIinstance\-name\fR
 is the name of the Zorp instance to be started; it is passed to
 \fBzorp\fR
@@ -52,12 +50,10 @@ with its
 \fB\-\-as\fR
 parameter\&. Instance names may consist of the characters [a\-zA\-Z0\-9_] and must begin with a letter\&.
 .PP
-
 \fIparameters\fR
 are space separated parameters entered into the zorp command\-line\&. For details on these command\-line parameters see
 zorp(8)\&.
 .PP
-
 \fIzorpctl\-options\fR
 are space separated parameters control startup specific options\&. They are processed by
 \fBzorpctl\fR
@@ -84,20 +80,12 @@ parameter of
 zorp(8)) multiplied by 4\&.
 .RE
 .PP
-\fB\-\-process\-limit <number>\fR or \fB\-p <number>\fR
-.RS 4
-Set the process limit to <number>\&. The process limit defaults to the number of threads (specified by the
-\fI\-\-threads\fR
-parameter of
-zorp(8)) multiplied by 2\&.
-.RE
-.PP
 \fB\-\-enable\-core\fR
 .RS 4
 Explicitly enable core dumps for Zorp processes\&. The core limit is inherited from the local starting environment (e\&.g\&.: starting shell) if not specified\&.
 .RE
 .PP
-\fB\-\-parallel\-instances <number>\fR or \fB\-P <number> \fR
+\fB\-\-num\-of\-processes <number>\fR or \fB\-P <number> \fR
 .RS 4
 Run <number> of processes for the instance\&.
 \fBzorpctl\fR
@@ -106,7 +94,6 @@ starts exactly one Zorp process in master mode and <number> of slave Zorp proces
 .SH "EXAMPLES"
 .PP
 .PP
-
 \fBzorp_ftp \-\-policy /etc/zorp/policy\&.py \-\-verbose 5 \fR
 .PP
 The line above describes a Zorp instance named
@@ -114,7 +101,6 @@ The line above describes a Zorp instance named
 using policy file
 \fI/etc/zorp/policy\&.py\fR, and having verbosity level 5\&.
 .PP
-
 \fBzorp_intra \-v4 \-p /etc/zorp/policy\&.py \-\-threads 500 \-\-no\-auto\-restart \-\-fd\-limit 1024 \-\-process\-limit 512\fR
 .PP
 This line describes a zorp instance named
@@ -128,10 +114,4 @@ instances\&.conf
 is
 /etc/zorp/instances\&.conf\&. Defaults for zorpctl tunables can be specified in
 /etc/zorp/zorpctl\&.
-.SH "AUTHOR"
-.PP
-This manual page was written by the BalaBit Documentation Team <documentation@balabit\&.com>\&.
-.SH "COPYRIGHT"
-.PP
-Copyright \(co 2006 BalaBit IT Security Ltd\&. All rights reserved\&. For more information about the legal status of this document please read:
-\m[blue]\fBhttp://www\&.balabit\&.com/products/zorp/docs/legal_notice\&.bbq\fR\m[]
+<xi:include></xi:include><xi:include></xi:include>
