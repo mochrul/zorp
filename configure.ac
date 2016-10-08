@@ -3,7 +3,6 @@ dnl
 dnl There are a couple of environment defined variables which this script
 dnl makes use of in addition to the standard CXXFLAGS/LDFLAGS/etc. These are:
 dnl
-dnl RELEASE_TAG        - Debian release tag which is put to debian/changelog
 dnl SNAPSHOT_VERSION   - snapshot version to add to version number
 dnl SOURCE_REVISION    - Revision of the source-tree, will added to the version string
 dnl
@@ -15,11 +14,10 @@ m4_include(m4/ax_cxx_compile_stdcxx_11.m4)
 dnl ***************************************************************************
 dnl Definitions
 
-PACKAGE=zorp-pro
+PACKAGE="zorp"
 BROCHURE_VERSION="6"
 VERSION=`cat $srcdir/VERSION`
-ZORP_PRODUCT_NAME="Zorp Professional"
-ZORP_LICENSE_VERSION="6.0"
+ZORP_PRODUCT_NAME="Zorp GPL"
 
 dnl ***************************************************************************
 dnl Dependencies
@@ -46,35 +44,8 @@ case "$srcdir" in
         ;;
 esac
 
-if test -r $srcdir/dist.conf; then
-        # read defaults, dist.conf does not change
-        # values for parameters that are already set
-        source $srcdir/dist.conf
-fi
-
-if test -z "$ZORP_PACKAGE_LICENSE"; then
-        ZORP_PACKAGE_LICENSE="pro"
-fi
-
-if test "$ZORP_PACKAGE_LICENSE" = "gpl"; then
-        PACKAGE="zorp"
-        PACKAGE_SUFFIX=""
-elif test "$ZORP_PACKAGE_LICENSE" = "pro"; then
-        PACKAGE_SUFFIX="-pro"
-else
-        AC_ERROR(Invalid license type: %s)
-fi
-
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
-
-if test -n "$SNAPSHOT_VERSION"; then
-        VERSION=$VERSION+$SNAPSHOT_VERSION
-fi
-
-if test -z "$RELEASE_TAG"; then
-        RELEASE_TAG=zorp35dbg
-fi
 
 AM_CONFIG_HEADER(lib/zorp/zorpconfig.h)
 AC_PREFIX_DEFAULT(/usr/local)
@@ -369,15 +340,10 @@ dnl ***************************************************************************
 dnl Size check of pointers
 AC_CHECK_SIZEOF(void *)
 
-AC_SUBST(RELEASE_TAG)
 AC_SUBST(BROCHURE_VERSION)
 AC_SUBST(SNAPSHOT_VERSION)
 AC_SUBST(SOURCE_REVISION)
 
-AC_SUBST(ZORP_PACKAGE_LICENSE)
-AC_SUBST(PACKAGE_SUFFIX)
-
-AC_DEFINE_UNQUOTED(ZORP_LICENSE_VERSION, "$ZORP_LICENSE_VERSION", [Required license version])
 AC_DEFINE_UNQUOTED(ZORP_PRODUCT_NAME, "$ZORP_PRODUCT_NAME", [Required product name in license])
 AC_SUBST(ZORP_PRODUCT_NAME)
 
@@ -464,7 +430,6 @@ coverage: $enable_coverage
 ipoptions: $enable_ip_options
 ipv6: $enable_ipv6
 prefork: $enable_prefork
-License: $ZORP_PACKAGE_LICENSE
 
 
 EOF
@@ -475,8 +440,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
 
 AC_SUBST(GLIB_MIN_VERSION)
 AC_SUBST(ZORPLL_MIN_VERSION)
-AC_SUBST(ZORPLIC_MIN_VERSION)
-AC_SUBST(ZORPMISC_MIN_VERSION)
 AC_SUBST(OPENSSL_MIN_VERSION)
 AC_SUBST(PYTHON_MIN_VERSION)
 AC_SUBST(CURRDATE)
