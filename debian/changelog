@@ -1,3 +1,14 @@
+zorp (6.0.8-8~2.gbp2d3897) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @2d3897e6107d663e812776f6cb3320362028055c **
+
+  * New upstream version
+  * [1f0f4eb] Added a debug message to test script
+  * [68a269f] Added gbp.conf
+  * [2d3897e] (Re)Applied debian patches
+
+ -- Szilárd Pfeiffer <mailbox@pfeifferszilard.hu>  Sat, 08 Oct 2016 17:19:26 +0200
+
 zorp (3.9.5-7) unstable; urgency=medium
 
   * [1c630b8] Added a basic autopkgtest test case.
