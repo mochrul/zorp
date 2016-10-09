@@ -5,30 +5,54 @@ Subject: Modernize AM_INIT_AUTOMAKE and add foreign key
 This needed to smoothly use dh to atorconfigure the
 project.
 ---
- configure.ac | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ configure.ac | 16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index f8758cd..27218e4 100644
+index 46c58dc..ed93a11 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -8,7 +8,6 @@ dnl SNAPSHOT_VERSION   - snapshot version to add to version number
- dnl SOURCE_REVISION    - Revision of the source-tree, will added to the version string
+@@ -1,22 +1,17 @@
+ dnl Process this file with autoconf to produce a configure script.
  dnl
+-dnl There are a couple of environment defined variables which this script
+-dnl makes use of in addition to the standard CXXFLAGS/LDFLAGS/etc. These are:
+-dnl
+-dnl SNAPSHOT_VERSION   - snapshot version to add to version number
+-dnl SOURCE_REVISION    - Revision of the source-tree, will added to the version string
+-dnl
  
 -AC_INIT(zorp/main.cc)
  AC_CONFIG_MACRO_DIR([m4])
  m4_include(m4/ax_cxx_compile_stdcxx_11.m4)
  
-@@ -65,7 +64,10 @@ else
-         AC_ERROR(Invalid license type: %s)
- fi
- 
--AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
-+AC_INIT($PACKAGE, $VERSION)
++AC_INIT([zorp], m4_esyscmd([tr -d '\n' < VERSION]))
 +AC_CONFIG_SRCDIR(zorp/main.cc)
 +AM_INIT_AUTOMAKE([no-define foreign])
 +
+ dnl ***************************************************************************
+ dnl Definitions
+ 
+-PACKAGE="zorp"
+ BROCHURE_VERSION="6"
+-VERSION=`cat $srcdir/VERSION`
+ ZORP_PRODUCT_NAME="Zorp GPL"
+ 
+ dnl ***************************************************************************
+@@ -44,7 +39,6 @@ case "$srcdir" in
+         ;;
+ esac
+ 
+-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
  m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
  
- if test -n "$SNAPSHOT_VERSION"; then
+ AM_CONFIG_HEADER(lib/zorp/zorpconfig.h)
+@@ -348,7 +342,7 @@ AC_DEFINE_UNQUOTED(ZORP_PRODUCT_NAME, "$ZORP_PRODUCT_NAME", [Required product na
+ AC_SUBST(ZORP_PRODUCT_NAME)
+ 
+ AC_DEFINE_UNQUOTED(BROCHURE_VERSION, "$BROCHURE_VERSION", [Zorp brochure version])
+-AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Zorp package version])
++AC_DEFINE_UNQUOTED(VERSION, "$PACKAGE_VERSION", [Zorp package version])
+ AC_DEFINE_UNQUOTED(ZORP_SOURCE_REVISION, "$SOURCE_REVISION", [Zorp source revision number])
+ 
+ AC_DEFINE_UNQUOTED(ENABLE_DEBUG, `enable_value $enable_debug`, [Enable debugging])

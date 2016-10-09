@@ -2,8 +2,7 @@ From: SZALAY Attila <sasa@ubainba.hu>
 Date: Sat, 8 Oct 2016 17:58:24 +0200
 Subject: Do not use CPPFLAGS
 
-Use AM_CPPFLAGS instead. This patch is needed to be able to
-inject CPP options from the debian build system (ie.: fortify)
+Use AM_CPPFLAGS instead. The CPPFLAGS is reserved for users.
 ---
  modules/anypy/Makefile.am        | 2 +-
  modules/apr/Makefile.am          | 2 +-

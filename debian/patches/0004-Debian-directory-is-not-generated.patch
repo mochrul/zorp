@@ -20,10 +20,10 @@ index 0510216..6aa9c88 100644
  
  pkgconfigdir = $(libdir)/pkgconfig
 diff --git a/configure.ac b/configure.ac
-index 8f0be53..f8758cd 100644
+index 8841b7c..46c58dc 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -479,7 +479,6 @@ AC_CONFIG_LINKS([pylib/Zorp/__init__.py:pylib/Zorp/__init__.py])
+@@ -449,7 +449,6 @@ AC_CONFIG_LINKS([pylib/Zorp/__init__.py:pylib/Zorp/__init__.py])
  
  AC_CONFIG_FILES(
  Makefile
