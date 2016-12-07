@@ -31,6 +31,7 @@
 #include <zorp/proxygroup.h>
 #include <zorp/source.h>
 #include <zorp/error.h>
+#include <openssl/err.h>
 #include <memory>
 
 static void z_proxy_ssl_handshake_destroy(ZProxySSLHandshake *self);
@@ -508,14 +509,29 @@ z_proxy_ssl_append_local_cert_chain(ZProxy *self, const ZEndpoint side, SSL *ssl
       for (gsize i = 0; i != chain_len; ++i)
         {
           X509 *cert = z_certificate_chain_get_cert_from_chain(self->tls_opts.local_cert[side], i);
-
           CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
-          if (!SSL_CTX_add_extra_chain_cert(ssl->ctx, cert))
+          if (!X509_STORE_add_cert(ssl->ctx->cert_store, cert))
             {
               X509_free(cert);
-              z_proxy_log(self, CORE_ERROR, 3, "Failed to add the complete certificate chain "
-                          "to the SSL session; index='%" G_GSIZE_FORMAT "'", i);
-              z_proxy_return(self, FALSE);
+              unsigned long error = ERR_peek_last_error();
+              if (ERR_GET_LIB(error) == ERR_LIB_X509 &&
+                  ERR_GET_REASON(error) == X509_R_CERT_ALREADY_IN_HASH_TABLE)
+                {
+                  /**
+                   * If there is multiple certificates in pem file, intermediate certificates
+                   * added every time
+                   */
+                  ERR_clear_error();
+                }
+              else
+                {
+                  char error_str[256];
+
+                  ERR_error_string_n(error, error_str, sizeof(error_str));
+                  z_proxy_log(self, CORE_ERROR, 3, "Failed to add the complete certificate chain "
+                              "to the SSL session; index='%" G_GSIZE_FORMAT "', error='%s'", i, error_str);
+                  z_proxy_return(self, FALSE);
+                }
             }
         }
     }
@@ -1241,24 +1257,23 @@ z_proxy_ssl_restore_stream(ZProxySSLHandshake *handshake)
  * Completion callback used for our semi-nonblocking handshake.
  *
  * @param handshake     the handshake object
- * @param user_data     the gboolean which has to be set
  *
  * This function is used as a completion callback by z_proxy_ssl_do_handshake() if it's
  * doing a semi-nonblocking handshake, where it avoids starvation of other proxies running
  * in the same proxy group by iterating the main loop of the proxy group and waiting
  * for the handshake to be finished.
  *
- * The callback is passed a pointer to a gboolean: z_proxy_ssl_do_handshake() iterates
- * the main loop until the boolean is set by the callback, signaling that the handshake
- * has been finished.
+ * z_proxy_ssl_do_handshake() iterates the main loop until the value of completed
+ * member of handshake structure is set by the callback, signaling that the
+ * handshake has been finished.
  */
 static void
-z_proxy_ssl_handshake_completed(ZProxySSLHandshake *handshake G_GNUC_UNUSED,
-                                gpointer user_data)
+z_proxy_ssl_handshake_completed(ZProxySSLHandshake *handshake)
 {
   z_enter();
 
-  *((gboolean *) user_data) = TRUE;
+  handshake->completed = true;
+  z_proxy_log(handshake->proxy, CORE_INFO, 6, "SSL handshake done; side='%s'", EP_STR(handshake->side));
 
   z_leave();
 }
@@ -1285,15 +1300,14 @@ z_proxy_ssl_do_handshake(ZProxySSLHandshake *handshake,
   if (nonblocking)
     {
       ZProxyGroup *proxy_group = z_proxy_get_group(handshake->proxy);
-      gboolean handshake_done = FALSE;
 
-      z_proxy_ssl_handshake_set_callback(handshake, z_proxy_ssl_handshake_completed, &handshake_done, NULL);
+      z_proxy_ssl_handshake_set_callback(handshake, reinterpret_cast<ZProxySSLCallbackFunc>(z_proxy_ssl_handshake_completed), nullptr, nullptr);
 
       if (!z_proxy_ssl_setup_stream(handshake, proxy_group))
         z_proxy_return(handshake->proxy, FALSE);
 
       /* iterate until the handshake has been completed */
-      while (!handshake_done && z_proxy_group_iteration(proxy_group))
+      while (!handshake->completed && z_proxy_group_iteration(proxy_group))
         {
           ;
         }
@@ -1392,7 +1406,7 @@ z_proxy_ssl_setup_handshake(ZProxySSLHandshake *handshake)
   if (side == EP_CLIENT && self->encryption->ssl_opts.handshake_seq == PROXY_SSL_HS_CLIENT_SERVER)
     {
       /* TLS Server Name Indication extension support */
-      z_proxy_ssl_get_sni_from_client(self);
+      z_proxy_ssl_get_sni_from_client(self, handshake->stream);
     }
   if (side == EP_CLIENT)
     {
@@ -1488,7 +1502,7 @@ z_proxy_ssl_init_stream(ZProxy *self, ZEndpoint side)
           if (side == EP_CLIENT && self->encryption->ssl_opts.handshake_seq == PROXY_SSL_HS_SERVER_CLIENT)
             {
               /* TLS Server Name Indication extension support */
-              z_proxy_ssl_get_sni_from_client(self);
+              z_proxy_ssl_get_sni_from_client(self, self->endpoints[EP_CLIENT]);
             }
 
           rc = z_proxy_ssl_request_handshake(self, side, FALSE);
@@ -1575,7 +1589,11 @@ z_proxy_ssl_init_completed(ZProxySSLHandshake *handshake, gpointer user_data)
       success = z_proxy_nonblocking_init(self, z_proxy_group_get_poll(z_proxy_get_group(self)));
     }
 
-  if (!success)
+  if (success)
+    {
+      z_proxy_ssl_handshake_completed(handshake);
+    }
+  else
     {
       /* initializing the client stream or the proxy failed, stop the proxy instance */
       z_proxy_nonblocking_stop(self);
@@ -1670,13 +1688,13 @@ z_proxy_ssl_sni_do_handshake(ZProxy *self, ZPktBuf *buf, gsize bytes_read)
 }
 
 void
-z_proxy_ssl_get_sni_from_client(ZProxy *self)
+z_proxy_ssl_get_sni_from_client(ZProxy *self, ZStream *stream)
 {
   ZPktBuf *buf = z_pktbuf_new();
   z_pktbuf_resize(buf, 1024);
   gsize bytes_read = 0;
 
-  ZStream *ssl_stream = z_stream_search_stack(self->endpoints[EP_CLIENT], G_IO_OUT, Z_CLASS(ZStreamSsl));
+  ZStream *ssl_stream = z_stream_search_stack(stream, G_IO_OUT, Z_CLASS(ZStreamSsl));
   if (!ssl_stream)
     {
       z_proxy_log(self, CORE_ERROR, 1, "Could not find ssl stream on stream stack");

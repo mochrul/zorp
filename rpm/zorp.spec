@@ -1,5 +1,5 @@
 Name:                   zorp
-Version:                6.0.9
+Version:                6.0.10
 Release:                1
 URL:                    https://www.balabit.com/network-security/zorp-gpl
 Source0:                zorp_%{version}.tar.gz
@@ -11,7 +11,7 @@ BuildRequires:          automake
 BuildRequires:          autoconf
 BuildRequires:          libtool
 BuildRequires:          gcc-c++
-BuildRequires:          libzorpll-6_0-9-devel
+BuildRequires:          libzorpll-6_0-10-devel
 BuildRequires:          boost-devel
 BuildRequires:          python-devel
 BuildRequires:          binutils-devel
@@ -55,7 +55,7 @@ is permitted.
 %package devel
 Summary:                Headers for zorp
 Group:                  System/Daemons
-Requires:               libzorpll-6_0-9-devel
+Requires:               libzorpll-6_0-10-devel
 
 %description devel
 This package provides header files for zorp
@@ -146,26 +146,26 @@ ldconfig
 %dir %attr(750,root,zorp) %{_sysconfdir}/zorp
 %config %attr(640,root,zorp) %{_sysconfdir}/zorp/*.sample
 
-%package -n libzorp-6_0-9
+%package -n libzorp-6_0-10
 Summary:                The runtime library of Zorp
 Group:                  System/Daemons
 
-%description -n libzorp-6_0-9
+%description -n libzorp-6_0-10
 Zorp is a new generation firewall. It is essentially a transparent proxy
 firewall, with strict protocol analyzing proxies, a modular architecture,
 and fine-grained control over the mediated traffic. Configuration decisions
 
 The library needed to run zorp.
 
-%files -n libzorp-6_0-9
+%files -n libzorp-6_0-10
 %defattr(-,root,root)
 %{_exec_prefix}/lib/libzorp-*.so.*
 %{_exec_prefix}/lib/libzorpproxy-*.so.*
 
-%post -n libzorp-6_0-9
+%post -n libzorp-6_0-10
 ldconfig
 
-%postun -n libzorp-6_0-9
+%postun -n libzorp-6_0-10
 ldconfig
 
 %package -n libzorp-6_0-devel
@@ -340,6 +340,8 @@ Standalone daemon that handles zones and updates dynamic zones.
 
 
 %changelog
+* Fri Nov 25 2016 Balasys Development Team <devel@balasys.hu> - 6.0.10
+  - New upstream release 6.0.10
 * Wed Apr 13 2016 Balasys Development Team <devel@balasys.hu> - 6.0.9
   - New upstream release 6.0.9
 * Sun Feb 21 2016 Balasys Development Team <devel@balasys.hu> - 6.0.8

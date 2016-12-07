@@ -25,8 +25,11 @@ libzorp_la_SOURCES = \
 	ifmonitor.cc proxygroup.cc pyproxygroup.cc \
 	coredump.cc \
 	proxyssl.cc pyx509.cc proxysslhostiface.cc \
-	kzorp.cc \
 	certchain.cc pyx509chain.cc \
 	session.cc \
 	pyencryption.cc
+
+if ENABLE_KZORP
+libzorp_la_SOURCES += kzorp.cc
+endif
 

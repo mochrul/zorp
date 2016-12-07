@@ -23,6 +23,7 @@
 #include <zorp/log.h>
 #include <zorp/dimhash.h>
 
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -790,14 +791,14 @@ z_policy_dict_ip_get_value(ZPolicyDict *self G_GNUC_UNUSED, ZPolicyDictEntry *en
       struct in6_addr *in6 = (struct in6_addr *) entry->value;
 
       res = Py_BuildValue("(iiiiiiii)",
-                          in6->s6_addr16[0],
-                          in6->s6_addr16[1],
-                          in6->s6_addr16[2],
-                          in6->s6_addr16[3],
-                          in6->s6_addr16[4],
-                          in6->s6_addr16[5],
-                          in6->s6_addr16[6],
-                          in6->s6_addr16[7]);
+                          in6->s6_addr[0],
+                          in6->s6_addr[2],
+                          in6->s6_addr[4],
+                          in6->s6_addr[6],
+                          in6->s6_addr[8],
+                          in6->s6_addr[10],
+                          in6->s6_addr[12],
+                          in6->s6_addr[14]);
     }
   z_return(res);
 }
@@ -832,14 +833,14 @@ z_policy_dict_ip_set_value(ZPolicyDict *self G_GNUC_UNUSED, ZPolicyDictEntry *en
             struct in6_addr *in6 = (struct in6_addr *) entry->value;
 
             if (!PyArg_Parse(new_value, "(iiiiiiii)",
-                             &in6->s6_addr16[0],
-                             &in6->s6_addr16[1],
-                             &in6->s6_addr16[2],
-                             &in6->s6_addr16[3],
-                             &in6->s6_addr16[4],
-                             &in6->s6_addr16[5],
-                             &in6->s6_addr16[6],
-                             &in6->s6_addr16[7]))
+                             &in6->s6_addr[0],
+                             &in6->s6_addr[2],
+                             &in6->s6_addr[4],
+                             &in6->s6_addr[6],
+                             &in6->s6_addr[8],
+                             &in6->s6_addr[10],
+                             &in6->s6_addr[12],
+                             &in6->s6_addr[14]))
               return 1;
             break;
           }

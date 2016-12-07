@@ -1387,8 +1387,9 @@ class Proxy(BuiltinProxy):
           </metainfo>
         </method>
         """
-        if self.session.owner.verdict == ConnectionVerdict(ConnectionVerdict.ACCEPTED):
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.ABORTED_BY_POLICY_ACTION)
+        mastersession = self.session.getMasterSession()
+        if mastersession.verdict == ConnectionVerdict(ConnectionVerdict.ACCEPTED):
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.ABORTED_BY_POLICY_ACTION)
 
     def invalidPolicyCall(self):
         """
@@ -1406,8 +1407,9 @@ class Proxy(BuiltinProxy):
           </metainfo>
         </method>
         """
-        if self.session.owner.verdict == ConnectionVerdict(ConnectionVerdict.ACCEPTED):
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.INVALID_POLICY_CALL)
+        mastersession = self.session.getMasterSession()
+        if mastersession.verdict == ConnectionVerdict(ConnectionVerdict.ACCEPTED):
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.INVALID_POLICY_CALL)
 
     def __destroy__(self):
         """
@@ -1630,6 +1632,7 @@ class Proxy(BuiltinProxy):
         """<method internal="yes"/>"""
         server_stream = None
 
+        mastersession = self.session.getMasterSession()
         try:
             server_stream = self.session.chainer.chainParent(self.session)
         except ZoneException, s:
@@ -1637,7 +1640,7 @@ class Proxy(BuiltinProxy):
             # This message indicates that no appropriate zone was found for the server address.
             # @see: Zone
             ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
             proxyLog(self, CORE_POLICY, 1, "Zone not found; info='%s'", (s,))
         except DACException, s:
             ## LOG ##
@@ -1645,34 +1648,34 @@ class Proxy(BuiltinProxy):
             # It is likely that the new connection was not permitted as an inbound_service in the given zone.
             # @see: Zone
             ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
             proxyLog(self, CORE_POLICY, 1, "DAC policy violation; info='%s'", (s,))
             self.notifyEvent("core.dac_exception", [])
         except MACException, s:
             ## LOG ##
             # This message indicates that a MAC policy violation occurred.
             ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
             proxyLog(self, CORE_POLICY, 1, "MAC policy violation; info='%s'", (s,))
         except AAException, s:
             ## NOLOG ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_POLICY)
             proxyLog(self.self, CORE_POLICY, 1, "Authentication failure; info='%s'", (s,))
         except LimitException, s:
             ## NOLOG ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_LIMIT)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_LIMIT)
             proxyLog(self, CORE_POLICY, 1, "Connection over permitted limits; info='%s'", (s,))
         except LicenseException, s:
             ## NOLOG ##
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_LIMIT)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_LIMIT)
             proxyLog(self, CORE_POLICY, 1, "Attempt to use an unlicensed component, or number of licensed hosts exceeded; info='%s'", (s,))
         except:
-            self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_UNKNOWN_FAIL)
+            mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_UNKNOWN_FAIL)
             traceback.print_exc()
         else:
             is_silent_io_error = server_stream is None
             if is_silent_io_error:
-                self.session.owner.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_CONNECTION_FAIL)
+                mastersession.verdict = ConnectionVerdict(ConnectionVerdict.DENIED_BY_CONNECTION_FAIL)
 
         return server_stream
 

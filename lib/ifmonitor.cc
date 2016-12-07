@@ -19,6 +19,8 @@
  ***************************************************************************/
 
 #include <zorp/ifmonitor.h>
+
+#ifdef HAVE_LINUX_NETLINK_H
 #include <zorp/log.h>
 #include <zorp/socketsource.h>
 
@@ -785,3 +787,5 @@ z_ifmon_destroy(void)
 {
   z_netlink_destroy();
 }
+
+#endif

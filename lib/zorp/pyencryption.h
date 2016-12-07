@@ -96,6 +96,9 @@ typedef struct _ZProxySsl {
   gboolean permit_invalid_certificates[EP_MAX];
   gboolean permit_missing_crl[EP_MAX];
   gboolean server_check_subject;
+  gboolean disable_renegotiation;
+
+  GString *dh_params;
 
 } ZProxySsl;
 

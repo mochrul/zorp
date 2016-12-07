@@ -31,6 +31,7 @@ ZORPMISC_MIN_VERSION="6.0.3.0"
 OPENSSL_MIN_VERSION="1.0.1"
 PYTHON_MIN_VERSION="2.7"
 PYTHON_MAX_VERSION="2.8"
+m4_define_default([_AM_PYTHON_INTERPRETER_LIST], [python2.7])
 
 dnl ***************************************************************************
 dnl Initial setup
@@ -122,6 +123,10 @@ AC_ARG_WITH(pidfiledir,
               pidfiledir="$with_pidfiledir",
               pidfiledir='${localstatedir}/run/zorp/')
 
+AC_ARG_ENABLE(kzorp,
+              [  --enable-kzorp       Enable kzorp],,
+	      enable_kzorp=yes)
+
 ZORP_MUNIN_CONF_DIR="${sysconfdir}/munin/plugin-conf.d"
 ZORP_NAGIOS_CONF_DIR="${sysconfdir}/nagios/nrpe.d"
 ZORP_SUDOERSD_CONF_DIR="${sysconfdir}/sudoers.d"
@@ -176,6 +181,9 @@ dnl Checks for header files.
 
 
 AC_CHECK_HEADERS(sys/capability.h sys/prctl.h sys/syscall.h limits.h stdbool.h stdint.h)
+AC_CHECK_HEADERS([sys/thr.h])
+AC_CHECK_HEADERS([arpa/inet.h])
+AC_CHECK_HEADERS([linux/netlink.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_CACHE_CHECK(for MSG_PROXY, blb_cv_msg_proxy,
@@ -237,6 +245,16 @@ AM_COND_IF([PYTHON_VERSION_MATCHES],, AC_MSG_ERROR(Cannot find Python version = 
 
 LIBS=$save_LIBS
 
+AC_CHECK_DECLS([IP_FREEBIND], [], [], [[#include <linux/in.h>]])
+AC_CHECK_DECLS([IP_TRANSPARENT], [], [], [[#include <linux/in.h>]])
+AC_CHECK_DECLS([IPV6_TRANSPARENT], [], [], [[#include <linux/in6.h>]])
+
+AC_CHECK_DECLS([IP_BINDANY], [], [], [#include <netinet/in.h>])
+AC_CHECK_DECLS([IPV6_BINDANY], [], [], [[#include <netinet6/in6.h>]])
+
+AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <linux/tcp.h>]])
+AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
+
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= $GLIB_MIN_VERSION,,
 	AC_MSG_ERROR(Cannot find GLib library version >= $GLIB_MIN_VERSION: is pkg-config in path?))
 
@@ -259,6 +277,7 @@ PKG_CHECK_MODULES(LIBPYTHON, python-2.7 < $PYTHON_MAX_VERSION,,
 
 
 
+AM_CONDITIONAL(ENABLE_KZORP, test x$enable_kzorp = xyes)
 
 if test "x$ac_cv_func_gethostbyname_r" = "xyes"; then
 dnl	if test "`uname -s`" = "Linux"; then
@@ -306,12 +325,13 @@ AC_SUBST(ZORP_NAGIOS_CONF_DIR)
 AC_SUBST(ZORP_PYTHON_DIR)
 AC_SUBST(ZORPCTL_PYTHON_DIR)
 AC_SUBST(ZORP_SUDOERSD_CONF_DIR)
+AC_SUBST(ENABLE_KZORP)
 
 zorpeval()
 {
 	OLD=$1
 	NEW=`eval echo $1`
-	while /usr/bin/test "x$OLD" != "x$NEW"
+	while test "x$OLD" != "x$NEW"
 	do
 		OLD=$NEW
 		NEW=`eval echo $OLD`
@@ -389,6 +409,7 @@ AC_DEFINE_UNQUOTED(ENABLE_TRACE, `enable_value $enable_trace`, [Enable trace mes
 AC_DEFINE_UNQUOTED(ENABLE_IPOPTIONS, `enable_value $enable_ip_options`, [Enable IP option processing])
 AC_DEFINE_UNQUOTED(ENABLE_IPV6, `enable_value $enable_ipv6`, [Enable IPv6 support])
 AC_DEFINE_UNQUOTED(ENABLE_PREFORK, `enable_value $enable_prefork`, [Enable prefork support])
+AC_DEFINE_UNQUOTED(ENABLE_KZORP, `enable_value $enable_kzorp`, [Enable kzorp support])
 
 # CPPFLAGS as supplied by dependencies
 DEPS_CPPFLAGS="$CPPFLAGS $ZORPLL_CFLAGS $ZORPLIC_CFLAGS $ZORPMISC_CFLAGS $LIBPYTHON_CFLAGS $OPENSSL_CFLAGS $LIBADPALERTING_CFLAGS"
@@ -463,6 +484,7 @@ coverage: $enable_coverage
 ipoptions: $enable_ip_options
 ipv6: $enable_ipv6
 prefork: $enable_prefork
+kzorp: $enable_kzorp
 License: $ZORP_PACKAGE_LICENSE
 
 

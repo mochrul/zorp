@@ -24,6 +24,7 @@ from Dispatch import BaseDispatch
 from Session import MasterSession
 from Proxy import Proxy
 from Detector import DetectResult
+from collections import OrderedDict
 
 class DetectorProxy(Proxy):
     """<class internal="yes" abstract="yes">
@@ -37,7 +38,8 @@ class DetectorProxy(Proxy):
         Proxy.__init__(self, session)
 
         log(self.session.session_id, CORE_SESSION, 5, "Proxy start")
-        self._detector_config = session.service.detector_config
+        self._detector_config = OrderedDict(session.service.detector_config)
+        self._detector_default_service_name = session.service.detector_default_service_name
         self.results = {}
 
     def config(self):
@@ -88,5 +90,6 @@ class DetectorProxy(Proxy):
                 self.copy_client_data = res.bytes_to_copy
 
         if len(self._detector_config) == count_nomatch_detectors:
+            service = Globals.services.get(self._detector_default_service_name, None)
             self.quit = TRUE
         return service

@@ -111,7 +111,7 @@ binary-arch: build install
 #	dh_installinfo -a
 	dh_installchangelogs -a
 	dh_link -a
-	dh_strip -a --dbg-package=zorp --dbg-package=zorp-modules --dbg-package=libzorp6.0-9
+	dh_strip -a --dbg-package=zorp --dbg-package=zorp-modules --dbg-package=libzorp6.0-10
 	dh_compress -a
 	dh_fixperms -a
 	chmod 750 `pwd`/debian/zorp/etc/zorp
@@ -119,7 +119,7 @@ binary-arch: build install
 	dh_installdeb -a
 	dh_python2 -a
 #	dh_perl -a
-	dh_shlibdeps -a -l`pwd`/debian/libzorp-pro6.0-9/usr/lib:`pwd`/debian/zorp/usr/lib
+	dh_shlibdeps -a -l`pwd`/debian/libzorp-pro6.0-10/usr/lib:`pwd`/debian/zorp/usr/lib
 	dh_gencontrol -a
 	dh_md5sums -a
 	dh_builddeb -a
