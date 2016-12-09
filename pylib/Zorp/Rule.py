@@ -87,6 +87,7 @@ from Util import parseIfaceGroupAliases
 from Subnet import Subnet
 from Zone import Zone
 import Globals
+from Zorp import *
 import Dispatch
 
 class RuleSet(object):
@@ -455,11 +456,16 @@ class Rule(object):
 
         Globals.rules.add(self)
 
-        protocol_detect_dict = parameters.pop('detect', None)
-        if protocol_detect_dict:
+        protocol_detect_list_or_dict = parameters.pop('detect', None)
+        if protocol_detect_list_or_dict:
           from APR import DetectorProxy
           from Service import Service
-          for detector_name, service_name in protocol_detect_dict.iteritems():
+          protocol_detect_iterable = protocol_detect_list_or_dict
+          if isinstance(protocol_detect_list_or_dict, dict):
+            log(None, CORE_DEBUG, 3, "Using dictionary in the detect parameter is deprecated, list should be used instead.")
+            protocol_detect_iterable = protocol_detect_list_or_dict.iteritems()
+
+          for detector_name, service_name in protocol_detect_iterable:
             if not Globals.detectors.get(detector_name, None):
               raise ValueError, "No such detector defined; detector='%s'" % (detector_name,)
 
@@ -467,7 +473,10 @@ class Rule(object):
               raise ValueError, "No such service defined; service='%s'" % (service_name,)
 
           rule_service_name = "detector_service_for_rule_%s" % (self.getId(),)
-          Service(rule_service_name, proxy_class=DetectorProxy, detector_config=protocol_detect_dict)
+          default_service_name = parameters.pop('service', None)
+          if default_service_name and not Globals.services.get(default_service_name, None):
+            raise ValueError, "No valid default service was specified for the rule; service='%s'" % (default_service_name,)
+          Service(rule_service_name, proxy_class=DetectorProxy, detector_config=protocol_detect_list_or_dict, detector_default_service_name=default_service_name)
           parameters['service'] = rule_service_name
 
         CreateRealRule(parameters)

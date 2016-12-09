@@ -18,28 +18,15 @@
  *
  ***************************************************************************/
 
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#ifndef ZORP_PYENCRYPTION_PRIVATE_H_INCLUDED
+#define ZORP_PYENCRYPTION_PRIVATE_H_INCLUDED
 
-#include "helpers/zproxy.h"
-#include <zorp/proxy.h>
+#include <memory>
+#include <openssl/dh.h>
 
+using DH_deleter =  void (*) (DH *);
+using DH_unique_ptr = std::unique_ptr<DH, DH_deleter>;
 
-BOOST_AUTO_TEST_CASE(test_empty)
-{
-}
+DH_unique_ptr z_policy_encryption_get_dh_from_pem(const char *buf, int len);
 
-
-class TestProxySetup
-{
-public:
-  TestProxySetup()
-    {
-      init_environment();
-    }
-  ~TestProxySetup()
-    {
-    }
-};
-
-BOOST_GLOBAL_FIXTURE(TestProxySetup);
+#endif

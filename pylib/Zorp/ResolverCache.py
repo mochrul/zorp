@@ -34,8 +34,8 @@
 
 from Zorp import *
 import dns.resolver
-import dns.query
-from dns.exception import DNSException
+import dns.rdatatype
+import dns.name
 import time
 import operator
 import socket
@@ -54,47 +54,51 @@ class DNSResolver(AbstractResolver):
     def __init__(self, server=None, timeout=2):
         super(DNSResolver, self).__init__(timeout)
 
-        self.nameservers = []
+        self.resolver = dns.resolver.Resolver()
+        self.resolver.lifetime = timeout
         if server:
-            self.nameservers.append(server)
-        else:
-            self.nameservers = dns.resolver.Resolver().nameservers
+            self.resolver.nameservers = [server]
 
-    def __resolveHost(self, nameserver, host):
+    def resolve(self, host, resolved_cnames=None):
+        if type(host) is str:
+            host = dns.name.from_text(host)
+
+        if resolved_cnames == None:
+            resolved_cnames = set([host])
+
+        ipv4_addresses = set()
+        ipv6_addresses = set()
         ttl = None
-        ipv4_addresses = []
-        ipv6_addresses = []
 
-        domain = dns.name.from_text(host)
-        query = dns.message.make_query(domain, dns.rdatatype.ANY)
-        response = dns.query.udp(query, nameserver, self.timeout)
-
-        for answer in response.answer:
-            for item in answer.items:
-                if item.rdtype == dns.rdatatype.CNAME:
-                    ttl, ipv4_addresses, ipv6_addresses = self.__resolveHost(nameserver, item.target.to_text())
-                if item.rdtype == dns.rdatatype.A:
-                    ipv4_addresses.append(item.address)
-                if item.rdtype == dns.rdatatype.AAAA:
-                    ipv6_addresses.append(item.address)
-            if not ttl or ttl > answer.ttl:
-                ttl = answer.ttl
-
-        if not ipv4_addresses and not ipv6_addresses:
-            raise DNSException
-
-        return ttl, ipv4_addresses, ipv6_addresses
-
-    def resolve(self, host):
-        for nameserver in self.nameservers:
+        for record_type in (dns.rdatatype.A, dns.rdatatype.AAAA, dns.rdatatype.CNAME):
             try:
-                ttl, ipv4_addresses, ipv6_addresses = self.__resolveHost(nameserver, host)
-                log(None, CORE_DEBUG, 6, "Host resolved; host='%s', ttl='%d', addresses='%s'" % (host, ttl, ipv4_addresses + ipv6_addresses))
-            except (DNSException, socket.error) as e:
-                log(None, CORE_ERROR, 4, "Could not resolve host; host='%s', error='%s'" % (host, e))
+                log(None, CORE_DEBUG, 6, "Resolving host; host='%s', record_type='%s'" % (host, dns.rdatatype.to_text(record_type)))
+                answer = self.resolver.query(host, record_type)
+            except dns.resolver.NoAnswer:
+                log(None, CORE_DEBUG, 6, "No records; host='%s', record_type='%s'" % (host, dns.rdatatype.to_text(record_type)))
+            except (dns.resolver.Timeout, dns.resolver.NXDOMAIN, dns.resolver.YXDOMAIN, dns.resolver.NoNameservers) as e:
+                log(None, CORE_ERROR, 4, "Error while resolving host; host='%s', record_type='%s', error='%s'" % (host, dns.rdatatype.to_text(record_type), type(e)))
                 raise KeyError
+            else:
+                ttl = min(ttl, answer.ttl) if ttl else answer.ttl
+                if record_type == dns.rdatatype.A:
+                    ipv4_addresses.update({record.address for record in answer})
+                elif record_type == dns.rdatatype.AAAA:
+                    ipv6_addresses.update({record.address for record in answer})
+                elif record_type == dns.rdatatype.CNAME:
+                    for record in answer:
+                        if record.target in resolved_cnames:
+                            log(None, CORE_DEBUG, 6, "CNAME already resolved, skipping; host='%s', cname='%s'" % (host, record.target))
+                            continue
+                        resolved_cnames.add(record.target)
+                        log(None, CORE_DEBUG, 6, "Resolving CNAME for host; host='%s', cname='%s'" % (host, record.target))
+                        cname_ttl, cname_ipv4_addresses, cname_ipv6_addresses = self.resolve(record.target, resolved_cnames)
+                        ipv4_addresses.update(cname_ipv4_addresses)
+                        ipv6_addresses.update(cname_ipv6_addresses)
+                        ttl = min(ttl, cname_ttl)
 
-        return ttl, ipv4_addresses, ipv6_addresses
+        log(None, CORE_DEBUG, 6, "Host resolved; host='%s', ttl='%d', addresses='%s'" % (host, ttl, list(ipv4_addresses) + list(ipv6_addresses)))
+        return ttl or AbstractHostnameCache.default_cache_timeout, list(ipv4_addresses), list(ipv6_addresses)
 
 
 class AbstractHostnameCache(object):

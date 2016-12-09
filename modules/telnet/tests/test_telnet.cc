@@ -376,4 +376,4 @@ BOOST_FIXTURE_TEST_CASE(test_telnet_lineedit, TelnetLineEditSetup)
 }
 
 
-BOOST_GLOBAL_FIXTURE(TelnetSetup);
+BOOST_GLOBAL_FIXTURE(TelnetSetup)

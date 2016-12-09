@@ -27,7 +27,7 @@
 #include <signal.h>
 
 #include <time.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <syslog.h>
 #include <stdio.h>
 #include <unistd.h>

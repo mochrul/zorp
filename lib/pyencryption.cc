@@ -122,6 +122,13 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
             return false;
         };
 
+      if (!z_ssl_ctx_setup_ecdh(self->ssl_client_context))
+        {
+          z_log(NULL, CORE_ERROR, 1, "Unable to setup ECDH; side='%s'", EP_STR(EP_CLIENT));
+          return false;
+        }
+      SSL_CTX_set_options(self->ssl_client_context, SSL_OP_SINGLE_ECDH_USE);
+
       SSL_CTX_set_app_data(self->ssl_client_context, self);
 
       SSL_CTX_set_session_id_context(self->ssl_client_context, session_id_context, sizeof(session_id_context));
@@ -154,6 +161,13 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
             return false;
         };
       SSL_CTX_set_app_data(self->ssl_server_context, self);
+
+      if (!z_ssl_ctx_setup_ecdh(self->ssl_server_context))
+        {
+          z_log(NULL, CORE_ERROR, 1, "Unable to setup ECDH; side='%s'", EP_STR(EP_SERVER));
+          return false;
+        }
+      SSL_CTX_set_options(self->ssl_server_context, SSL_OP_SINGLE_ECDH_USE);
 
 
       SSL_CTX_set_timeout(self->ssl_server_context, self->ssl_server_context_timeout);
@@ -242,6 +256,9 @@ z_policy_encryption_register_vars(ZPolicyEncryption *self)
                          self->ssl_opts.ssl_cipher[EP_CLIENT]);
   z_policy_dict_register(dict, Z_VT_INT, "cipher_server_preference", Z_VF_RW,
                          &self->ssl_opts.cipher_server_preference);
+  z_policy_dict_register(dict, Z_VT_STRING, "dh_params",
+                         Z_VF_RW | Z_VF_CONSUME,
+                         self->ssl_opts.dh_params);
 
   /* server side */
   z_policy_dict_register(dict, Z_VT_HASH, "server_handshake", Z_VF_READ | Z_VF_CONSUME,
@@ -300,6 +317,8 @@ z_policy_encryption_register_vars(ZPolicyEncryption *self)
                          self->ssl_opts.ssl_cipher[EP_SERVER]);
   z_policy_dict_register(dict, Z_VT_INT, "server_check_subject", Z_VF_RW,
                          &self->ssl_opts.server_check_subject);
+  z_policy_dict_register(dict, Z_VT_INT, "disable_renegotiation", Z_VF_RW,
+                         &self->ssl_opts.disable_renegotiation);
 }
 
 /**
@@ -343,6 +362,7 @@ z_policy_encryption_set_config_defaults(ZPolicyEncryption *self)
     }
 
   self->ssl_opts.cipher_server_preference = FALSE;
+  self->ssl_opts.dh_params = g_string_new("");
 
   self->ssl_opts.server_setup_key_cb = NULL;
   self->ssl_opts.server_setup_ca_list_cb = NULL;
@@ -355,6 +375,7 @@ z_policy_encryption_set_config_defaults(ZPolicyEncryption *self)
   self->ssl_opts.client_verify_cert_cb = NULL;
 
   self->ssl_opts.server_check_subject = TRUE;
+  self->ssl_opts.disable_renegotiation = TRUE;
 
   self->ssl_opts.ssl_dict = z_policy_dict_new();
 
@@ -460,6 +481,58 @@ z_policy_encryption_setup_set_verify(ZPolicyEncryption *self, SSL_CTX *ctx, ZEnd
     SSL_CTX_set_verify(ctx, verify_mode, z_proxy_ssl_verify_peer_cert_cb);
 }
 
+#include <zorp/pyencryption_private.h>
+#include <openssl/err.h>
+#include <stdexcept>
+
+template <typename exception_class> void throw_openssl_error()
+{
+  char buf[256];
+  ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
+  const char *human_readable_error = buf;
+  throw exception_class(human_readable_error);
+}
+
+DH_unique_ptr
+z_policy_encryption_get_dh_from_pem(const char *buf, int len)
+{
+  using BIO_deleter =  int (*) (BIO *);
+  using BIO_unique_ptr = std::unique_ptr<BIO, BIO_deleter>;
+
+  BIO_unique_ptr bio(BIO_new_mem_buf(const_cast<char *>(buf), len), BIO_free);
+  DH_unique_ptr dh(PEM_read_bio_DHparams(bio.get(), NULL, NULL, NULL), DH_free);
+  if (!dh)
+    throw_openssl_error<std::invalid_argument>();
+
+  return dh;
+}
+
+static void
+z_policy_encryption_set_dh_params(SSL_CTX *ctx, const ZProxySsl &ssl_opts)
+{
+  bool is_dh_param_set = (ssl_opts.dh_params->len != 0);
+  if (!is_dh_param_set)
+    return;
+
+  DH_unique_ptr dh(z_policy_encryption_get_dh_from_pem(ssl_opts.dh_params->str,
+                                                       ssl_opts.dh_params->len));
+  if (1 != SSL_CTX_set_tmp_dh(ctx, dh.get()))
+    throw_openssl_error<std::invalid_argument>();
+}
+
+static void
+z_policy_encryption_info_callback(const SSL *ssl, int where, int rc G_GNUC_UNUSED)
+{
+    ZProxySSLHandshake *handshake = (ZProxySSLHandshake *) SSL_get_app_data(ssl);
+
+    if ((where & SSL_CB_HANDSHAKE_START) && handshake->completed)
+      {
+        z_proxy_log(handshake->proxy, CORE_ERROR, 3, "Client initiated renegotiation terminated; side='%s'",
+                    EP_STR(handshake->side));
+        z_stream_shutdown(handshake->proxy->endpoints[handshake->side], SHUT_RDWR, nullptr);
+      }
+}
+
 static PyObject *
 z_policy_encryption_setup_method(ZPolicyEncryption *self, PyObject *args G_GNUC_UNUSED)
 {
@@ -483,11 +556,37 @@ z_policy_encryption_setup_method(ZPolicyEncryption *self, PyObject *args G_GNUC_
 
           Py_RETURN_FALSE;
         }
+      if (self->ssl_opts.disable_renegotiation && side == EP_CLIENT)
+        SSL_CTX_set_info_callback(ctx, z_policy_encryption_info_callback);
 
       z_policy_encryption_setup_ctx_options(self, ctx, side);
       z_policy_encryption_setup_set_verify(self, ctx, side);
-      if (side == EP_SERVER)
-        SSL_CTX_set_client_cert_cb(ctx, z_proxy_ssl_client_cert_cb); /* instead of specifying key here */
+
+      switch (side)
+        {
+        case EP_CLIENT:
+          try
+            {
+              z_policy_encryption_set_dh_params(ctx, self->ssl_opts);
+            }
+          catch (const std::invalid_argument &e)
+            {
+              z_log(NULL, CORE_ERROR, 1,
+                    "Error setting DH parameters for ephemeral DH key; side='%s', error='%s'",
+                     EP_STR(side), e.what());
+              Py_RETURN_FALSE;
+            }
+        break;
+
+        case EP_SERVER:
+          SSL_CTX_set_client_cert_cb(ctx, z_proxy_ssl_client_cert_cb); /* instead of specifying key here */
+          break;
+
+        case EP_MAX:
+          abort();
+        break;
+        }
+
       /* For server side, the z_proxy_ssl_app_verify_callback_cb sets up
          trusted CA list. It calls verify_cert callback for both sides.
 

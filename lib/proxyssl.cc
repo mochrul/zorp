@@ -31,6 +31,7 @@
 #include <zorp/proxygroup.h>
 #include <zorp/source.h>
 #include <zorp/error.h>
+#include <openssl/err.h>
 #include <memory>
 
 static void z_proxy_ssl_handshake_destroy(ZProxySSLHandshake *self);
@@ -508,14 +509,29 @@ z_proxy_ssl_append_local_cert_chain(ZProxy *self, const ZEndpoint side, SSL *ssl
       for (gsize i = 0; i != chain_len; ++i)
         {
           X509 *cert = z_certificate_chain_get_cert_from_chain(self->tls_opts.local_cert[side], i);
-
           CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
-          if (!SSL_CTX_add_extra_chain_cert(ssl->ctx, cert))
+          if (!X509_STORE_add_cert(ssl->ctx->cert_store, cert))
             {
               X509_free(cert);
-              z_proxy_log(self, CORE_ERROR, 3, "Failed to add the complete certificate chain "
-                          "to the SSL session; index='%" G_GSIZE_FORMAT "'", i);
-              z_proxy_return(self, FALSE);
+              unsigned long error = ERR_peek_last_error();
+              if (ERR_GET_LIB(error) == ERR_LIB_X509 &&
+                  ERR_GET_REASON(error) == X509_R_CERT_ALREADY_IN_HASH_TABLE)
+                {
+                  /**
+                   * If there is multiple certificates in pem file, intermediate certificates
+                   * added every time
+                   */
+                  ERR_clear_error();
+                }
+              else
+                {
+                  char error_str[256];
+
+                  ERR_error_string_n(error, error_str, sizeof(error_str));
+                  z_proxy_log(self, CORE_ERROR, 3, "Failed to add the complete certificate chain "
+                              "to the SSL session; index='%" G_GSIZE_FORMAT "', error='%s'", i, error_str);
+                  z_proxy_return(self, FALSE);
+                }
             }
         }
     }
@@ -621,6 +637,19 @@ z_proxy_ssl_load_local_crl_list(ZProxySSLHandshake *handshake, gchar *name)
   z_proxy_return(self, TRUE);
 }
 
+int
+z_proxy_ssl_verify_cb_allow_missing_crl(int ok, X509_STORE_CTX *ctx)
+{
+  bool *found_missing_crl = reinterpret_cast<bool *>(X509_STORE_CTX_get_ex_data(ctx, 0));
+  if (!ok && ctx->error == X509_V_ERR_UNABLE_TO_GET_CRL)
+    {
+     *found_missing_crl = true;
+      return 1;
+    }
+
+  return ok;
+}
+
 /* this function is called to verify the whole chain as provided by
    the peer. The SSL lib takes care about setting up the context,
    we only need to call X509_verify_cert. */
@@ -635,7 +664,8 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
   gboolean new_verify_callback, success;
   guint verdict;
   gboolean ok, verify_valid;
-  gint verify_error, verify_type;
+  gint verify_error;
+  proxy_ssl_verify_type verify_type;
 
   z_proxy_enter(self);
   /* publish the peer's certificate to python, and fetch the calist
@@ -654,16 +684,22 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
   if (side == EP_SERVER)
     z_proxy_ssl_load_local_ca_list(handshake);
 
+  bool found_missing_crl = false;
   if (self->encryption->ssl_opts.verify_crl_directory[side]->len > 0)
     {
       X509_STORE_CTX_set_flags(ctx, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+
+      if (self->encryption->ssl_opts.permit_missing_crl[side])
+        {
+          X509_STORE_CTX_set_verify_cb(ctx, z_proxy_ssl_verify_cb_allow_missing_crl);
+          X509_STORE_CTX_set_ex_data(ctx, 0, &found_missing_crl);
+        }
     }
 
   verify_valid = X509_verify_cert(ctx);
   verify_error = X509_STORE_CTX_get_error(ctx);
 
-  if (self->encryption->ssl_opts.permit_missing_crl[side] &&
-      !verify_valid && verify_error == X509_V_ERR_UNABLE_TO_GET_CRL)
+  if (self->encryption->ssl_opts.permit_missing_crl[side] && found_missing_crl)
     {
       /* no CRL was found, but the configuration explicitly permits
        * missing CRLs */
@@ -673,11 +709,6 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
         explicitly allows missing CRLs.
        */
       z_proxy_log(self, CORE_POLICY, 5, "Trying verification without CRL check as directed by the policy");
-
-      /* disable CRL check and redo verify */
-      X509_VERIFY_PARAM_clear_flags(ctx->param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-      verify_valid = X509_verify_cert(ctx);
-      verify_error = X509_STORE_CTX_get_error(ctx);
     }
 
   z_policy_lock(self->thread);
@@ -695,23 +726,26 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
   else
     success = z_proxy_ssl_callback(self, side, "verify_cert", z_policy_var_build("(i)", side), &verdict);
 
+  ok = 0;
   z_policy_unlock(self->thread);
   if (!success)
-    {
-      ok = 0;
-      goto exit;
-    }
+    goto exit;
+
+  if (!verify_valid)
+    z_proxy_log(self, CORE_INFO, 3, "Certificate verification failed, making policy decision; error='%s'",
+                                    X509_verify_cert_error_string(verify_error));
 
   if (verdict == PROXY_SSL_HS_ACCEPT)
     {
-      if (verify_type == ENCRYPTION_VERIFY_REQUIRED_TRUSTED ||
-          verify_type == ENCRYPTION_VERIFY_OPTIONAL_TRUSTED)
+      switch (verify_type)
         {
+        case ENCRYPTION_VERIFY_REQUIRED_TRUSTED:
+        case ENCRYPTION_VERIFY_OPTIONAL_TRUSTED:
           ok = verify_valid;
-        }
-      else if (verify_type == ENCRYPTION_VERIFY_REQUIRED_UNTRUSTED ||
-               verify_type == ENCRYPTION_VERIFY_OPTIONAL_UNTRUSTED)
-        {
+        break;
+
+        case ENCRYPTION_VERIFY_REQUIRED_UNTRUSTED:
+        case ENCRYPTION_VERIFY_OPTIONAL_UNTRUSTED:
           if (!verify_valid &&
               (self->encryption->ssl_opts.permit_invalid_certificates[side] ||
                (verify_error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
@@ -730,10 +764,14 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
             {
               ok = verify_valid;
             }
-        }
-      else
-        {
+        break;
+
+        case ENCRYPTION_VERIFY_NONE:
+          z_proxy_log(self, CORE_POLICY, 3,
+                      "Accepting untrusted certificate as directed by the policy; verify_error='%s'",
+                      X509_verify_cert_error_string(verify_error));
           ok = 1;
+        break;
         }
     }
   else if (verdict == PROXY_SSL_HS_VERIFIED)
@@ -1071,7 +1109,6 @@ z_proxy_ssl_handshake_cb(ZStream *stream, GIOCondition poll_cond G_GNUC_UNUSED, 
           /* no break here: we let the code go to the next case so that the error gets logged */
 
         default:
-          /* SSL handshake failed */
           z_proxy_ssl_handshake_set_error(handshake, ssl_err);
           z_proxy_log(handshake->proxy, CORE_ERROR, 1, "SSL handshake failed; side='%s', error='%s'",
                       EP_STR(handshake->side), z_proxy_ssl_handshake_get_error_str(handshake));
@@ -1220,24 +1257,23 @@ z_proxy_ssl_restore_stream(ZProxySSLHandshake *handshake)
  * Completion callback used for our semi-nonblocking handshake.
  *
  * @param handshake     the handshake object
- * @param user_data     the gboolean which has to be set
  *
  * This function is used as a completion callback by z_proxy_ssl_do_handshake() if it's
  * doing a semi-nonblocking handshake, where it avoids starvation of other proxies running
  * in the same proxy group by iterating the main loop of the proxy group and waiting
  * for the handshake to be finished.
  *
- * The callback is passed a pointer to a gboolean: z_proxy_ssl_do_handshake() iterates
- * the main loop until the boolean is set by the callback, signaling that the handshake
- * has been finished.
+ * z_proxy_ssl_do_handshake() iterates the main loop until the value of completed
+ * member of handshake structure is set by the callback, signaling that the
+ * handshake has been finished.
  */
 static void
-z_proxy_ssl_handshake_completed(ZProxySSLHandshake *handshake G_GNUC_UNUSED,
-                                gpointer user_data)
+z_proxy_ssl_handshake_completed(ZProxySSLHandshake *handshake)
 {
   z_enter();
 
-  *((gboolean *) user_data) = TRUE;
+  handshake->completed = true;
+  z_proxy_log(handshake->proxy, CORE_INFO, 6, "SSL handshake done; side='%s'", EP_STR(handshake->side));
 
   z_leave();
 }
@@ -1264,15 +1300,14 @@ z_proxy_ssl_do_handshake(ZProxySSLHandshake *handshake,
   if (nonblocking)
     {
       ZProxyGroup *proxy_group = z_proxy_get_group(handshake->proxy);
-      gboolean handshake_done = FALSE;
 
-      z_proxy_ssl_handshake_set_callback(handshake, z_proxy_ssl_handshake_completed, &handshake_done, NULL);
+      z_proxy_ssl_handshake_set_callback(handshake, reinterpret_cast<ZProxySSLCallbackFunc>(z_proxy_ssl_handshake_completed), nullptr, nullptr);
 
       if (!z_proxy_ssl_setup_stream(handshake, proxy_group))
         z_proxy_return(handshake->proxy, FALSE);
 
       /* iterate until the handshake has been completed */
-      while (!handshake_done && z_proxy_group_iteration(proxy_group))
+      while (!handshake->completed && z_proxy_group_iteration(proxy_group))
         {
           ;
         }
@@ -1371,7 +1406,7 @@ z_proxy_ssl_setup_handshake(ZProxySSLHandshake *handshake)
   if (side == EP_CLIENT && self->encryption->ssl_opts.handshake_seq == PROXY_SSL_HS_CLIENT_SERVER)
     {
       /* TLS Server Name Indication extension support */
-      z_proxy_ssl_get_sni_from_client(self);
+      z_proxy_ssl_get_sni_from_client(self, handshake->stream);
     }
   if (side == EP_CLIENT)
     {
@@ -1467,7 +1502,7 @@ z_proxy_ssl_init_stream(ZProxy *self, ZEndpoint side)
           if (side == EP_CLIENT && self->encryption->ssl_opts.handshake_seq == PROXY_SSL_HS_SERVER_CLIENT)
             {
               /* TLS Server Name Indication extension support */
-              z_proxy_ssl_get_sni_from_client(self);
+              z_proxy_ssl_get_sni_from_client(self, self->endpoints[EP_CLIENT]);
             }
 
           rc = z_proxy_ssl_request_handshake(self, side, FALSE);
@@ -1554,7 +1589,11 @@ z_proxy_ssl_init_completed(ZProxySSLHandshake *handshake, gpointer user_data)
       success = z_proxy_nonblocking_init(self, z_proxy_group_get_poll(z_proxy_get_group(self)));
     }
 
-  if (!success)
+  if (success)
+    {
+      z_proxy_ssl_handshake_completed(handshake);
+    }
+  else
     {
       /* initializing the client stream or the proxy failed, stop the proxy instance */
       z_proxy_nonblocking_stop(self);
@@ -1649,13 +1688,13 @@ z_proxy_ssl_sni_do_handshake(ZProxy *self, ZPktBuf *buf, gsize bytes_read)
 }
 
 void
-z_proxy_ssl_get_sni_from_client(ZProxy *self)
+z_proxy_ssl_get_sni_from_client(ZProxy *self, ZStream *stream)
 {
   ZPktBuf *buf = z_pktbuf_new();
   z_pktbuf_resize(buf, 1024);
   gsize bytes_read = 0;
 
-  ZStream *ssl_stream = z_stream_search_stack(self->endpoints[EP_CLIENT], G_IO_OUT, Z_CLASS(ZStreamSsl));
+  ZStream *ssl_stream = z_stream_search_stack(stream, G_IO_OUT, Z_CLASS(ZStreamSsl));
   if (!ssl_stream)
     {
       z_proxy_log(self, CORE_ERROR, 1, "Could not find ssl stream on stream stack");

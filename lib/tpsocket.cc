@@ -28,19 +28,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <netinet/in.h>
+
 static gint
 z_do_ll_getdestname(gint fd, struct sockaddr *sa, socklen_t *salen, guint32 sock_flags G_GNUC_UNUSED)
 {
   return getsockname(fd, sa, salen);
 }
-
-#ifndef IP_FREEBIND
-#define IP_FREEBIND 15
-#endif
-
-#ifndef IP_TRANSPARENT
-#define IP_TRANSPARENT 19
-#endif
 
 static gint
 z_do_tp40_bind(gint fd, struct sockaddr *sa, socklen_t salen, guint32 sock_flags)
@@ -50,8 +44,21 @@ z_do_tp40_bind(gint fd, struct sockaddr *sa, socklen_t salen, guint32 sock_flags
   z_enter();
   if (sock_flags & ZSF_TRANSPARENT || sock_flags & ZSF_MARK_TPROXY)
     {
-      if (setsockopt(fd, SOL_IP, IP_TRANSPARENT, &on, sizeof(on)) < 0)
-        setsockopt(fd, SOL_IP, IP_FREEBIND, &on, sizeof(on));
+#if defined(__gnu_linux__)
+#if HAVE_DECL_IP_TRANSPARENT
+      if (setsockopt(fd, IPPROTO_IP, IP_TRANSPARENT, &on, sizeof(on)) < 0)
+        z_return(false);
+#endif
+#if HAVE_DECL_IP_FREEBIND
+      if (setsockopt(fd, IPPROTO_IP, IP_FREEBIND, &on, sizeof(on)) < 0)
+        z_return(false);
+#endif
+#elif defined(__FreeBSD__)
+#if HAVE_DECL_IP_BINDANY
+      if (setsockopt(fd, IPPROTO_IP, IP_BINDANY, &on, sizeof(on)) < 0)
+        z_return(false);
+#endif
+#endif
     }
   res = z_do_ll_bind(fd, sa, salen, sock_flags);
   z_return(res);

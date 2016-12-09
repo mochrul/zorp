@@ -457,6 +457,9 @@ class EncryptionPolicy(object):
         return self.encryption
 
 class NoneEncryption(Encryption):
+    """
+    <class internal="yes"/>
+    """
     def __init__(self):
         super(NoneEncryption, self).__init__(client_security = SSL_NONE, server_security = SSL_NONE)
 
@@ -788,6 +791,16 @@ class ClientSSLOptions(SSLOptions):
             <default>FALSE</default>
             <description>Set this to TRUE to disable support for SSL/TLS compression.</description>
           </attribute>
+          <attribute>
+            <name>dh_params</name>
+            <type>
+              <dhparams/>
+            </type>
+            <default>None</default>
+            <description>
+             The DH parameter used by ephemeral DH key generarion.
+            </description>
+          </attribute>
         </attributes>
       </metainfo>
     </class>
@@ -795,7 +808,7 @@ class ClientSSLOptions(SSLOptions):
 
     def __init__(self, method=SSL_METHOD_ALL, cipher=SSL_CIPHERS_HIGH, cipher_server_preference=False, timeout=300,
                        disable_sslv2=True, disable_sslv3=True, disable_tlsv1=False, disable_tlsv1_1=False, disable_tlsv1_2=False,
-                       disable_compression=False):
+                       disable_compression=False, dh_params=None, disable_renegotiation=True):
         """
         <method maturity="stable">
           <summary>
@@ -890,6 +903,24 @@ class ClientSSLOptions(SSLOptions):
                 <default>FALSE</default>
                 <description>Set this to TRUE to disable support for SSL/TLS compression.</description>
               </argument>
+              <argument>
+                <name>dh_param_file_path</name>
+                <type>
+                  <string/>
+                </type>
+                <default>None</default>
+                <description>
+                 The path and filename to the DH parameter file. The DH parameter file must be in PEM format.
+                </description>
+              </argument>
+              <argument maturity="stable">
+                <name>disable_renegotiation</name>
+                <type>
+                  <boolean/>
+                </type>
+                <default>TRUE</default>
+                <description>Set this to TRUE to disable client initiated renegotiation.</description>
+              </argument>
             </arguments>
           </metainfo>
         </method>
@@ -899,6 +930,15 @@ class ClientSSLOptions(SSLOptions):
                                                disable_sslv2, disable_sslv3, disable_tlsv1, disable_tlsv1_1, disable_tlsv1_2,
                                                disable_compression)
         self.cipher_server_preference = cipher_server_preference
+        if dh_params is None:
+            self.dh_params = ""
+        elif isinstance(dh_params, DHParam):
+            self.dh_params = dh_params.getParams()
+        elif isinstance(dh_params, str):
+            self.dh_params = dh_params
+        else:
+            raise TypeError, "Type of dh_params must be string or DHParam"
+        self.disable_renegotiation = disable_renegotiation
 
     def setup(self, encryption):
         """
@@ -913,6 +953,8 @@ class ClientSSLOptions(SSLOptions):
         encryption.settings.client_disable_compression = self.disable_compression
         encryption.settings.client_ssl_cipher = self.cipher
         encryption.settings.cipher_server_preference = self.cipher_server_preference
+        encryption.settings.dh_params = self.dh_params
+        encryption.settings.disable_renegotiation = self.disable_renegotiation
 
 class ServerSSLOptions(SSLOptions):
     """
@@ -2544,6 +2586,116 @@ Ae/P63OHt89sWbb5oG2+fcb7xCwH3kYmVgT4/xPv0FQRspwpErKYlCWg
         """
         return PrivateKey(readPEM(key_file_path), passphrase)
 
+
+class DHParam(object):
+    """
+    <class type="dhparam">
+      <summary>
+        Class encapsulating DH parameters.
+      </summary>
+      <description>
+        <para>The DHParam class stores DH parameters. The DH parameters must be in PEM format.</para>
+        <para>When configuring Zorp manually using its configuration file, use the regular constructor of the DHParam class to load DH parameters key from a string. To load DH parameters key from a file, use the <link linkend="python.Encryption.DHParam.fromFile">DHParam.fromFile</link> method.</para>
+        <example>
+            <title>Loading DH parameters</title>
+            <para>The following example loads DH parameters from the Zorp configuration file.</para>
+            <synopsis>my_dh_params = "-----BEGIN DH PARAMETERS-----
+MIIBCAKCAQEAvvO8WguTNtkDs33qe5u1T7IjllmTrRnwFV4z7W4A0Du9j+prdRdD
+UAblHYBrQn30Fsfg/6WDVTmUj8Lvgn9aFjWYTe6U3Ey7CQt4MBw2BhCO3Rl9KDw7
+Im8UdBBhxuekuqZGifMkEEFzAcbiQepvBXiGMucDWgbLaaTY/FrKqb5O9DvoenSV
+Aj/VNFnsefQTHXGo1Urg8ixaWj7kTNhM3x7kj7BhK4ALfBuv/93aet2SQjU207C6
+0j3mku8CD93Xsbng6rIzmRd6pCANEFH0Rgo1OX7+vMwwG5h5YDsF8cVAcRroZkxR
+dyPdVNzYlz1X3Jxln3It/6F2yyx/FOXAGwIBAg==
+-----END DH PARAMETERS-----"
+                    my_dh_params_object = DHParam(my_dh_params)</synopsis>
+            <para>The following example loads DH parameters key from an external file.</para>
+            <synopsis>my_dh_params_object = DHParam.fromFile("/tmp/my_dh_params.pem")</synopsis>
+        </example>
+      </description>
+      <metainfo>
+        <attributes>
+          <attribute>
+            <name>params</name>
+            <type>
+              <string/>
+            </type>
+            <default>""</default>
+            <conftime>
+              <read/>
+              <write/>
+            </conftime>
+            <runtime>
+              <read/>
+            </runtime>
+            <description>
+             The path and filename to the DH parameters file. The DH parameters must be in PEM format.
+            </description>
+          </attribute>
+         </attributes>
+      </metainfo>
+    </class>
+    """
+    def __init__(self, params):
+        """
+        <method maturity="stable">
+          <summary>
+            Load DH parameters key from a string
+          </summary>
+          <description>
+            <para>Initializes a DHParam instance by loading DH parameters key from a string. To load a DH parameters from a file, use the <link linkend="python.Encryption.DHParam.fromFile">DHParam.fromFile</link> method.
+            </para>
+          </description>
+          <metainfo>
+            <arguments>
+              <argument>
+                <name>params</name>
+                <type>
+                    <certificate cert="no" key="yes"/>
+                </type>
+                <description>
+                The path and filename to the DH parameters file. The DH parameters must be in PEM format.
+                </description>
+              </argument>
+            </arguments>
+          </metainfo>
+        </method>
+        """
+        self.params = params
+
+    def getParams(self):
+        """
+        <method internal="yes"/>
+        """
+        return self.params
+
+    @staticmethod
+    def fromFile(file_path):
+        """
+        <method maturity="stable">
+          <summary>
+            Load a DH parameters from a file
+          </summary>
+          <description>
+            <para>Initializes a DHParam instance by loading a DH parameters from a file.
+            </para>
+          </description>
+          <metainfo>
+            <arguments>
+              <argument>
+                <name>file_path</name>
+                <type>
+                    <dhparam/>
+                </type>
+                <description>
+                The path and filename to the DH parameters file. The DH parameters must be in PEM format.
+                </description>
+              </argument>
+            </arguments>
+          </metainfo>
+        </method>
+        """
+        return DHParam(readPEM(file_path))
+
 class Certificate(object):
     """
     <class type="certcertificate">
@@ -2581,7 +2733,7 @@ Wm7DCfrPNGVwFWUQOmsPue9rZBgO
           <attribute>
             <name>certificate_file_path</name>
             <type>
-                <certificate cert="yes" key="yes"/>
+                <certificatechain cert="yes" key="yes"/>
             </type>
             <description>
             The path and filename to the certificate file. The certificate must be in PEM format.
@@ -2614,7 +2766,7 @@ Wm7DCfrPNGVwFWUQOmsPue9rZBgO
               <argument>
                 <name>certificate_file_path</name>
                 <type>
-                    <certificate cert="yes" key="yes"/>
+                    <certificate cert="yes" key="yes" chain="yes"/>
                 </type>
                 <description>
                 The path and filename to the certificate file. The certificate must be in PEM format.

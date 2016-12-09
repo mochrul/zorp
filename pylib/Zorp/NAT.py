@@ -409,13 +409,9 @@ class GeneralNAT(AbstractNAT):
         <method internal="yes">
         </method>
         """
-        def subnetToKZorpTuple(subnet):
-            import kzorp.messages
-            return (kzorp.messages.KZ_SVC_NAT_MAP_IPS, socket.ntohl(subnet.network()), socket.ntohl(subnet.broadcast()), 0, 0)
-
         result = []
         for (src_tuple, dst_tuple, map_tuple) in self.mappings[NAT_SNAT]:
-            result.append((subnetToKZorpTuple(src_tuple), subnetToKZorpTuple(dst_tuple), subnetToKZorpTuple(map_tuple)))
+            result.append((src_tuple.ip_range, dst_tuple.ip_range, map_tuple.ip_range))
         return result
 
 class ForgeClientSourceNAT(AbstractNAT):

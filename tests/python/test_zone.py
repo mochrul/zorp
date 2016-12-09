@@ -22,6 +22,7 @@
 ############################################################################
 
 from Zorp.Core import *
+from Zorp.ResolverCache import DNSResolver
 from Zorp.Zorp import quit
 from Zorp.Zone import Zone
 from Zorp.Subnet import Subnet
@@ -31,6 +32,8 @@ from socket import htonl
 from Zorp.Exceptions import ZoneException
 import unittest
 import radix
+import dns.rdatatype
+from collections import namedtuple
 
 config.options.kzorp_enabled = FALSE
 
@@ -71,6 +74,25 @@ class MyResolverCache():
         else:
             return None
 
+class FakeDNSResolver(DNSResolver):
+
+    class Answer(list):
+        def __init__(self, l):
+            super(FakeDNSResolver.Answer, self).__init__(l)
+            self.ttl = 60
+
+    Record = namedtuple('Record', ['target'])
+
+    @staticmethod
+    def fake_query(host, record_type):
+        if record_type == dns.rdatatype.CNAME or record_type == 'CNAME':
+            return FakeDNSResolver.Answer([FakeDNSResolver.Record(target=host)])
+        return FakeDNSResolver.Answer([])
+
+    def __init__(self, **kwargs):
+        super(FakeDNSResolver, self).__init__(**kwargs)
+        self.resolver.query = FakeDNSResolver.fake_query
+
 class TestZone(unittest.TestCase):
 
     def setUp(self):
@@ -85,6 +107,10 @@ class TestZone(unittest.TestCase):
         if zone is None:
             raise ZoneException(address)
         return zone
+
+    def test_lookup_recursive_cname(self):
+        resolver = FakeDNSResolver()
+        self.assertEqual(resolver.resolve('example.org'), (60, [], []))
 
     def test_lookup_no_zones_defined(self):
         self.assertRaises(ZoneException, self.doLookup, '1.2.3.4')

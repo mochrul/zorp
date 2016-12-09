@@ -214,7 +214,6 @@ CORE_POLICY = Common.CORE_POLICY
 CORE_MESSAGE = Common.CORE_MESSAGE
 CORE_AUTH = Common.CORE_AUTH
 CORE_INFO = Common.CORE_INFO
-CORE_ALERTING = Common.CORE_ALERTING
 CORE_SUMMARY = Common.CORE_SUMMARY
 
 # return values returned by event handlers
@@ -444,10 +443,13 @@ def init(names, virtual_name, is_master):
     Globals.rules = Rule.RuleSet()
 
     if config.options.kzorp_enabled:
-        import kzorp.communication
         # ping kzorp to see if it's there
         try:
+            import kzorp.communication
+            import kzorp.messages
             h = kzorp.communication.Handle()
+            get_version_reply = h.exchange(kzorp.messages.KZorpGetVersionMessage())
+            Globals.kzorp_version = (get_version_reply.major, get_version_reply.compat)
             Globals.kzorp_available = True
         except:
             Globals.kzorp_available = False

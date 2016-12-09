@@ -55,7 +55,9 @@ struct ZDispatchChain
   ZDispatchParams params;
   GList *listeners;
   GList *iface_watches;
+#ifdef HAVE_LINUX_NETLINK_H
   ZIfmonGroupWatch *iface_group_watch;
+#endif
 };
 
 /* Each ZDispatchChain structure contains a list of instances of this type */
@@ -804,6 +806,7 @@ z_dispatch_iface_to_sa(gint family, void *addr, guint16 port)
   return NULL;
 }
 
+#ifdef HAVE_LINUX_NETLINK_H
 /**
  * z_dispatch_bind_iface_change:
  *
@@ -941,6 +944,7 @@ z_dispatch_bind_iface_group_change(guint32 group, ZIfChangeType change, const gc
       break;
     }
 }
+#endif
 
 /**
  * z_dispatch_bind_listener:
@@ -1003,7 +1007,9 @@ z_dispatch_bind_listener(ZDispatchChain *chain, ZDispatchBind **bound_key)
        * registration is always deleted before this ZDispatchChain
        * instance would be */
 
+#ifdef HAVE_LINUX_NETLINK_H
       chain->iface_watches = g_list_prepend(chain->iface_watches, z_ifmon_register_watch(chain->registered_key->iface.iface, chain->registered_key->iface.family, z_dispatch_bind_iface_change, chain, NULL));
+#endif
       *bound_key = z_dispatch_bind_ref(chain->registered_key);
       break;
     case ZD_BIND_IFACE_GROUP:
@@ -1014,7 +1020,9 @@ z_dispatch_bind_listener(ZDispatchChain *chain, ZDispatchBind **bound_key)
        * registration is always deleted before this ZDispatchChain
        * instance would be */
 
+#ifdef HAVE_LINUX_NETLINK_H
       chain->iface_group_watch = z_ifmon_register_group_watch(chain->registered_key->iface_group.group, z_dispatch_bind_iface_group_change, chain, NULL);
+#endif
       *bound_key = z_dispatch_bind_ref(chain->registered_key);
       break;
     }
@@ -1042,6 +1050,7 @@ z_dispatch_unbind_listener(ZDispatchChain *chain)
       /* send exit magic to our threads */
       g_async_queue_push(chain->accept_queue, Z_DISPATCH_THREAD_EXIT_MAGIC);
     }
+#ifdef HAVE_LINUX_NETLINK_H
   if (chain->iface_group_watch)
     z_ifmon_unregister_group_watch(chain->iface_group_watch);
   while (chain->iface_watches)
@@ -1049,6 +1058,7 @@ z_dispatch_unbind_listener(ZDispatchChain *chain)
       z_ifmon_unregister_watch((ZIfmonWatch *) chain->iface_watches->data);
       chain->iface_watches = g_list_delete_link(chain->iface_watches, chain->iface_watches);
     }
+#endif
   for (p = chain->listeners; p; p = g_list_next(p))
     {
       ZListenerEntry *l = (ZListenerEntry *) p->data;

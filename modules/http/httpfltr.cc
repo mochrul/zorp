@@ -1134,7 +1134,15 @@ http_data_transfer(HttpProxy *self, gint transfer_type, ZEndpoint from, ZStream 
     {
       guint one = 1;
       guint fd = z_stream_get_fd(to_stream);
-      setsockopt(fd, SOL_TCP, TCP_CORK, &one, sizeof(one));
+#if defined(__gnu_linux__)
+#ifdef HAVE_DECL_TCP_CORK
+      setsockopt(fd, IPPROTO_TCP, TCP_CORK, &one, sizeof(one));
+#endif
+#elif defined(__FreeBSD__)
+#ifdef HAVE_DECL_TCP_NOPUSH
+      setsockopt(fd, IPPROTO_TCP, TCP_NOPUSH, &one, sizeof(one));
+#endif
+#endif
     }
 
   t = http_transfer_new(self, transfer_type, from, from_stream, to, to_stream, expect_data, suppress_data, format_preamble);
@@ -1164,7 +1172,15 @@ http_data_transfer(HttpProxy *self, gint transfer_type, ZEndpoint from, ZStream 
     {
       guint zero = 0;
       guint fd = z_stream_get_fd(to_stream);
-      setsockopt(fd, SOL_TCP, TCP_CORK, &zero, sizeof(zero));
+#if defined(__gnu_linux__)
+#ifdef HAVE_DECL_TCP_CORK
+      setsockopt(fd, IPPROTO_TCP, TCP_CORK, &zero, sizeof(zero));
+#endif
+#elif defined(__FreeBSD__)
+#ifdef HAVE_DECL_TCP_NOPUSH
+      setsockopt(fd, IPPROTO_TCP, TCP_NOPUSH, &zero, sizeof(zero));
+#endif
+#endif
     }
 
   if (tr == ZT2_RESULT_FAILED)

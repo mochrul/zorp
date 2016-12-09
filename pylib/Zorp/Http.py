@@ -1083,10 +1083,10 @@ def instance():
 </metainfo>
 </module>"""
 
-from Zorp.Zorp import *
+from Zorp import *
 from Plug import PlugProxy
-from Zorp.Proxy import Proxy, proxyLog
-from Zorp.Matcher import getMatcher
+from Proxy import Proxy, proxyLog
+from Matcher import getMatcher
 
 HTTP_URL_ACCEPT         = 1
 HTTP_URL_REJECT         = 3

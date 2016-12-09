@@ -75,8 +75,8 @@
 </module>
 """
 
-from Zorp.Zorp import *
-from Zorp.Proxy import Proxy
+from Zorp import *
+from Proxy import Proxy
 
 PLUG_DEBUG = "plug.debug"
 

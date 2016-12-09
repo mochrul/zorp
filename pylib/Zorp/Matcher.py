@@ -42,7 +42,7 @@ from Cache import TimedCache
 from Exceptions import MatcherException
 from ResolverCache import ResolverCache
 from ResolverCache import DNSResolver
-import os, re, string, types, time, smtplib, socket, traceback
+import os, re, string, types, time, smtplib, socket, traceback, collections
 
 class MatcherPolicy(object):
     """<class maturity="stable" type="matcherpolicy">
@@ -844,6 +844,13 @@ class DNSMatcher(AbstractMatcher):
         </method>
         """
         self.cache = ResolverCache(DNSResolver())
+        if isinstance(hosts, str):
+            self.cache.addHost(hosts)
+        elif isinstance(hosts, collections.Iterable):
+            for host in hosts:
+                self.cache.addHost(host)
+        else:
+            raise ValueError('hosts has type %s, must be str or iterable')
 
     def checkMatch(self, str):
         """<method internal="yes"/>

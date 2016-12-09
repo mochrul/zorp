@@ -11,7 +11,7 @@ check_SCRIPTS = \
              test_szig.py                     \
              test_szig_walk_algorithm.py
 
-AM_TESTS_ENVIRONMENT = PYTHONPATH=${top_srcdir}:${top_builddir}/pylib; export PYTHONPATH;
+AM_TESTS_ENVIRONMENT = PYTHONPATH=${top_srcdir}:${top_srcdir}/pylib:${top_builddir}/pylib; export PYTHONPATH;
 
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = $(PYTHON)

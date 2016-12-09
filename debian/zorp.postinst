@@ -18,6 +18,12 @@ if [ "$1" = "configure" ]; then
 
   chown -R zorp.zorp /var/lib/zorp/keybridge-cache
   chmod 0770 /var/lib/zorp/keybridge-cache
+
+  ZORP_DHFILE="/etc/zorp/dh.pem"
+  if [ ! -f $ZORP_DHFILE ]; then
+    echo "Generating dh.pem for ephemeral Diiffie-Hellman connections"
+    openssl dhparam -out $ZORP_DHFILE 2048
+  fi
 fi
 
 #DEBHELPER#

@@ -25,7 +25,9 @@
 #include <zorp/log.h>
 #include <zorp/pysockaddr.h>
 #include <zorp/pystream.h>
+#ifdef ENABLE_KZORP
 #include <zorp/kzorp.h>
+#endif
 /* for capability management */
 #include <zorp/cap.h>
 /* ZPolicyDispatchBind */
@@ -649,6 +651,7 @@ z_policy_dispatch_free(ZPolicyDispatch *self)
   PyObject_Del(self);
 }
 
+#ifdef ENABLE_KZORP
 /**
  * z_policy_dispatch_get_kzorp_result
  * @o unused
@@ -685,13 +688,16 @@ z_policy_dispatch_get_kzorp_result(PyObject *o G_GNUC_UNUSED, PyObject *args)
 
   return ret;
 }
+#endif
 PyMethodDef z_policy_dispatch_funcs[] =
 {
   { "Dispatch", (PyCFunction) z_policy_dispatch_new_instance, METH_VARARGS, NULL },
   { "DBSockAddr",  (PyCFunction) z_policy_dispatch_bind_new_instance_sa, METH_VARARGS | METH_KEYWORDS, NULL },
   { "DBIface",  (PyCFunction) z_policy_dispatch_bind_new_instance_iface, METH_VARARGS | METH_KEYWORDS, NULL },
   { "DBIfaceGroup",  (PyCFunction) z_policy_dispatch_bind_new_instance_iface_group, METH_VARARGS | METH_KEYWORDS, NULL },
+#ifdef ENABLE_KZORP
   { "getKZorpResult", (PyCFunction) z_policy_dispatch_get_kzorp_result, METH_VARARGS, NULL },
+#endif
   { NULL,      NULL, 0, NULL }   /* sentinel*/
 };
 
