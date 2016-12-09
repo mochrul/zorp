@@ -25,6 +25,8 @@ test -x $ZORPCTL || exit 0
 
 set -e
 
+. /lib/lsb/init-functions
+
 case "$1" in
   start)
   	shift

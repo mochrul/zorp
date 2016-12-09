@@ -8,21 +8,21 @@ Build-Depends: python-dev,
                libglib2.0-dev (>= 2.2.1),
                libzorpll-6.0-8-dev,
                python-dnspython, gperf,
-               debhelper (>=9),
+               debhelper (>=10),
                automake,
                autoconf,
                libtool,
                dh-autoreconf,
                dh-python,
                libboost-test1.62-dev,
-               python-openssl (>= 0.10-1),
+               python-openssl (>= 0.10),
                python-radix,
 
 Package: zorp
 Section: net
 Architecture: linux-any
-Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dnspython, python-kzorp (=${source:Version}), ${misc:Depends},
-	 adduser, ${python:Depends}, python-radix
+Depends: ${shlibs:Depends}, python-openssl (>= 0.10), python-dnspython, ${misc:Depends},
+	 adduser, ${python:Depends}, python-radix, lsb-base
 Suggests: zorp-doc, zorp-modules (= ${binary:Version})
 Replaces: zorp-modules (<< 3.9.0-1)
 Breaks: zorp-modules (<< 3.9.0-1)
@@ -81,14 +81,3 @@ Description: Default proxy modules for Zorp
  .
  This package includes proxies for the protocols: FINGER, FTP, HTTP,
  SSL, TELNET, WHOIS, and two general modules ANYPY and PLUG.
-
-Package: python-kzorp
-Architecture: all
-Section: python
-Depends: ${python:Depends}, ${misc:Depends}
-Description: Python bindings for kzorp.
- Zorp is a new generation firewall. It is essentially a transparent proxy
- firewall, with strict protocol analyzing proxies, a modular architecture,
- and fine-grained control over the mediated traffic. Configuration decisions
- .
- General python bindings for kzorp.
