@@ -1,0 +1,25 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Fri, 25 Nov 2016 22:13:47 +0100
+Subject: Add fd-limit option
+
+Because the tests run under a normal users
+name, raising the fd limit is not quite
+possible. 1024 is is low enough, that
+theoretically it can work on every host.
+---
+ tests/python/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/python/Makefile.am b/tests/python/Makefile.am
+index 916f608..ce9ca43 100644
+--- a/tests/python/Makefile.am
++++ b/tests/python/Makefile.am
+@@ -4,7 +4,7 @@ AM_TESTS_ENVIRONMENT = G_DEBUG='fatal_warnings gc-friendly'; G_SLICE='always-mal
+ 
+ TEST_EXTENSIONS = .py
+ PY_LOG_COMPILER = $(top_builddir)/zorp/zorp
+-AM_PY_LOG_FLAGS = -F --no-syslog --no-caps --user `id --name --user`  --group `id --name --group` -p
++AM_PY_LOG_FLAGS = -F --no-syslog --no-caps --fd-limit-min 1024 -p
+ 
+ TESTS = $(check_SCRIPTS)
+ EXTRA_DIST = $(check_SCRIPTS)

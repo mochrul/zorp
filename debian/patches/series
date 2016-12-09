@@ -4,3 +4,5 @@
 0004-Debian-directory-is-not-generated.patch
 0005-Modernize-AM_INIT_AUTOMAKE-and-add-foreign-key.patch
 0006-Removed-obsoleted-ssl-methods.patch
+0007-Add-fd-limit-option.patch
+0008-Removed-option-which-prevent-building.patch
