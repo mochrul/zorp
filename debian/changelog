@@ -1,13 +1,17 @@
-zorp (6.0.8-8~2.gbp2d3897) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @2d3897e6107d663e812776f6cb3320362028055c **
+zorp (6.0.8-8) experimental; urgency=medium
 
   * New upstream version
   * [1f0f4eb] Added a debug message to test script
   * [68a269f] Added gbp.conf
   * [2d3897e] (Re)Applied debian patches
+  * [8f4f1b1] Added some patch needed to compile the project
+  * [e5c6e99] Added another important patch to make the project compile
+  * [7bfdbca] Fixed libssl dependency (Closes: #828620)
+  * [0bd4d8d] Re-shape the debianization.
+    Follow the changes happened between 3.9 and 6.0
+    with the debianization.
 
- -- Szilárd Pfeiffer <mailbox@pfeifferszilard.hu>  Sat, 08 Oct 2016 17:19:26 +0200
+ -- SZALAY Attila <sasa@debian.org>  Fri, 09 Dec 2016 12:45:38 +0100
 
 zorp (3.9.5-7) unstable; urgency=medium
 
