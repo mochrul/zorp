@@ -3,12 +3,25 @@ Section: net
 Priority: optional
 Maintainer: SZALAY Attila <sasa@debian.org>
 Standards-Version: 3.9.2
-Build-Depends: python-dev, libssl1.0-dev | libssl-dev (<< 1.1.0~), libglib2.0-dev (>= 2.2.1), libzorpll-dev (>=3.9.0.1), python-dns, gperf, debhelper (>=9), automake, autoconf, libtool, dh-autoreconf, dh-python
+Build-Depends: python-dev,
+               libssl1.0-dev | libssl-dev (<< 1.1.0~),
+               libglib2.0-dev (>= 2.2.1),
+               libzorpll-6.0-8-dev,
+               python-dnspython, gperf,
+               debhelper (>=9),
+               automake,
+               autoconf,
+               libtool,
+               dh-autoreconf,
+               dh-python,
+               libboost-test1.62-dev,
+               python-openssl (>= 0.10-1),
+               python-radix,
 
 Package: zorp
 Section: net
 Architecture: linux-any
-Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dns, python-kzorp (=${source:Version}), ${misc:Depends},
+Depends: ${shlibs:Depends}, python-openssl (>= 0.10-1), python-dnspython, python-kzorp (=${source:Version}), ${misc:Depends},
 	 adduser, ${python:Depends}, python-radix
 Suggests: zorp-doc, zorp-modules (= ${binary:Version})
 Replaces: zorp-modules (<< 3.9.0-1)
@@ -26,20 +39,7 @@ Description: Advanced protocol analyzing firewall
  of the attacks do not cross a Zorp based firewall even if the given service
  is permitted.
 
-Package: zorp-dbg
-Architecture: linux-any
-Section: debug
-Priority: extra
-Depends: zorp (= ${binary:Version}), ${misc:Depends}
-Description: Advanced protocol analyzing firewall
- Zorp is a new generation firewall. It is essentially a transparent proxy
- firewall, with strict protocol analyzing proxies, a modular architecture,
- and fine-grained control over the mediated traffic. Configuration decisions
- are scriptable with the Python based configuration language.
- .
- Debug symbols.
-
-Package: libzorp3.9
+Package: libzorp6.0
 Section: libs
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -56,7 +56,7 @@ Description: Runtime library of Zorp
 Package: libzorp-dev
 Section: libdevel
 Architecture: linux-any
-Depends: python-dev (>=2.6), libzorpll-dev, libzorp3.9 (= ${binary:Version}), ${misc:Depends}
+Depends: python-dev (>=2.6), libzorpll-dev, libzorp6.0 (= ${binary:Version}), ${misc:Depends}
 Conflicts: zorp-dev, libzorp0-dev
 Breaks: libzorp3.9-0 (<= 3.9.2-4)
 Replaces: libzorp0-dev, zorp-dev
@@ -81,20 +81,6 @@ Description: Default proxy modules for Zorp
  .
  This package includes proxies for the protocols: FINGER, FTP, HTTP,
  SSL, TELNET, WHOIS, and two general modules ANYPY and PLUG.
-
-
-Package: zorp-modules-dbg
-Architecture: linux-any
-Section: debug
-Priority: extra
-Depends: zorp-modules (= ${binary:Version}), ${misc:Depends}
-Description: Default proxy modules for Zorp
- Zorp is a new generation firewall. It is essentially a transparent proxy
- firewall, with strict protocol analyzing proxies, a modular architecture,
- and fine-grained control over the mediated traffic. Configuration decisions
- are scriptable with the Python based configuration language.
- .
- This package includes debug symbol of proxies.
 
 Package: python-kzorp
 Architecture: all

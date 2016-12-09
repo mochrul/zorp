@@ -1,0 +1,34 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Fri, 25 Nov 2016 21:08:32 +0100
+Subject: Removed obsoleted ssl methods
+
+---
+ lib/pyencryption.cc | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/lib/pyencryption.cc b/lib/pyencryption.cc
+index 6f14bdc..454c9dd 100644
+--- a/lib/pyencryption.cc
++++ b/lib/pyencryption.cc
+@@ -106,8 +106,8 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
+             self->ssl_client_context = SSL_CTX_new(SSLv23_server_method());
+             break;
+           case ENCRYPTION_METHOD_SSLV3:
+-            self->ssl_client_context = SSL_CTX_new(SSLv3_server_method());
+-            break;
++            z_log(NULL, CORE_POLICY, 1, "Bad SSL method; method='%d'", client_method);
++            return false;
+           case ENCRYPTION_METHOD_TLSV1:
+             self->ssl_client_context = SSL_CTX_new(TLSv1_server_method());
+             break;
+@@ -138,8 +138,8 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
+             self->ssl_server_context = SSL_CTX_new(SSLv23_client_method());
+             break;
+           case ENCRYPTION_METHOD_SSLV3:
+-            self->ssl_server_context = SSL_CTX_new(SSLv3_client_method());
+-            break;
++            z_log(NULL, CORE_POLICY, 1, "Bad SSL method; method='%d'", server_method);
++            return false;
+           case ENCRYPTION_METHOD_TLSV1:
+             self->ssl_server_context = SSL_CTX_new(TLSv1_client_method());
+             break;
