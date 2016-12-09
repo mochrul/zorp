@@ -57,6 +57,7 @@ typedef struct _ZProxySSLHandshake {
   ZEndpoint side;
 
   /* result */
+  bool completed;
   gint ssl_err;
   gchar ssl_err_str[512];
 
@@ -80,7 +81,7 @@ gboolean z_proxy_ssl_init_stream_nonblocking(ZProxy *self, ZEndpoint side);
 gboolean z_proxy_ssl_request_handshake(ZProxy *self, ZEndpoint side, gboolean forced);
 void z_proxy_ssl_clear_session(ZProxy *self, ZEndpoint side);
 void z_proxy_ssl_set_force_connect_at_handshake(ZProxy *self, gboolean val);
-void z_proxy_ssl_get_sni_from_client(ZProxy *self);
+void z_proxy_ssl_get_sni_from_client(ZProxy *self, ZStream *stream);
 int z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx);
 int z_proxy_ssl_client_cert_cb(SSL *ssl, X509 **cert, EVP_PKEY **pkey);
 int z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data);

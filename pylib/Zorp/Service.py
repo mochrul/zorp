@@ -441,7 +441,8 @@ Rule(src_zone='office',
                     dnat_policy=None, dnat=None, authentication_policy=None, authorization_policy=None,
                     max_instances=0, max_sessions=0, auth_name=None, resolver_policy=None, auth=None,
                     auth_policy=None, keepalive=None,
-                    encryption_policy=None, limit_target_zones_to=None, detector_config=None,
+                    encryption_policy=None, limit_target_zones_to=None,
+                    detector_config=None, detector_default_service_name=None,
                     ):
         """
         <method maturity="stable">
@@ -695,6 +696,7 @@ Rule(src_zone='office',
 
         self.limit_target_zones_to = limit_target_zones_to
         self.detector_config = detector_config
+        self.detector_default_service_name = detector_default_service_name
 
         self.max_instances = max_instances
         self.max_sessions = max_sessions
@@ -928,6 +930,7 @@ Rule(dst_port=5555,
         """
         def addNATMappings(messages, nat_type, nat_policy):
             import kzorp.messages
+            message_version = 2 if Globals.kzorp_version > (4, 5) else 1
             if nat_type == NAT_SNAT:
                 msg_class = kzorp.messages.KZorpAddServiceSourceNATMappingMessage
             else:
@@ -935,7 +938,7 @@ Rule(dst_port=5555,
             if nat_policy:
                 nat_mappings = nat_policy.getKZorpMapping()
                 for src_tuple, dst_tuple, map_tuple in nat_mappings:
-                    messages.append(msg_class(self.name, src_tuple, map_tuple, dst_tuple))
+                    messages.append(msg_class(self.name, src_tuple, map_tuple, dst_tuple, version=message_version))
 
         import kzorp.messages
         flags = kzorp.messages.KZF_SVC_LOGGING

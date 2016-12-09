@@ -12,14 +12,48 @@
 /* Enable IPv6 support */
 #undef ENABLE_IPV6
 
+/* Enable kzorp support */
+#undef ENABLE_KZORP
+
 /* Enable prefork support */
 #undef ENABLE_PREFORK
 
 /* Enable trace messages */
 #undef ENABLE_TRACE
 
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
+
+/* Define to 1 if you have the declaration of `IPV6_BINDANY', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IPV6_BINDANY
+
+/* Define to 1 if you have the declaration of `IPV6_TRANSPARENT', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IPV6_TRANSPARENT
+
+/* Define to 1 if you have the declaration of `IP_BINDANY', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IP_BINDANY
+
+/* Define to 1 if you have the declaration of `IP_FREEBIND', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IP_FREEBIND
+
+/* Define to 1 if you have the declaration of `IP_TRANSPARENT', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IP_TRANSPARENT
+
+/* Define to 1 if you have the declaration of `TCP_CORK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCP_CORK
+
+/* Define to 1 if you have the declaration of `TCP_NOPUSH', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCP_NOPUSH
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -35,6 +69,9 @@
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <linux/netlink.h> header file. */
+#undef HAVE_LINUX_NETLINK_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -89,6 +126,9 @@
 
 /* Define to 1 if you have the <sys/syscall.h> header file. */
 #undef HAVE_SYS_SYSCALL_H
+
+/* Define to 1 if you have the <sys/thr.h> header file. */
+#undef HAVE_SYS_THR_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H

@@ -35,7 +35,16 @@
 #include <zorp/process.h>
 
 #include <string.h>
+#if defined(linux)
+#ifdef HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
+#endif
+#elif defined(__FreeBSD__)
+#ifdef HAVE_SYS_THR_H
+#include <sys/thr.h>
+#endif
+#endif
+#include <sys/types.h>
 
 
 /*
@@ -2215,6 +2224,24 @@ z_szig_destroy(void)
   /* FIXME: free result tree */
 }
 
+static int
+get_thread_id(void)
+{
+    int ret = -1;
+
+#if defined(linux)
+    ret = syscall(SYS_gettid);
+#elif defined(__NetBSD__)
+    ret = _lwp_self();
+#elif defined(__FreeBSD__)
+    long lwpid;
+    thr_self(&lwpid);
+    ret = lwpid;
+#endif
+
+    return ret;
+}
+
 void
 z_szig_value_add_thread_id(ZProxy *proxy)
 {
@@ -2240,7 +2267,7 @@ z_szig_value_add_thread_id(ZProxy *proxy)
       ZSzigValue *sv;
       gchar *tid_str;
 
-      tid = (pid_t) syscall(SYS_gettid);
+      tid = (pid_t) get_thread_id();
       tid_str = g_strdup_printf("%d", tid);
       sv = z_szig_value_new_connection_props(service_name, instance_id, 0, 0, NULL);
       z_szig_value_add_connection_prop(sv, "thread_id", tid_str);

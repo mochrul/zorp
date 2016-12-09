@@ -24,7 +24,7 @@
 from Zorp.Core import *
 from Zorp.Zorp import quit
 from Zorp.Proxy import Proxy
-from Http import HttpProxy
+from Zorp.Http import HttpProxy
 from Zorp.Session import MasterSession, StackedSession
 import Zorp.Globals
 import Zorp.Resolver

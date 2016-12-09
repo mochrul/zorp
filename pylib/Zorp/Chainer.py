@@ -81,6 +81,7 @@ from NAT import NAT_SNAT, NAT_DNAT
 from Cache import TimedCache
 from Exceptions import DACException
 import types
+import socket
 
 class AbstractChainer(object):
     """
@@ -279,7 +280,8 @@ in a roundrobin fashion.</para>
                               server_socket_mark=session.proxy.server_socket_mark)
                 session.server_stream = conn.start()
                 session.server_local = conn.local
-                session.owner.server_local = conn.local
+                mastersession = session.getMasterSession()
+                mastersession.server_local = conn.local
             except IOError:
                 session.server_stream = None
             if session.server_stream == None:
@@ -949,7 +951,7 @@ class SideStackChainer(AbstractChainer):
         <method internal="yes">
         </method>
         """
-        return self.right_chainer.getProcotol()
+        return self.right_chainer.getProtocol()
 
     def chainParent(self, session):
         """
@@ -977,7 +979,7 @@ class SideStackChainer(AbstractChainer):
         </method>
         """
         try:
-            streams = streamPair(AF_UNIX, SOCK_STREAM)
+            streams = streamPair(socket.AF_UNIX, socket.SOCK_STREAM)
         except IOError:
             ## LOG ##
             # This message indicates that side stacking failed, because Zorp was unable to create a socketPair.
@@ -1007,7 +1009,7 @@ class SideStackChainer(AbstractChainer):
                     (session.server_stream.fd, ss.client_stream.fd, self.right_class.__name__))
             proxy = self.right_class(ss)
             if ProxyGroup(1).start(proxy):
-                return ss.client_stream
+                return session.server_stream
             else:
                 raise RuntimeError, "Error starting proxy in group"
         except:

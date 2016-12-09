@@ -37,6 +37,7 @@ from string import split, atoi
 from socket import htonl, ntohl, inet_ntoa, inet_aton, inet_pton, inet_ntop, ntohs
 import socket
 import struct
+from netaddr import IPNetwork, IPRange
 
 def packed_1operand(a, f):
     """<function internal="yes">apply second argument to each character of the packed string 'a', converted to int</function>"""
@@ -106,6 +107,8 @@ class InetSubnet(Subnet):
                </method>
         """
         super(InetSubnet, self).__init__()
+        ip_network = IPNetwork(addr)
+        self.ip_range = IPRange(ip_network[0], ip_network[-1])
         parts = split(addr,'/')
         try:
             self.mask_bits = atoi(parts[1])
@@ -263,6 +266,8 @@ class Inet6Subnet(Subnet):
             return ret.ljust(16, chr(0))
 
         super(Inet6Subnet, self).__init__()
+        ip_network = IPNetwork(addr)
+        self.ip_range = IPRange(ip_network[0], ip_network[-1])
 
         parts = split(addr, '/')
 

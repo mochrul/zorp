@@ -219,18 +219,20 @@ class X509KeyBridge(X509KeyManager):
         """
         key_pem = self.readPEM(key_file)
         if trusted_ca_files:
+            (trusted_cert_file, trusted_key_file, trusted_passphrase) = trusted_ca_files
             try:
-                passphrase = trusted_ca_files[2]
+                passphrase = trusted_passphrase
             except IndexError:
                 passphrase = ""
-            trusted_ca_pems = (self.readPEM(trusted_ca_files[0]), self.readPEM(trusted_ca_files[1]), passphrase)
+            trusted_ca_pems = (self.readPEM(trusted_cert_file), self.readPEM(trusted_key_file), passphrase)
 
         if untrusted_ca_files:
+            (untrusted_cert_file, untrusted_key_file, untrusted_passphrase) = untrusted_ca_files
             try:
-                passphrase = untrusted_ca_files[2]
+                passphrase = untrusted_passphrase
             except IndexError:
                 passphrase = ""
-            untrusted_ca_pems = (self.readPEM(untrusted_ca_files[0]), self.readPEM(untrusted_ca_files[1]), passphrase)
+            untrusted_ca_pems = (self.readPEM(untrusted_cert_file), self.readPEM(untrusted_key_file), passphrase)
 
         self._new_init(key_pem, cache_directory, trusted_ca_pems, untrusted_ca_pems, key_passphrase, extension_whitelist)
 
@@ -258,20 +260,26 @@ class X509KeyBridge(X509KeyManager):
 
         if not trusted_ca_files:
             trusted_ca_files = (None, None, None)
+        (trusted_cert_file, trusted_key_file, trusted_passphrase) = trusted_ca_files
         self.key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, key_pem, key_passphrase)
+        self.key_pem = key_pem
         try:
-            passphrase = trusted_ca_files[2]
+            passphrase = trusted_passphrase
         except IndexError:
             passphrase = ""
-        self.trusted_ca = (OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, trusted_ca_files[0]),
-                           OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, trusted_ca_files[1], passphrase))
+        self.trusted_ca = (OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, trusted_cert_file),
+                           OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, trusted_key_file, passphrase))
+        self.trusted_ca_pem = trusted_cert_file
+        self.untrusted_ca_pem = ""
         if untrusted_ca_files:
+            (untrusted_cert_file, untrusted_key_file, untrusted_passphrase) = untrusted_ca_files
             try:
-                passphrase = untrusted_ca_files[2]
+                passphrase = untrusted_passphrase
             except IndexError:
                 passphrase = ""
-            self.untrusted_ca = (OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, untrusted_ca_files[0]),
-                                 OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, untrusted_ca_files[1], passphrase))
+            self.untrusted_ca = (OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, untrusted_cert_file),
+                                 OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, untrusted_key_file, passphrase))
+            self.untrusted_ca_pem = untrusted_cert_file
 
     def readPEM(self, filename):
         """<method internal="yes">
@@ -381,7 +389,11 @@ class X509KeyBridge(X509KeyManager):
         new_cert.set_pubkey(key)
         hash_alg = orig_cert.get_signature_algorithm()
 
-        new_cert.sign(ca_key, hash_alg)
+        try:
+            new_cert.sign(ca_key, hash_alg)
+        except ValueError, e:
+            log(None, CORE_INFO, 3, "Could not sign cert with hash algorithm, falling back to SHA256; hash_alg='%s'", hash_alg)
+            new_cert.sign(ca_key, 'sha256')
 
         return new_cert
 
@@ -421,11 +433,13 @@ class X509KeyBridge(X509KeyManager):
         try:
             trusted = 1
             orig_blob = selector['bridge-trusted-key']
+            hash_key = orig_blob + self.trusted_ca_pem + self.key_pem
         except KeyError:
             trusted = 0
             orig_blob = selector['bridge-untrusted-key']
+            hash_key = orig_blob + self.untrusted_ca_pem + self.key_pem
 
-        hash = hashlib.md5(orig_blob).hexdigest()
+        hash = hashlib.sha256(hash_key).hexdigest()
         if trusted:
             cert_file = '%s/trusted-%s.crt' % (self.cache_directory, hash)
             ca_pair = self.trusted_ca

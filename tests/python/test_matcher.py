@@ -121,21 +121,27 @@ class TestCombineMatcher(unittest.TestCase):
 
 class TestDNSMatcher(unittest.TestCase):
 
+    class FakeDNSResolver(DNSResolver):
+        def resolve(self, host, resolved_cnames=None):
+            return (180, ['1.2.3.4'], ['1:2:3:4:5:6:7:8']) if host == 'matching' else (180, ['5.6.7.8'], ['9:a:b:c:d:e:f:0'])
+
     def tearDown(self):
         """Clean up global state since constructing a matcher policy has side effects."""
         import Zorp.Globals
         Zorp.Globals.matchers.clear()
 
     def test_dns_matcher(self):
-        a = MatcherPolicy("a", DNSMatcher(server="10.10.0.1", hosts=("core.balabit", "blog.balabit")))
+        Zorp.Matcher.DNSResolver = TestDNSMatcher.FakeDNSResolver
+
+        a = MatcherPolicy("a", DNSMatcher(hosts='matching'))
         Zorp.Matcher.validateMatchers()
 
-        a.matcher.cache = MyResolverCache(None)
-
-        print a.matcher.checkMatch("10.10.0.1")
-
-        self.assertTrue(a.matcher.checkMatch("10.10.0.1"))
-        self.assertFalse(a.matcher.checkMatch("10.10.0.2"))
+        self.assertTrue(a.matcher.checkMatch("1.2.3.4"))
+        self.assertTrue(a.matcher.checkMatch("1:2:3:4:5:6:7:8"))
+        self.assertFalse(a.matcher.checkMatch("5.6.7.8"))
+        self.assertFalse(a.matcher.checkMatch("9:a:b:c:d:e:f:0"))
+        self.assertFalse(a.matcher.checkMatch("11.12.13.14"))
+        self.assertFalse(a.matcher.checkMatch("11:12:13:14:15:16:17:18"))
 
 def init(name, virtual_name, is_master):
     unittest.main(argv=('/',))

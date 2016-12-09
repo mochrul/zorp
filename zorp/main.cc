@@ -35,7 +35,9 @@
 #include <zorp/dispatch.h>
 #include <zorp/process.h>
 #include <zorp/blob.h>
+#ifdef HAVE_LINUX_NETLINK_H
 #include <zorp/ifmonitor.h>
+#endif
 
 #include <zorp/stackdump.h>
 
@@ -570,8 +572,10 @@ main(int argc, char *argv[])
   z_main_loop_init();
 
 
+#ifdef HAVE_LINUX_NETLINK_H
   z_ifmon_init();
   z_dispatch_init();
+#endif
   z_registry_init();
 
 
@@ -615,7 +619,9 @@ main(int argc, char *argv[])
     {
       z_python_destroy();
       z_dispatch_destroy();
+#ifdef HAVE_LINUX_NETLINK_H
       z_ifmon_destroy();
+#endif
     }
   z_main_loop_destroy();
   z_ssl_destroy();

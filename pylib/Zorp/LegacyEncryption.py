@@ -18,6 +18,7 @@
 ## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
+
 from Encryption import *
 import types
 
@@ -45,6 +46,8 @@ class LegacyEncryption(object):
         res = f.read()
         f.close()
         return res
+
+    hash_pattern = re.compile("[0-9a-fA-F]*\.(r){0,1}[0-9]")
 
     def readHashDir(self, hash, directory):
         """<method internal="yes">
@@ -137,12 +140,10 @@ class LegacyEncryption(object):
 
             if hasattr(self, "client_ca_directory"):
                 log(proxy.session.session_id, SSL_DEBUG, 6, "Compatibility feature, processing client_ca_directory; value='%s'" % self.client_ca_directory)
-                #self.readHashDir(self.client_local_ca_list, self.client_ca_directory)
                 self.readHashDir(encryption.settings.client_local_ca_list, self.client_ca_directory)
 
             if hasattr(self, "client_crl_directory"):
                 log(proxy.session.session_id, SSL_DEBUG, 6, "Compatibility feature, processing client_crl_directory; value='%s'" % self.client_crl_directory)
-                #self.readHashDir(self.client_local_crl_list, self.client_crl_directory)
                 self.readHashDir(encryption.settings.client_local_crl_list, self.client_crl_directory)
 
             if self.client_keypair_generate:
@@ -180,12 +181,10 @@ class LegacyEncryption(object):
 
             if hasattr(self, "server_ca_directory"):
                 log(proxy.session.session_id, SSL_DEBUG, 6, "Compatibility feature, processing server_ca_directory; value='%s'" % self.server_ca_directory)
-                #self.readHashDir(self.server_local_ca_list, self.server_ca_directory)
                 self.readHashDir(encryption.settings.server_local_ca_list, self.server_ca_directory)
 
             if hasattr(self, "server_crl_directory"):
                 log(proxy.session.session_id, SSL_DEBUG, 6, "Compatibility feature, processing server_crl_directory; value='%s'" % self.server_crl_directory)
-                #self.readHashDir(self.server_local_crl_list, self.server_crl_directory)
                 self.readHashDir(encryption.settings.server_local_crl_list, self.server_crl_directory)
 
             if self.server_keypair_generate:

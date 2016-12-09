@@ -41,7 +41,7 @@
   </metainfo>
 </module>"""
 
-from Zorp.Proxy import Proxy
+from Proxy import Proxy
 
 # policy verdicts
 ANYPY_UNSPEC     = 0 # policy doesn't specify it, do something sensible

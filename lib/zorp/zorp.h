@@ -43,7 +43,7 @@
 #define ZORP_AUTH_KEY_FILE	ZORP_SYSCONFDIR "/zorp.key"
 #define ZORP_STATE_DIR          ZORP_STATEDIR
 #define ZORP_PID_FILE_DIR       ZORP_PIDFILEDIR
-#define ZORP_SZIG_SOCKET_NAME      ZORP_PID_FILE_DIR "zorpctl"
+#define ZORP_SZIG_SOCKET_NAME      ZORP_PID_FILE_DIR "/zorpctl"
 #define ZORP_WORKING_DIR        ZORP_STATEDIR "/cores"
 
 #define MAX_SESSION_ID		128

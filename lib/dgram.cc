@@ -193,35 +193,35 @@ z_nf_dgram_socket_setup(gint fd, guint flags, gint tos, gint family)
         {
         case PF_INET:
           tmp = 1;
-          if (setsockopt(fd, SOL_IP, IP_RECVORIGDSTADDR, &tmp, sizeof(tmp)) < 0)
+          if (setsockopt(fd, IPPROTO_IP, IP_RECVORIGDSTADDR, &tmp, sizeof(tmp)) < 0)
             {
               /*LOG
                 This message indicates that the setsockopt requesting
                 reception of original destination addresses of UDP
                 frames failed.
               */
-              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(SOL_IP, IP_RECVORIGADDRS); error='%s'", g_strerror(errno));
+              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(IPPROTO_IP, IP_RECVORIGADDRS); error='%s'", g_strerror(errno));
               z_return(FALSE);
             }
 #if ZORPLIB_ENABLE_TOS
           tmp = 1;
-          if (setsockopt(fd, SOL_IP, IP_RECVTOS, &tmp, sizeof(tmp)) < 0)
+          if (setsockopt(fd, IPPROTO_IP, IP_RECVTOS, &tmp, sizeof(tmp)) < 0)
             {
-              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(SOL_IP, IP_RECVTOS); error='%s'", g_strerror(errno));
+              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(IPPROTO_IP, IP_RECVTOS); error='%s'", g_strerror(errno));
               z_return(FALSE);
             }
 #endif
           break;
         case PF_INET6:
           tmp = 1;
-          if (setsockopt(fd, SOL_IPV6, IPV6_RECVORIGDSTADDR, &tmp, sizeof(tmp)) < 0)
+          if (setsockopt(fd, IPPROTO_IPV6, IPV6_RECVORIGDSTADDR, &tmp, sizeof(tmp)) < 0)
             {
               /*LOG
                 This message indicates that the setsockopt requesting
                 reception of original destination addresses of UDP
                 frames failed.
               */
-              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(SOL_IPV6, IPV6_RECVORIGADDRS); error='%s'", g_strerror(errno));
+              z_log(NULL, CORE_ERROR, 3, "Error during setsockopt(IPPROTO_IPV6, IPV6_RECVORIGADDRS); error='%s'", g_strerror(errno));
               /* FIXME: we should signal failure here, however, we
                  must not do so because IPv6 tproxy support is not
                  widespread enough to expect that it will be
@@ -308,7 +308,7 @@ z_nf_dgram_socket_recv(gint fd, ZPktBuf **packet, ZSockAddr **from_addr, ZSockAd
 
       for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg,cmsg))
         {
-          if (to_addr && cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_ORIGDSTADDR)
+          if (to_addr && cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_ORIGDSTADDR)
             {
               struct sockaddr_in *orig = (struct sockaddr_in *) CMSG_DATA(cmsg);
 
@@ -322,7 +322,7 @@ z_nf_dgram_socket_recv(gint fd, ZPktBuf **packet, ZSockAddr **from_addr, ZSockAd
                   *to_addr = z_sockaddr_inet_new2(&to);
                 }
             }
-          else if (to_addr && cmsg->cmsg_level == SOL_IPV6 && cmsg->cmsg_type == IPV6_ORIGDSTADDR)
+          else if (to_addr && cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_ORIGDSTADDR)
             {
               struct sockaddr_in6 *orig = (struct sockaddr_in6 *) CMSG_DATA(cmsg);
 
@@ -336,7 +336,7 @@ z_nf_dgram_socket_recv(gint fd, ZPktBuf **packet, ZSockAddr **from_addr, ZSockAd
                   *to_addr = z_sockaddr_inet6_new2(&to);
                 }
             }
-          else if (tos && cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_TOS)
+          else if (tos && cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_TOS)
             {
               memcpy(tos, CMSG_DATA(cmsg), sizeof(*tos));
             }

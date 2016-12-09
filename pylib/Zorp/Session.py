@@ -110,6 +110,13 @@ class AbstractSession(object):
         if self.client_stream:
             self.client_stream.close()
 
+    def getMasterSession(self):
+        mastersession = self
+        while not isinstance(mastersession, MasterSession):
+            mastersession = mastersession.owner
+
+        return mastersession
+
 def get_protocol_name(protocol):
     """<function internal="yes"/>"""
     try:
@@ -630,8 +637,10 @@ class StackedSession(AbstractSession):
         """
         self.server_address = addr
         self.server_zone = Zone.lookup(addr)
-        self.owner.server_address = addr
-        self.owner.server_zone = self.server_zone
+
+        mastersession = self.getMasterSession()
+        mastersession.server_address = addr
+        mastersession.server_zone = self.server_zone
 
     def isServerPermitted(self):
         """
