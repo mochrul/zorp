@@ -194,14 +194,14 @@ index f8d0997..7704aa9 100644
  pkgdata_DATA = Whois.py
  
 diff --git a/tests/unit/Makefile.am b/tests/unit/Makefile.am
-index b960437..72db5ef 100644
+index ad0a06a..dc7af30 100644
 --- a/tests/unit/Makefile.am
 +++ b/tests/unit/Makefile.am
 @@ -1,6 +1,6 @@
  LIBS = @ZORP_LIBS@ @MODULES_LIBS@ @DEPS_LIBS@
- LDADD = -lboost_unit_test_framework
+ LDADD = -lboost_unit_test_framework -lstdc++
 -CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
 +AM_CPPFLAGS = @MODULES_CPPFLAGS@ -DBOOST_TEST_DYN_LINK=1
  
- check_PROGRAMS = test_pystruct test_szig test_proxy
- 
+ check_PROGRAMS = \
+ 	test_dhparam \

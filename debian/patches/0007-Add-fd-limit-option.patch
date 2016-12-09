@@ -11,7 +11,7 @@ theoretically it can work on every host.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tests/python/Makefile.am b/tests/python/Makefile.am
-index 916f608..ce9ca43 100644
+index aeeb68c..e7076fa 100644
 --- a/tests/python/Makefile.am
 +++ b/tests/python/Makefile.am
 @@ -4,7 +4,7 @@ AM_TESTS_ENVIRONMENT = G_DEBUG='fatal_warnings gc-friendly'; G_SLICE='always-mal

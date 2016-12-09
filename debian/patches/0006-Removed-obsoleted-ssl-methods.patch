@@ -7,7 +7,7 @@ Subject: Removed obsoleted ssl methods
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/lib/pyencryption.cc b/lib/pyencryption.cc
-index 6f14bdc..454c9dd 100644
+index 7fdb0e9..c8566a6 100644
 --- a/lib/pyencryption.cc
 +++ b/lib/pyencryption.cc
 @@ -106,8 +106,8 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
@@ -21,7 +21,7 @@ index 6f14bdc..454c9dd 100644
            case ENCRYPTION_METHOD_TLSV1:
              self->ssl_client_context = SSL_CTX_new(TLSv1_server_method());
              break;
-@@ -138,8 +138,8 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
+@@ -145,8 +145,8 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
              self->ssl_server_context = SSL_CTX_new(SSLv23_client_method());
              break;
            case ENCRYPTION_METHOD_SSLV3:

@@ -7,7 +7,7 @@ Subject: Removed all variables related to the profession release
  1 file changed, 2 insertions(+), 39 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index acca7e4..8841b7c 100644
+index 1e53ad6..de246b9 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -3,7 +3,6 @@ dnl
@@ -32,7 +32,7 @@ index acca7e4..8841b7c 100644
  
  dnl ***************************************************************************
  dnl Dependencies
-@@ -46,36 +44,9 @@ case "$srcdir" in
+@@ -47,36 +45,9 @@ case "$srcdir" in
          ;;
  esac
  
@@ -69,7 +69,7 @@ index acca7e4..8841b7c 100644
  AM_CONFIG_HEADER(lib/zorp/zorpconfig.h)
  AC_PREFIX_DEFAULT(/usr/local)
  
-@@ -369,15 +340,10 @@ dnl ***************************************************************************
+@@ -388,15 +359,10 @@ dnl ***************************************************************************
  dnl Size check of pointers
  AC_CHECK_SIZEOF(void *)
  
@@ -85,15 +85,15 @@ index acca7e4..8841b7c 100644
  AC_DEFINE_UNQUOTED(ZORP_PRODUCT_NAME, "$ZORP_PRODUCT_NAME", [Required product name in license])
  AC_SUBST(ZORP_PRODUCT_NAME)
  
-@@ -464,7 +430,6 @@ coverage: $enable_coverage
- ipoptions: $enable_ip_options
+@@ -485,7 +451,6 @@ ipoptions: $enable_ip_options
  ipv6: $enable_ipv6
  prefork: $enable_prefork
+ kzorp: $enable_kzorp
 -License: $ZORP_PACKAGE_LICENSE
  
  
  EOF
-@@ -475,8 +440,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
+@@ -496,8 +461,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
  
  AC_SUBST(GLIB_MIN_VERSION)
  AC_SUBST(ZORPLL_MIN_VERSION)
