@@ -6,3 +6,4 @@
 0006-Removed-obsoleted-ssl-methods.patch
 0007-Add-fd-limit-option.patch
 0008-Removed-option-which-prevent-building.patch
+0009-Added-needed-semicolon.patch
