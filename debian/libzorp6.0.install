@@ -1,4 +1,2 @@
-usr/lib/libzorp-6.0.so.8
-usr/lib/libzorpproxy-6.0.so.8.0.0
-usr/lib/libzorpproxy-6.0.so.8
-usr/lib/libzorp-6.0.so.8.0.0
+usr/lib/libzorp-6.0.so.*
+usr/lib/libzorpproxy-6.0.so.*
