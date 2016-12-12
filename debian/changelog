@@ -1,3 +1,16 @@
+zorp (6.0.10-1) unstable; urgency=medium
+
+  * [a724688] Added patches needed to compile in debian with cowbuilder
+  * [54d820e] Fixed some lintian issue
+  * [aca9e03] Added openssl to dependencies because of dh file generation
+  * [4a184b1] Re-base debian patches to the new version
+  * [51c3fc0] Fixed compilation issue with newer boost
+  * [3670db4] Added dependencies needed to compile and run tests
+  * [1c0f018] Make the install file version-agnostic
+  * [a1ee8f2] Adapt test policy file to the new version
+
+ -- SZALAY Attila <sasa@debian.org>  Mon, 12 Dec 2016 22:21:05 +0100
+
 zorp (6.0.8-8) experimental; urgency=medium
 
   * New upstream version
