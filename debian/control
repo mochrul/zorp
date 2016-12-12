@@ -6,7 +6,7 @@ Standards-Version: 3.9.2
 Build-Depends: python-dev,
                libssl1.0-dev | libssl-dev (<< 1.1.0~),
                libglib2.0-dev (>= 2.2.1),
-               libzorpll-6.0-8-dev,
+               libzorpll-6.0-10-dev,
                python-dnspython, gperf,
                debhelper (>=10),
                automake,
@@ -17,12 +17,13 @@ Build-Depends: python-dev,
                libboost-test1.62-dev,
                python-openssl (>= 0.10),
                python-radix,
+               python-netaddr
 
 Package: zorp
 Section: net
 Architecture: linux-any
 Depends: ${shlibs:Depends}, python-openssl (>= 0.10), python-dnspython, ${misc:Depends},
-	 adduser, ${python:Depends}, python-radix, lsb-base, openssl
+	 adduser, ${python:Depends}, python-radix, lsb-base, openssl, python-netaddr
 Suggests: zorp-doc, zorp-modules (= ${binary:Version})
 Replaces: zorp-modules (<< 3.9.0-1)
 Breaks: zorp-modules (<< 3.9.0-1)
