@@ -1,0 +1,32 @@
+From: =?utf-8?q?Jakab_Krist=C3=B3f?= <jakab.kristof@balasys.hu>
+Date: Fri, 6 Jan 2017 14:38:05 +0100
+Subject: pydict.cc: handle the 16-bit parts of IPv6 addresses as unsigned
+ shorts
+
+References: jira ZORP-869
+---
+ lib/pydict.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/pydict.cc b/lib/pydict.cc
+index 4850b1a..977e73f 100644
+--- a/lib/pydict.cc
++++ b/lib/pydict.cc
+@@ -790,7 +790,7 @@ z_policy_dict_ip_get_value(ZPolicyDict *self G_GNUC_UNUSED, ZPolicyDictEntry *en
+     {
+       struct in6_addr *in6 = (struct in6_addr *) entry->value;
+ 
+-      res = Py_BuildValue("(iiiiiiii)",
++      res = Py_BuildValue("(HHHHHHHH)",
+                           in6->s6_addr[0],
+                           in6->s6_addr[2],
+                           in6->s6_addr[4],
+@@ -832,7 +832,7 @@ z_policy_dict_ip_set_value(ZPolicyDict *self G_GNUC_UNUSED, ZPolicyDictEntry *en
+           {
+             struct in6_addr *in6 = (struct in6_addr *) entry->value;
+ 
+-            if (!PyArg_Parse(new_value, "(iiiiiiii)",
++            if (!PyArg_Parse(new_value, "(HHHHHHHH)",
+                              &in6->s6_addr[0],
+                              &in6->s6_addr[2],
+                              &in6->s6_addr[4],

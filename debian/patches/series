@@ -7,3 +7,5 @@
 0007-Add-fd-limit-option.patch
 0008-Removed-option-which-prevent-building.patch
 0009-Added-needed-semicolon.patch
+0010-pydict.cc-handle-the-16-bit-parts-of-IPv6-addresses-.patch
+0011-pydict.cc-handle-IPv4-addresses-as-unsigned-numbers.patch
