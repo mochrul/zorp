@@ -1,3 +1,9 @@
+zorp (6.0.10-2) unstable; urgency=medium
+
+  * [f1a5a31] Fixed ipv6 handling in big-endian architectures (Closes: #849160)
+
+ -- SZALAY Attila <sasa@debian.org>  Mon, 16 Jan 2017 20:16:11 +0100
+
 zorp (6.0.10-1) unstable; urgency=medium
 
   * [a724688] Added patches needed to compile in debian with cowbuilder
