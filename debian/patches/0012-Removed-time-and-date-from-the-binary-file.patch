@@ -1,0 +1,47 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Wed, 5 Jul 2017 22:14:47 +0200
+Subject: Removed time and date from the binary file
+
+To make the compilation reproducible, the compilation
+time should be removed from the binary.
+---
+ configure.ac | 3 ---
+ zorp/main.cc | 4 ----
+ 2 files changed, 7 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index c6c2489..ff39466 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -431,9 +431,6 @@ AC_SUBST(ZORP_NAGIOS_DIR)
+ 
+ AC_SUBST(ZORP_SYSCONFDIR)
+ 
+-date=`date +%Y/%m/%d`
+-AC_DEFINE_UNQUOTED(ZORP_CONFIG_DATE, "$date", [Configuration date])
+-
+ cat <<EOF
+ 
+ 
+diff --git a/zorp/main.cc b/zorp/main.cc
+index 79fd565..784c363 100644
+--- a/zorp/main.cc
++++ b/zorp/main.cc
+@@ -208,8 +208,6 @@ z_version(void)
+ {
+   printf("Zorp %s (%s)\n"
+          "Revision: %s\n"
+-         "Compile-Date: %s %s\n"
+-         "Config-Date: %s\n"
+          "Trace: %s\n"
+          "Debug: %s\n"
+          "IPOptions: %s\n\n"
+@@ -217,8 +215,6 @@ z_version(void)
+          ,
+          BROCHURE_VERSION, VERSION,
+          ZORP_SOURCE_REVISION,
+-         __DATE__, __TIME__,
+-         ZORP_CONFIG_DATE,
+          ON_OFF_STR(ENABLE_TRACE),
+          ON_OFF_STR(ENABLE_DEBUG),
+          ON_OFF_STR(ENABLE_IPOPTIONS),
