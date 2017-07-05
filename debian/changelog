@@ -1,3 +1,11 @@
+zorp (6.0.10-3) unstable; urgency=medium
+
+  * [c5abb31] Fixed watchfile to point to the new repository
+  * [6fa0e3b] Added patch to remove compilation time from the binaries
+    (Closes: #829710)
+
+ -- SZALAY Attila <sasa@debian.org>  Wed, 05 Jul 2017 22:24:25 +0200
+
 zorp (6.0.10-2) unstable; urgency=medium
 
   * [f1a5a31] Fixed ipv6 handling in big-endian architectures (Closes: #849160)
