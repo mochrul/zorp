@@ -1,3 +1,11 @@
+zorp (6.0.10-4) unstable; urgency=medium
+
+  * [41bb910] Imported upstream patch to fix gcc-7 compile issue
+    (Closes: #853719)
+  * [3b6c113] Fixed autopkg test
+
+ -- SZALAY Attila <sasa@debian.org>  Thu, 10 Aug 2017 14:47:19 -0400
+
 zorp (6.0.10-3) unstable; urgency=medium
 
   * [c5abb31] Fixed watchfile to point to the new repository
