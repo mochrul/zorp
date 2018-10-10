@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,19 +23,19 @@
 
 #include "http.h"
 
-#include <zorp/thread.h>
-#include <zorp/registry.h>
-#include <zorp/log.h>
+#include <zorpll/thread.h>
+#include <zorpll/registry.h>
+#include <zorpll/log.h>
 #include <zorp/policy.h>
 #include <zorp/authprovider.h>
-#include <zorp/misc.h>
+#include <zorpll/misc.h>
 #include <zorp/policy.h>
-#include <zorp/code_base64.h>
-#include <zorp/streamblob.h>
-#include <zorp/streamline.h>
-#include <zorp/random.h>
-#include <zorp/code.h>
-#include <zorp/code_base64.h>
+#include <zorpll/code_base64.h>
+#include <zorpll/streamblob.h>
+#include <zorpll/streamline.h>
+#include <zorpll/random.h>
+#include <zorpll/code.h>
+#include <zorpll/code_base64.h>
 
 #include <zorp/proxy/errorloader.h>
 
@@ -44,18 +45,23 @@
 #include <fcntl.h>
 
 #include <memory>
+#include <functional>
 
 #include <netdb.h>
 static GHashTable *auth_hash = NULL;
 G_LOCK_DEFINE_STATIC(auth_mutex);
+
+const std::string HttpProxy::zorp_realm_cookie_name("ZorpRealm");
 
 typedef struct _ZorpAuthInfo
 {
   time_t last_auth_time;
   time_t accept_credit_until;
   time_t created_at;
+  gchar *username;
+  gchar **groups;
+  gchar *basic_auth_creds;
 } ZorpAuthInfo;
-
 
 /**
  * http_filter_hash_compare:
@@ -196,9 +202,7 @@ http_config_set_defaults(HttpProxy *self)
 
   self->request_categories = NULL;
 
-
   z_proxy_return(self);
-
 }
 
 /**
@@ -219,6 +223,30 @@ http_config_init(HttpProxy *self)
   self->super.endpoints[EP_CLIENT]->timeout = self->timeout_request;
   self->poll = z_poll_new();
   z_proxy_return(self);
+}
+
+/**
+ * http_query_request_version:
+ * @self: HttpProxy instance
+ * @name: name of requested variable
+ * @value: unused
+ *
+ * This function is registered as a Z_VAR_TYPE_CUSTOM get handler, e.g. it
+ * is called whenever one of the request_version attribute is requested from
+ * Python. Instead of presetting that attribute before calling into Python
+ * we calculate its value dynamically.
+ **/
+static ZPolicyObj *
+http_query_request_version(HttpProxy *self, gchar *name, gpointer value G_GNUC_UNUSED)
+{
+  ZPolicyObj *res = NULL;
+
+  z_proxy_enter(self);
+
+  if (strcmp(name, "request_version") == 0)
+    res = z_policy_var_build("s#", self->request_version, strlen(self->request_version));
+
+  z_proxy_return(self, res);
 }
 
 /**
@@ -433,6 +461,32 @@ http_policy_header_manip(HttpProxy *self, ZPolicyObj *args)
 
 }
 
+static ZPolicyObj *
+http_query_headers_flat(HttpProxy *self, gint side)
+{
+  ZPolicyObj *res = NULL;
+
+  z_proxy_enter(self);
+
+  side &= 1;
+  res = z_policy_var_build("s#", self->headers[side].flat->str, strlen(self->headers[side].flat->str));
+
+  z_proxy_return(self, res);
+}
+
+static ZPolicyObj *
+http_query_request_headers_flat(HttpProxy *self, gchar *name G_GNUC_UNUSED, gpointer value G_GNUC_UNUSED)
+{
+  return http_query_headers_flat(self, EP_CLIENT);
+}
+
+static ZPolicyObj *
+http_query_response_headers_flat(HttpProxy *self, gchar *name G_GNUC_UNUSED, gpointer value G_GNUC_UNUSED)
+{
+  return http_query_headers_flat(self, EP_SERVER);
+}
+
+
 /**
  * http_register_vars:
  * @self: HttpProxy instance
@@ -618,6 +672,11 @@ http_register_vars(HttpProxy *self)
                   Z_VAR_TYPE_HASH | Z_VAR_GET | Z_VAR_GET_CONFIG,
                   self->request_header_policy);
 
+  /* string containing current request headers as a raw string */
+  z_proxy_var_new(&self->super, "request_headers_flat",
+                  Z_VAR_TYPE_CUSTOM | Z_VAR_GET,
+                  NULL, http_query_request_headers_flat, NULL, NULL);
+
   /* hash indexed by response code */
   z_proxy_var_new(&self->super, "response",
                   Z_VAR_TYPE_DIMHASH | Z_VAR_GET | Z_VAR_GET_CONFIG,
@@ -628,6 +687,11 @@ http_register_vars(HttpProxy *self)
                   Z_VAR_TYPE_HASH | Z_VAR_GET | Z_VAR_GET_CONFIG,
                   self->response_header_policy);
 
+  /* string containing current response headers as a raw string */
+  z_proxy_var_new(&self->super, "response_headers_flat",
+                  Z_VAR_TYPE_CUSTOM | Z_VAR_GET,
+                  NULL, http_query_response_headers_flat, NULL, NULL);
+
   /* header manipulation */
   z_proxy_var_new(&self->super, "_AbstractHttpProxy__headerManip",
                   Z_VAR_TYPE_METHOD | Z_VAR_GET,
@@ -637,6 +701,11 @@ http_register_vars(HttpProxy *self)
   z_proxy_var_new(&self->super, "request_method",
                   Z_VAR_TYPE_STRING | Z_VAR_GET,
                   self->request_method);
+
+  /* string containing current url version */
+  z_proxy_var_new(&self->super, "request_version",
+                  Z_VAR_TYPE_CUSTOM | Z_VAR_GET,
+                  NULL, http_query_request_version, NULL, NULL);
 
   /* string containing current url */
   z_proxy_var_new(&self->super, "request_url",
@@ -808,6 +877,10 @@ http_register_vars(HttpProxy *self)
                   Z_VAR_TYPE_ALIAS | Z_VAR_GET | Z_VAR_SET,
                   "error_status");
 
+  z_proxy_var_new(&self->super, "request_host",
+                  Z_VAR_TYPE_ALIAS | Z_VAR_GET,
+                  "request_url_host");
+
   z_proxy_var_new(&self->super, "auth_by_cookie",
                   Z_VAR_TYPE_INT | Z_VAR_GET | Z_VAR_SET_CONFIG | Z_VAR_GET_CONFIG,
                   &self->auth_by_cookie);
@@ -895,8 +968,8 @@ http_error_message(HttpProxy *self, gint response_code, guint message_code, GStr
     {
       /*LOG
         This message indicates that Zorp caught an invalid error code
-        internally. Please report this event to the Zorp QA team (at
-        devel@balabit.com).
+        internally. Please report this event to the BalaSys Development Team
+	(at devel@balasys.hu).
       */
       z_proxy_log(self, HTTP_ERROR, 2, "Internal error, error code out of range; error_code='%d'", message_code);
       z_proxy_return(self, FALSE);
@@ -1081,8 +1154,8 @@ http_write(HttpProxy *self, guint side, gchar *buf, size_t buflen)
     {
       /*LOG
         This message reports that Zorp was about to write to an invalid
-        stream. Please report this event to the Zorp QA team (at
-        devel@balabit.com).
+        stream. Please report this event to the BalaSys Development Team (at
+        devel@balasys.hu).
       */
       z_proxy_log(self, HTTP_ERROR, 1, "Error writing stream, stream is NULL; side='%s'", side == EP_CLIENT ? "client" : "server");
       z_proxy_return(self, G_IO_STATUS_ERROR);
@@ -1143,38 +1216,56 @@ http_parent_proxy_enabled(HttpProxy *self)
 }
 
 static gboolean
-http_process_base64(gchar *dst, guint dstlen, gchar *src, guint srclen)
+http_decode_base64(gchar *dst, guint dstlen, const gchar *src, guint srclen)
 {
-  ZCode *auth_line;
-
   z_enter();
-  auth_line = z_code_base64_decode_new(0, FALSE);
+  ZCode * base64_decode = z_code_base64_decode_new(0, FALSE);
 
-  if (!z_code_transform(auth_line, src, srclen) ||
-      !z_code_finish(auth_line))
+  if (!z_code_transform(base64_decode, src, srclen) ||
+      !z_code_finish(base64_decode))
     {
-      z_code_free(auth_line);
+      z_code_free(base64_decode);
       z_return(FALSE);
     }
 
-  dstlen = z_code_get_result(auth_line, dst, dstlen - 1);
+  dstlen = z_code_get_result(base64_decode, dst, dstlen - 1);
   dst[dstlen] = 0;
-  z_code_free(auth_line);
+  z_code_free(base64_decode);
   z_return(TRUE);
+}
+
+static std::string
+http_encode_base64(const std::string &src)
+{
+  z_enter();
+  ZCode *base64_encode = z_code_base64_encode_new(0, 0);
+
+  if (!z_code_transform(base64_encode, src.c_str(), src.length()) ||
+      !z_code_finish(base64_encode))
+    {
+      z_code_free(base64_encode);
+      z_return("");
+    }
+
+  gsize retlen = z_code_get_result_length(base64_encode);
+  char *dst = g_new(gchar, retlen + 1);
+  gsize dstlen = z_code_get_result(base64_encode, dst, retlen);
+  std::string result(dst, dstlen);
+  g_free(dst);
+  z_code_free(base64_encode);
+  z_return(result);
 }
 
 static bool
 http_do_authenticate(HttpProxy *self, ZorpAuthInfo *auth_info, const std::string &username, const std::string &password)
 {
-  gchar **groups = NULL;
-
   z_policy_lock(self->super.thread);
-  bool res = z_auth_provider_check_passwd(self->auth, self->super.session_id, const_cast<gchar*>(username.c_str()), const_cast<gchar *>(password.c_str()), &groups, &self->super);
+  bool res = z_auth_provider_check_passwd(self->auth, self->super.session_id, const_cast<gchar*>(username.c_str()), const_cast<gchar *>(password.c_str()), &auth_info->groups, &self->super);
   z_policy_unlock(self->super.thread);
 
   if (res)
     {
-      res = z_proxy_user_authenticated_default(&self->super, username.c_str(), (gchar const **) groups);
+      res = z_proxy_user_authenticated_default(&self->super, username.c_str(), (const gchar **)auth_info->groups);
       G_LOCK(auth_mutex);
 
       if (self->auth_cache_time > 0)
@@ -1182,11 +1273,29 @@ http_do_authenticate(HttpProxy *self, ZorpAuthInfo *auth_info, const std::string
           auth_info->last_auth_time = time(NULL);
         }
 
+      g_free(auth_info->username);
+      auth_info->username = g_strdup(username.c_str());
+
+      if (self->auth_forward)
+        {
+          z_proxy_log(self, HTTP_DEBUG, 5, "Assembling synthetic Authorization header for auth_forward;");
+
+          std::string encoded_creds = http_encode_base64(username + ':' + password);
+          if (encoded_creds.empty())
+            {
+              z_proxy_log(self, HTTP_ERROR, 3,
+                          "Error encoding synthetic Authorization header for auth_forward;");
+              res = FALSE;
+            }
+          else
+            {
+              encoded_creds.insert(0, "Basic ");
+              auth_info->basic_auth_creds = g_strdup(encoded_creds.c_str());
+            }
+        }
+
       G_UNLOCK(auth_mutex);
     }
-
-  g_strfreev(groups);
-
   return res;
 }
 
@@ -1222,7 +1331,7 @@ http_process_auth_info(HttpProxy *self, HttpHeader *h, ZorpAuthInfo *auth_info)
   while (*p == ' ')
     p++;
 
-  if (!http_process_base64(userpass, sizeof(userpass), p, strlen(p)))
+  if (!http_decode_base64(userpass, sizeof(userpass), p, strlen(p)))
     {
       /*LOG
         This message indicates that the client sent a malformed
@@ -1586,13 +1695,24 @@ http_fetch_request(HttpProxy *self)
 }
 
 static gboolean
-http_remove_old_auth(gpointer key G_GNUC_UNUSED, gpointer value, gpointer user_data)
+http_auth_is_expired(gpointer key G_GNUC_UNUSED, gpointer value, gpointer user_data)
 {
-  ZorpAuthInfo *real_value = (ZorpAuthInfo *)value;
+  ZorpAuthInfo *real_value = static_cast<ZorpAuthInfo *>(value);
   time_t max_time = MAX(MAX(real_value->last_auth_time, real_value->accept_credit_until), real_value->created_at);
   time_t cut_time = GPOINTER_TO_UINT(user_data);
 
-  return max_time < cut_time;
+  return (max_time < cut_time);
+}
+
+static void
+http_auth_destroy(gpointer value)
+{
+  ZorpAuthInfo *real_value = static_cast<ZorpAuthInfo *>(value);
+
+  g_free(real_value->username);
+  g_strfreev(real_value->groups);
+  g_free(real_value->basic_auth_creds);
+  g_free(real_value);
 }
 
 static inline gchar *
@@ -1606,50 +1726,61 @@ http_process_create_realm(HttpProxy *self, time_t now, gchar *buf, guint buflen)
   return buf;
 }
 
+
 static gboolean
-http_get_client_info(HttpProxy *self, gchar *key, guint key_length)
+http_extract_client_info_from_cookies(HttpProxy *self, gchar *key, const guint key_length)
 {
-  ZCode *coder;
-  guchar raw_key[32];
-  gsize pos;
-  GHashTable *cookie_hash;
-  gchar *our_value;
-
-  cookie_hash = http_parse_header_cookie(&self->headers[EP_CLIENT]);
-
-  if (cookie_hash)
+  CookiePairVector cookie_vector = http_parse_header_cookie(&self->headers[EP_CLIENT]);
+  if (! cookie_vector.empty())
     {
-      our_value = static_cast<gchar *>(g_hash_table_lookup(cookie_hash, "ZorpRealm"));
-
-      if (our_value)
+      // FIXME: for now only the first matching cookie will be used
+      CookiePairVector::iterator cookie_pair = http_find_cookie_by_name(cookie_vector, HttpProxy::zorp_realm_cookie_name);
+      if (cookie_pair != cookie_vector.end())
         {
-          g_strlcpy(key, our_value, key_length);
-          goto exit;
+          g_strlcpy(key, cookie_pair->second.c_str(), key_length);
+
+          // removing the Zorp auth cookie, because of security reasons (information leaking)
+          cookie_vector.erase(cookie_pair);
+
+          http_write_header_cookie(&self->headers[EP_CLIENT], cookie_vector);
+
+          return TRUE;
         }
     }
 
+  return FALSE;
+}
+
+static gboolean
+http_generate_client_info(gchar *key, const guint key_length)
+{
+  guchar raw_key[32];
+
   if (!z_random_sequence_get(Z_RANDOM_STRONG, raw_key, sizeof(raw_key)))
-    {
-      return FALSE;
-    }
+    return FALSE;
 
-  coder = z_code_base64_encode_new(256, 255);
-
+  ZCode * coder = z_code_base64_encode_new(256, 255);
   if (coder == NULL)
-    {
-      return FALSE;
-    }
+    return FALSE;
 
   if (!z_code_transform(coder, raw_key, sizeof(raw_key)) ||
       !z_code_finish(coder))
-    {
-      return FALSE;
-    }
+    return FALSE;
 
-  pos = z_code_get_result(coder, key, key_length - 1);
+  gsize pos = z_code_get_result(coder, key, key_length - 1);
   key[pos-2] = 0;
- exit:
+
   return TRUE;
+}
+
+static gboolean
+http_get_client_info(HttpProxy *self, gchar *key, const guint key_length)
+{
+  if (http_extract_client_info_from_cookies(self, key, key_length) ||
+      http_generate_client_info(key, key_length))
+    return TRUE;
+
+  return FALSE;
 }
 
 static gboolean
@@ -1805,9 +1936,14 @@ http_form_auth_replace_redirect_location(HttpProxy *self, std::string &html_form
   std::size_t found = html_form.find(search_string);
   if (found != std::string::npos)
     {
-      std::string request_url = redirect_location;
+      std::string request_url(redirect_location);
       if (request_url.empty())
-        request_url = self->super.tls_opts.ssl_sessions[EP_CLIENT] ? std::string("https") : std::string("http") + std::string("://") + std::string(self->remote_server->str) + std::string(self->request_url->str);
+        {
+          if (self->remote_server->len)
+            request_url = std::string(self->super.tls_opts.ssl_sessions[EP_CLIENT] ? "https" : "http") +
+                          "://" + self->remote_server->str;
+          request_url.append(self->request_url->str);
+        }
       html_form.insert(found+search_string.length()-1, request_url);
     }
 }
@@ -1830,10 +1966,29 @@ http_set_response(HttpProxy *self, int error_code, unsigned int error_status)
   self->error_status = error_status;
 }
 
+static void
+http_add_authorization_hdr(HttpProxy *self, ZorpAuthInfo *auth_info)
+{
+  if (self->transparent_mode && (self->auth_by_form || self->auth_by_cookie))
+    {
+      z_proxy_log(self, HTTP_POLICY, 4, "Relaying Basic authentication after successful client "
+                                        "authentication; username='%s'", auth_info->username);
+      http_add_header(&self->headers[EP_CLIENT], "Authorization", strlen("Authorization"),
+                      self->auth_header_value->str, self->auth_header_value->len);
+    }
+  else if (!self->transparent_mode && self->auth_by_cookie)
+    {
+      z_proxy_log(self, HTTP_POLICY, 4, "Relaying Basic proxy-authentication after successful client "
+                                        "authentication; username='%s'", auth_info->username);
+      http_add_header(&self->headers[EP_CLIENT], "Proxy-Authorization", strlen("Proxy-Authorization"),
+                      self->auth_header_value->str, self->auth_header_value->len);
+    }
+}
+
 static gboolean
 http_process_request(HttpProxy *self)
 {
-  HttpHeader *h;
+  HttpHeader *host_header = nullptr, *authorization_header = nullptr;
   const gchar *reason;
   static time_t prev_cleanup = 0;
   ZorpAuthInfo *auth_info;
@@ -1848,7 +2003,7 @@ http_process_request(HttpProxy *self)
      in a latter place. This variable is to know that this
      should happen. */
   gboolean need_cookie_header = FALSE;
-  gchar client_key[512];
+  gchar client_key[512] = "";
 
   z_proxy_enter(self);
 
@@ -1857,11 +2012,12 @@ http_process_request(HttpProxy *self)
   else
     self->connection_mode = HTTP_CONNECTION_CLOSE;
 
-  if (http_lookup_header(&self->headers[EP_CLIENT], "Host", &h))
-    g_string_assign(self->remote_server, h->value->str);
+  if (http_lookup_header(&self->headers[EP_CLIENT], "Host", &host_header))
+    g_string_assign(self->remote_server, host_header->value->str);
   else
     g_string_truncate(self->remote_server, 0);
 
+  // please mind, that auth can be set to NULL in case of keep-alive connections further requests!
   if (self->auth)
     {
       if (self->proto_version[EP_CLIENT] >= 0x0100)
@@ -1871,60 +2027,85 @@ http_process_request(HttpProxy *self)
           time_t now = time(NULL);
           gchar buf[4096];
 
-          if (self->auth_by_cookie || self->auth_by_form)
+          bool basic_auth_header_exists = http_lookup_header(&self->headers[EP_CLIENT], "Authorization", &authorization_header);
+          bool do_basic_auth = basic_auth_header_exists || !self->auth_by_form;
+
+          if (self->auth_by_cookie || !do_basic_auth)
             {
               if (!http_get_client_info(self, client_key, sizeof(client_key)))
                 g_assert_not_reached();
             }
-          else
+          else if (basic_auth_header_exists)
             {
               z_proxy_get_addresses(&self->super, NULL, &client_addr, NULL, NULL, NULL, NULL);
               c_addr = z_sockaddr_inet_get_address(client_addr);
               z_sockaddr_unref(client_addr);
-              z_inet_ntoa(client_key, sizeof(client_key), c_addr);
+              z_inet_ntoa(client_key, INET_ADDRSTRLEN, c_addr);
+              strncat(client_key, authorization_header->value->str, authorization_header->value->len);
             }
 
           G_LOCK(auth_mutex);
 
           if (now > prev_cleanup + (2 * MAX(self->max_auth_time, self->auth_cache_time)))
             {
-              g_hash_table_foreach_remove(auth_hash, http_remove_old_auth,
+              g_hash_table_foreach_remove(auth_hash, http_auth_is_expired,
                                           GUINT_TO_POINTER(now - (2 * MAX(self->max_auth_time, self->auth_cache_time))));
               prev_cleanup = now;
             }
 
           auth_info = static_cast<ZorpAuthInfo *>(g_hash_table_lookup(auth_hash, client_key));
 
+          bool auth_info_should_be_freed = false;
           if (auth_info == NULL)
             {
               auth_info = g_new0(ZorpAuthInfo, 1);
               auth_info->created_at = now;
-              g_hash_table_insert(auth_hash, g_strdup(client_key), auth_info);
+              auth_info_should_be_freed = true;
+              if (client_key[0] != '\0')
+                {
+                  g_hash_table_insert(auth_hash, g_strdup(client_key), auth_info);
+                  auth_info_should_be_freed = false;
+                }
             }
 
-          bool is_auth_cache_not_expired = self->auth_cache_time > 0 && auth_info->last_auth_time + self->auth_cache_time > now;
-          if (is_auth_cache_not_expired)
+          bool is_auth_cache_not_expired = self->auth_cache_time > 0 &&
+                                           self->auth_cache_time + auth_info->last_auth_time > now;
+
+          bool user_authenticated = is_auth_cache_not_expired &&
+                                    z_proxy_user_authenticated_default(&self->super, auth_info->username,
+                                                                       const_cast<const gchar **>(auth_info->groups));
+
+          z_proxy_log(self, HTTP_DEBUG, 7, "User authentication cache state; entity='%s', state='%d'", auth_info->username, is_auth_cache_not_expired);
+
+          if (user_authenticated)
             {
               if (self->auth_cache_update)
                 {
                   auth_info->last_auth_time = now;
                 }
 
+              if (self->auth_forward && auth_info->basic_auth_creds)
+                {
+                  g_string_assign(self->auth_header_value, auth_info->basic_auth_creds);
+
+                  if (self->auth_by_cookie || (self->auth_by_form && !basic_auth_header_exists))
+                    {
+                      http_add_authorization_hdr(self, auth_info);
+                    }
+                }
               G_UNLOCK(auth_mutex);
             }
           else
             {
               /* authentication is required */
               g_string_truncate(self->auth_header_value, 0);
-              h = NULL;
               G_UNLOCK(auth_mutex);
 
               bool is_auth_time_window_expired = auth_info->accept_credit_until > 0 && auth_info->accept_credit_until < now;
               if (self->transparent_mode)
                 {
                   std::string redirect_location;
-                  if (self->auth_by_form && (is_auth_time_window_expired ||
-                      !http_get_form_auth(self, auth_info, redirect_location)))
+                  if (!do_basic_auth && (is_auth_time_window_expired || !http_get_form_auth(self, auth_info, redirect_location)))
                     {
                       http_auth_update_accept_credit_until(self, auth_info, now);
                       http_set_response(self, HTTP_MSG_OK, 200);
@@ -1950,9 +2131,7 @@ http_process_request(HttpProxy *self)
                         }
                       z_proxy_return(self, FALSE);
                     }
-                  else if (!self->auth_by_form && (is_auth_time_window_expired ||
-                      !http_lookup_header(&self->headers[EP_CLIENT], "Authorization", &h) ||
-                      !http_process_auth_info(self, h, auth_info)))
+                  else if (do_basic_auth && (is_auth_time_window_expired || !basic_auth_header_exists || !http_process_auth_info(self, authorization_header, auth_info)))
                     {
                       http_auth_update_accept_credit_until(self, auth_info, now);
                       http_set_response(self, HTTP_MSG_AUTH_REQUIRED, 401);
@@ -1963,9 +2142,20 @@ http_process_request(HttpProxy *self)
                     }
                 }
               else if (is_auth_time_window_expired ||
-                       !http_lookup_header(&self->headers[EP_CLIENT], "Proxy-Authorization", &h) ||
-                       !http_process_auth_info(self, h, auth_info))
+                       !http_lookup_header(&self->headers[EP_CLIENT], "Proxy-Authorization", &authorization_header) ||
+                       !http_process_auth_info(self, authorization_header, auth_info))
                 {
+                  if (self->auth_by_form)
+                    {
+                      z_proxy_log(self, HTTP_POLICY, 1, "Configuration error, form-based authentication "
+                                                        "is not supported in non-transparent mode; "
+                                                        "auth_by_form='%s', transparent_mode='%s'",
+                                                        self->auth_by_form ? "TRUE" : "FALSE",
+                                                        self->transparent_mode ? "TRUE" : "FALSE");
+                      self->error_code = HTTP_MSG_POLICY_SYNTAX;
+                      z_proxy_return(self, FALSE);
+                    }
+
                   http_auth_update_accept_credit_until(self, auth_info, now);
                   http_set_response(self, HTTP_MSG_AUTH_REQUIRED, 407);
                   g_string_sprintf(self->error_msg, "Authentication is required.");
@@ -1974,12 +2164,14 @@ http_process_request(HttpProxy *self)
                   z_proxy_return(self, FALSE);
                 }
 
-              if (h)
-                g_string_assign(self->auth_header_value, h->value->str);
+              if (authorization_header)
+                g_string_assign(self->auth_header_value, authorization_header->value->str);
 
-              if (self->auth_by_cookie || self->auth_by_form)
+              if (self->auth_by_cookie || !do_basic_auth)
                 need_cookie_header = TRUE;
             }
+          if (auth_info_should_be_freed)
+            http_auth_destroy(auth_info);
         }
       else
         {
@@ -2105,8 +2297,8 @@ http_process_request(HttpProxy *self)
       g_string_sprintf(self->error_info, "Badly formatted url: %s", self->request_url->str);
       /*LOG
         This message indicates that there was an error parsing an already
-        canonicalized URL.  Please report this event to the Zorp QA team (at
-        devel@balabit.com)
+        canonicalized URL.  Please report this event to the BalaSys
+	Development Team (at devel@balasys.hu)
       */
       z_proxy_log(self, HTTP_ERROR, 1, "Error parsing URL; url='%s', reason='%s'", self->request_url->str, reason);
       z_proxy_return(self, FALSE);
@@ -2118,8 +2310,8 @@ http_process_request(HttpProxy *self)
       g_string_sprintf(self->error_info, "Error canonicalizing url (%s): %s", reason, self->request_url->str);
       /*LOG
         This message indicates that there was an error parsing an already
-        canonicalized URL.  Please report this event to the Zorp QA team (at
-        devel@balabit.com)
+        canonicalized URL.  Please report this event to the BalaSys
+	Development Team (at devel@balasys.hu)
       */
       z_proxy_log(self, HTTP_ERROR, 1, "Error parsing URL; url='%s', reason='%s'", self->request_url->str, reason);
       z_proxy_return(self, FALSE);
@@ -2144,7 +2336,7 @@ http_process_request(HttpProxy *self)
           nextdotpos = strchr(dotpos + 1, '.');
         }
 
-      std::string append_cookie {std::string("ZorpRealm=") + client_key + std::string("; path=/; domain=") + startpos};
+      std::string append_cookie { HttpProxy::zorp_realm_cookie_name + "=" + client_key + "; path=/; domain=" + startpos};
       if (self->auth_by_form)
         {
           g_string_append_printf(self->error_headers, "Set-Cookie: %s\r\n", append_cookie.c_str());
@@ -2604,8 +2796,8 @@ http_connect_server(HttpProxy *self)
       /* should never happen */
       /*LOG
         This message indicates that initializing the server stream
-        failed. Please report this event to the Zorp QA team (at
-        devel@balabit.com).
+        failed. Please report this event to the BalaSys Development Team (at
+        devel@balasys.hu).
       */
       z_proxy_log(self, HTTP_ERROR, 1, "Internal error initializing server stream;");
       z_proxy_return(self, FALSE);
@@ -3246,7 +3438,7 @@ http_handle_connect(HttpProxy *self)
       /*LOG
         This message indicates that an internal error occurred, the
         connectMethod function did not return an integer. Please report this
-        event to the Zorp QA team (at devel@balabit.com).
+        event to the BalaSys Development Team (at devel@balasys.hu).
       */
       z_proxy_log(self, HTTP_ERROR, 1, "Internal error, connectMethod is expected to return a proxy instance;");
       z_proxy_report_policy_abort(&(self->super));
@@ -3269,7 +3461,6 @@ http_handle_connect(HttpProxy *self)
 
   z_proxy_return(self, TRUE);
 }
-
 
 static void
 http_main(ZProxy *s)
@@ -3485,7 +3676,8 @@ http_main(ZProxy *s)
         {
           /*LOG
             This message indicates an internal error in HTTP proxy. Please
-            report this event to the Zorp QA team (at devel@balabit.com).
+            report this event to the BalaSys Development Team (at
+	    devel@balasys.hu).
           */
           z_proxy_log(self, CORE_ERROR, 1, "Internal error, invalid server_protocol; server_protocol='%d'", self->server_protocol);
         }
@@ -3504,7 +3696,7 @@ http_main(ZProxy *s)
       /* NOTE:
        * In keepalive mode we have to disable authentication after the first round.
        */
-      if (self->auth)
+      if (self->auth && !(self->auth_by_form || self->auth_by_cookie))
         {
           z_policy_lock(self->super.thread);
 
@@ -3561,7 +3753,6 @@ http_main(ZProxy *s)
   z_proxy_return(self);
 }
 
-
 static gboolean
 http_config(ZProxy *s)
 {
@@ -3596,7 +3787,6 @@ http_proxy_free(ZObject *s)
 
   if (self->request_data)
     z_blob_unref(self->request_data);
-
 
   g_string_free(self->old_auth_header, TRUE);
   g_string_free(self->auth_header_value, TRUE);
@@ -3641,18 +3831,17 @@ ZProxyFuncs http_proxy_funcs =
 
 Z_CLASS_DEF(HttpProxy, ZProxy, http_proxy_funcs);
 
-
-
 static ZProxyModuleFuncs http_module_funcs =
   {
     /* .create_proxy = */ http_proxy_new,
+    /* .module_py_init = */ NULL,
   };
 
 gint
 zorp_module_init(void)
 {
   http_proto_init();
-  auth_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+  auth_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, http_auth_destroy);
   z_registry_add("http", ZR_PROXY, &http_module_funcs);
   return TRUE;
 }

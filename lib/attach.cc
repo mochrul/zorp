@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +21,10 @@
  ***************************************************************************/
 
 #include <zorp/attach.h>
-#include <zorp/connect.h>
+#include <zorpll/connect.h>
 #include <zorp/dgram.h>
-#include <zorp/log.h>
-#include <zorp/streamfd.h>
+#include <zorpll/log.h>
+#include <zorpll/streamfd.h>
 #include <zorp/proxy.h>
 #include <zorp/proxygroup.h>
 

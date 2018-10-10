@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY product '@ZORP_PRODUCT_NAME@'>
+<!ENTITY version '@BROCHURE_VERSION@'>

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +21,22 @@
  ***************************************************************************/
 
 #include <zorp/szig.h>
-#include <zorp/log.h>
-#include <zorp/io.h>
-#include <zorp/thread.h>
-#include <zorp/stream.h>
-#include <zorp/streamfd.h>
-#include <zorp/streambuf.h>
-#include <zorp/streamline.h>
-#include <zorp/sockaddr.h>
-#include <zorp/listen.h>
+#include <zorpll/log.h>
+#include <zorpll/io.h>
+#include <zorpll/thread.h>
+#include <zorpll/stream.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/streambuf.h>
+#include <zorpll/streamline.h>
+#include <zorpll/sockaddr.h>
+#include <zorpll/listen.h>
 #include <zorp/coredump.h>
 #include <zorp/policy.h>
 #include <zorp/proxy.h>
-#include <zorp/process.h>
+#include <zorpll/process.h>
 
 #include <string.h>
-#if defined(linux)
+#ifdef __linux__
 #ifdef HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
 #endif
@@ -45,7 +46,6 @@
 #endif
 #endif
 #include <sys/types.h>
-
 
 /*
  * The SZIG framework serves as a means to publish internal statistics. It
@@ -2229,7 +2229,7 @@ get_thread_id(void)
 {
     int ret = -1;
 
-#if defined(linux)
+#ifdef __linux__
     ret = syscall(SYS_gettid);
 #elif defined(__NetBSD__)
     ret = _lwp_self();

@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -30,12 +31,20 @@ class ProcessStatus(object):
         self.reload_timestamp = 0
         self.details = None
         self.msg = ""
+        self.reloaded = True
+        self.threads = 0
+        self.pid = 0
 
     def __str__(self):
-        status = self.msg + "running"
+        status = self.msg
+        if self.pid > 0:
+            status += "running"
         if not self.reloaded:
             status += ", policy NOT reloaded"
-        status += ", %d threads active, pid %d" % (self.threads, self.pid)
+        if self.threads > 0:
+            status += ", %d threads active" % self.threads
+        if self.pid > 0:
+            status += ", pid %d" % self.pid
         if self.details:
             status += "\n%s" % self.details
         return status
@@ -60,7 +69,7 @@ class ProcessAlgorithm(object):
     def __init__(self):
         self.ZORPCTLCONF = ZorpctlConfig.Instance()
         try:
-            self.install_path = self.ZORPCTLCONF['ZORP_LIBDIR']
+            self.sbindir = self.ZORPCTLCONF['ZORP_SBINDIR']
             self.pidfiledir = self.ZORPCTLCONF['ZORP_PIDFILEDIR'] + "/"
         except KeyError as e:
             e.message = "You must specify the install directory of Zorp executable \
@@ -141,7 +150,7 @@ class StartAlgorithm(ProcessAlgorithm):
         return CommandResultSuccess()
 
     def assembleStartCommand(self):
-        command = [self.install_path + "/zorp", "--as", self.instance.name]
+        command = [self.sbindir + "/zorp", "--as", self.instance.name]
         command += self.instance.zorp_argument_list
         command.append("--slave" if self.instance.process_num else "--master")
         command.append(self.instance.process_name)
@@ -389,6 +398,15 @@ class GetProcInfoAlgorithm(ProcessAlgorithm):
             return error
 
         return self.getProcInfo()
+
+class PidAlgorithm(ProcessAlgorithm):
+    def __init__(self):
+        super(PidAlgorithm, self).__init__()
+
+    def execute(self):
+        status = ProcessStatus(self.instance.process_name)
+        status.pid = self.getProcessPid(self.instance.process_name)
+        return status
 
 class StatusAlgorithm(ProcessAlgorithm):
 

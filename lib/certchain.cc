@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,21 +32,21 @@ z_certificate_chain_new(void)
   return self;
 }
 
-void
+int
 z_certificate_chain_set_cert(ZCertificateChain *self, X509 *cert)
 {
   if (self->cert)
     X509_free(self->cert);
 
   self->cert = cert;
-  CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
+  return X509_up_ref(cert);
 }
 
-void
+int
 z_certificate_chain_add_cert_to_chain(ZCertificateChain *self, X509 *cert)
 {
   sk_X509_push(self->chain, cert);
-  CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
+  return X509_up_ref(cert);
 }
 
 X509 *

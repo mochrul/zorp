@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +25,11 @@
 #include "smtpmsg.h"
 
 #include <zorp/zorp.h>
-#include <zorp/streamline.h>
+#include <zorpll/streamline.h>
 #include <zorp/proxy.h>
 #include <zorp/dimhash.h>
-#include <zorp/poll.h>
-#include <zorp/misc.h>
+#include <zorpll/poll.h>
+#include <zorpll/misc.h>
 #include <zorp/plugsession.h>
 #include <zorp/proxy/transfer2.h>
 

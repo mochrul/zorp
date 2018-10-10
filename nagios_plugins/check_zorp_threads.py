@@ -4,6 +4,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -23,7 +24,6 @@
 ############################################################################
 
 # Zorp running threads control in Nagios
-# Created by Gabor Timar <gaboca@balabit.hu>
 
 import sys
 import subprocess

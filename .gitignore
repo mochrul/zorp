@@ -54,10 +54,3 @@ zorp/zorp
 zorpblgen/zorpblgen
 zorpconfig.h
 zorpctl/zorpctl
-
-*.pc
-
-*.log
-*.trs
-/compile
-/test-driver

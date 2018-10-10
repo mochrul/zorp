@@ -3,6 +3,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -23,7 +24,7 @@
 
 # set -x
 
-### == Nagios plugin for BalaBit licenses ==
+### == Nagios plugin for BalaSys licenses ==
 
 VERSION="0.0.14"
 VERBOSE="0"
@@ -40,7 +41,7 @@ VERBTEXT=""
 usage() {
 echo "
 NAME
-    $PROGRAM_NAME - Nagios plugin for Balabit licenses.
+    $PROGRAM_NAME - Nagios plugin for BalaSys licenses.
 SYNOPSIS
     $PROGRAM_NAME --warn=<days> --critical=<days>
     $PROGRAM_NAME -w<days> -c<days>
@@ -49,13 +50,13 @@ USAGE
     $0 options
     Usage: $PROGRAM_NAME --warn=<days> --critical=<days>
 DESCRIPTION
-    $PROGRAM_NAME a bash plugin for nagios. You can start with warning and critical parameters. $PROGRAM_NAME search Balabit product licenses, and examine
+    $PROGRAM_NAME a bash plugin for nagios. You can start with warning and critical parameters. $PROGRAM_NAME search BalaSys product licenses, and examine
     the expire date and current date. If a product expire date near to the current date return a warning or a critical status.
 EXAMPLES
     $PROGRAM_NAME -w30 -c15
-        Set warning level to 30 and critical level 15 day. Search Balabit product licenses, examine and write output to stdout.
+        Set warning level to 30 and critical level 15 day. Search BalaSys product licenses, examine and write output to stdout.
     $PROGRAM_NAME -c 30
-        Set critical level to 30 day. Warning level the default (15). Search Balabit product licenses, examine and write output to stdout.
+        Set critical level to 30 day. Warning level the default (15). Search BalaSys product licenses, examine and write output to stdout.
     $PROGRAM_NAME -v
         Display verbose output.
     $PROGRAM_NAME -h

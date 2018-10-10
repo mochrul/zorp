@@ -1,12 +1,8 @@
 pkgdatadir = @ZORP_PYTHON_DIR@
-pkglibdir = @libdir@/zorp
-LIBS = @MODULES_LIBS@
-CPPFLAGS = @MODULES_CPPFLAGS@
-
-pkgdata_DATA = Whois.py
+pkglibdir = ${ZORP_LIBDIR}
+AM_LDFLAGS = @MODULES_LIBS@
+AM_CXXFLAGS = @MODULES_CXXFLAGS@
 
 pkglib_LTLIBRARIES = libwhois.la
 
 libwhois_la_SOURCES = whois.cc
-
-EXTRA_DIST = $(pkgdata_DATA)

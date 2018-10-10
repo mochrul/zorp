@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,9 +45,9 @@
 #include <grp.h>
 #include <pwd.h>
 
-#include <zorp/misc.h>
+#include <zorpll/misc.h>
 
-#define ZORP ZORP_LIBDIR    "/zorp"
+#define ZORP ZORP_SBINDIR    "/zorp"
 
 #if 1
 #define ZORP_INSTANCES_CONF ZORP_SYSCONFDIR "/instances.conf"
@@ -439,6 +440,8 @@ z_kzorpd_reload()
   printf("Reloading kZorp Daemon: ");
   res = z_signal_by_pidfile(buf, SIGHUP, &pid, &stale);
   printf("%s\n", res ? "success" : "failure!");
+
+  return res;
 }
 
 static int

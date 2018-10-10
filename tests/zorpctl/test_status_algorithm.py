@@ -3,6 +3,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -21,6 +22,7 @@
 ##
 ############################################################################
 
+import tempfile
 import unittest, os
 from HandlerMock import HandlerMock
 from zorpctl.szig import SZIG
@@ -30,30 +32,34 @@ from zorpctl.ProcessAlgorithms import StatusAlgorithm
 class TestStatusAlgorithm(unittest.TestCase):
 
     def setUp(self):
+        (self.test_policy_file_fd, self.test_policy_file_name) = tempfile.mkstemp(prefix='test_policy_file')
+        os.close(self.test_policy_file_fd)
+
+        time_stamp = os.path.getmtime(self.test_policy_file_name)
         handler_mock = HandlerMock
-        test_policy_file = open('test_policy_file', 'w')
-        test_policy_file.close()
-        time_stamp = os.path.getmtime('test_policy_file')
         szig = SZIG("", handler_mock)
-        szig.handler.data["info"]["policy"]["file"] = 'test_policy_file'
+        szig.handler.data["info"]["policy"]["file"] = self.test_policy_file_name
         szig.handler.data["info"]["policy"]["file_stamp"] = time_stamp
         szig.handler.data["info"]["policy"]["reload_stamp"] = time_stamp
 
+        testinstance_name = 'testinstance-' + tempfile.mktemp(dir='')
         self.algorithm = StatusAlgorithm()
-        self.algorithm.setInstance(Instance(name='testinstance', process_num=0))
+        self.algorithm.setInstance(Instance(name=testinstance_name, process_num=0))
         self.algorithm.szig = szig
         self.algorithm.pidfiledir = self.test_dir = './var/run/zorp/'
 
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir)
 
-        self.test_pid_file = 'zorp-testinstance#0.pid'
+        self.test_pid_file = 'zorp-%s#0.pid' % testinstance_name
         pid_file = open(self.test_dir + self.test_pid_file, 'w')
         pid_file.write('123456')
         pid_file.close()
 
+        print self.test_pid_file
+
     def __del__(self):
-        os.remove("test_policy_file")
+        os.remove(self.test_policy_file_name)
         os.remove(self.test_dir + self.test_pid_file)
         os.removedirs(self.test_dir)
 

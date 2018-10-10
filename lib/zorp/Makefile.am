@@ -1,5 +1,4 @@
 ZORP_H = \
-	alerting.h \
 	attach.h \
 	authprovider.h \
 	certchain.h \

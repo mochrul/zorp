@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +24,9 @@
 
 #include <zorp/zpython.h>
 #include <zorp/policy.h>
-#include <zorp/registry.h>
-#include <zorp/thread.h>
-#include <zorp/sockaddr.h>
+#include <zorpll/registry.h>
+#include <zorpll/thread.h>
+#include <zorpll/sockaddr.h>
 #include <zorp/pysockaddr.h>
 
 #include <arpa/inet.h>

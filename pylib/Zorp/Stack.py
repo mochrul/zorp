@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -18,7 +19,6 @@
 ## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##
 ############################################################################
-
 
 """
 <module>
@@ -228,4 +228,3 @@ class RemoteStackingBackend(AbstractStackingBackend):
                 log(None, CORE_ERROR, 3, "Error performing stack handshake with peer; addr='%s'", str(addr))
         log(None, CORE_DEBUG, 6, "Could not finish handshake with any of the stacking peers;")
         return None
-

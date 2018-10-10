@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd"
+[
+<!ENTITY % entities SYSTEM "zorp-entities.ent">
+  %entities;
+  ]>
+<refentry xml:id="zorp.8">
+  <refmeta>
+    <refentrytitle>zorp</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo class="version">&version;</refmiscinfo>
+    <refmiscinfo class="source">&product;</refmiscinfo>
+    <refmiscinfo class='manual'>&product;</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>zorp</refname>
+    <refpurpose>Zorp Firewall Suite</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>zorp</command>
+      <arg>options</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsection>
+    <title>Description</title>
+    <para>The <command>zorp</command> command is the main entry point for a Zorp instance, and as
+      such it is generally called by <link linkend="zorpctl.8">zorpctl(8)</link> with command line
+      parameters specified in <link linkend="instances.conf.5">
+        <filename> instances.conf(5) </filename>
+      </link>.</para>
+  </refsection>
+  <refsection>
+    <title>Options</title>
+    <variablelist>
+      <varlistentry>
+        <term>
+          <command>--version</command> or <command>-V</command>
+        </term>
+        <listitem>
+          <para>Display version number and compilation information.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--as &lt;name&gt;</command> or <command>-a &lt;name&gt;</command>
+        </term>
+        <listitem>
+          <para>Set instance name to &lt;name&gt;. Instance names may consist of the
+            characters [a-zA-Z0-9_] and must begin with a letter. Log messages of this instance are
+            prefixed with this name.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--also-as &lt;name&gt;</command> or <command>-A
+          &lt;name&gt;</command>
+        </term>
+        <listitem>
+          <para>Add a secondary instance named &lt;name&gt;. Secondary instances share the
+            same Zorp process but they have a separate section in the configuration file.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--policy &lt;name&gt;</command> or <command>-p
+          &lt;name&gt;</command>
+        </term>
+        <listitem>
+          <para>Use the file called &lt;name&gt; as policy. This file must be a valid policy
+            file.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--verbose &lt;verbosity&gt;</command> or <command>-v
+            &lt;verbosity&gt;</command>
+        </term>
+        <listitem>
+          <para>Set verbosity level to &lt;verbosity&gt;, or if &lt;verbosity&gt; is
+            omitted increment it by one. Default the verbosity level is 3; possible values are
+          0-10.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--pidfile &lt;pidfile&gt;</command> or <command>-P
+            &lt;pidfile&gt;</command>
+        </term>
+        <listitem>
+          <para>Set path to the PID file where the pid of the main process is stored.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+          <term>
+            <command>--foreground</command> or <command>-F</command>
+          </term>
+          <listitem>
+            <para>Do not daemonize, run in the foreground. This option is a convenience alias
+            for '--process-mode=foreground'.</para>
+          </listitem>
+      </varlistentry>
+      <varlistentry>
+          <term>
+            <command>--process-mode &lt;mode&gt;</command>
+          </term>
+          <listitem>
+            <para>Set processing mode to one of background, safe-background
+              or foreground.</para>
+          </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--no-syslog</command> or <command>-l</command>
+        </term>
+        <listitem>
+          <para>Send log messages to the standard output instead of syslog. This option implies
+            foreground mode, overriding the contradicting process options if present.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--log-tags</command> or <command>-T</command>
+        </term>
+        <listitem>
+          <para>Prepend log category and log level to each message.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--log-escape</command>
+        </term>
+        <listitem>
+          <para>Escape non-printable characters to avoid binary log files. Each character less than
+            0x20 and greater than 0x7F are escaped in the form &lt;XX&gt;.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--log-spec &lt;spec&gt;</command> or <command>-s
+          &lt;spec&gt;</command>
+        </term>
+        <listitem>
+          <para>Set verbosity mask on a per category basis. Each log message has an assigned
+            multi-level category, where levels are separated by a dot. For example, HTTP requests
+            are logged under <emphasis>http.request</emphasis>.
+            <command>&lt;spec&gt;</command> is a comma separated list of log specifications.
+            A single log specification consists of a wildcard matching log category, a colon, and a
+            number specifying the verbosity level of that given category. Categories match from left
+            to right. E.g.: <command>--logspec 'http.*:5,core:3'</command>. The last matching entry
+            will be used as the verbosity of the given category. If no match is found the default
+            verbosity specified with <command>--verbose</command> is used.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--threads &lt;num&gt;</command> or <command>-t
+          &lt;num&gt;</command>
+        </term>
+        <listitem>
+          <para>Set the maximum number of threads that can be used in parallel by this Zorp
+            instance.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--idle-threads &lt;num&gt;</command> or <command>-I</command>
+        </term>
+        <listitem>
+          <para>Set the maximum number of idle threads; this option has effect only if threadpools
+            are enabled (see the option <command>--threadpools</command>).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--threadpools</command> or <command>-O</command>
+        </term>
+        <listitem>
+          <para>Enable the use of threadpools, which means that threads associated with sessions are
+            not automatically freed, only if the maximum number of idle threads is exceeded.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--user &lt;user&gt;</command> or <command>-u &lt;user&gt;</command>
+        </term>
+        <listitem>
+          <para>Switch to the supplied user after starting up.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--group &lt;group&gt;</command> or <command>-g &lt;group&gt;</command>
+        </term>
+        <listitem>
+          <para>Switch to the supplied group after starting up.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--chroot &lt;dir&gt;</command> or <command>-R
+          &lt;dir&gt;</command>
+        </term>
+        <listitem>
+          <para>Change root to the specified directory before reading the configuration file. The
+            directory must be set up accordingly.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--caps &lt;caps&gt;</command> or <command>-C
+          &lt;caps&gt;</command>
+        </term>
+        <listitem>
+          <para>Switch to the supplied set of capabilities after starting up. This should contain
+            the required capabilities in the permitted set. For the syntax of capability description
+            see the man page of cap_from_text(3).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--no-caps</command> or <command>-N</command>
+        </term>
+        <listitem>
+          <para>Do not change capabilities at all.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--crypto-engine &lt;engine&gt;</command> or <command>-E
+            &lt;engine&gt;</command>
+        </term>
+        <listitem>
+          <para>Set the OpenSSL crypto engine to be used for hardware accelerated crypto
+          support.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--stack-size &lt;size&gt;</command> or <command>-S
+          &lt;size&gt;</command>
+        </term>
+        <listitem>
+          <para>Set the maximum stack size used by threads. Note that the maximum number of parallel
+            threads is influenced by the size specified here. The default stack size is 512 KB, the
+            maximum you can set is 8192 KB.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsection>
+  <refsection>
+    <title>Files</title>
+    <para>
+      <filename>/etc/zorp/</filename>
+    </para>
+    <para>
+      <filename>/etc/zorp/policy.py</filename>
+    </para>
+    <para>
+      <filename>/etc/zorp/instances.conf</filename>
+    </para>
+  </refsection>
+  <xi:include href="manpage_authors.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="manpage_copyright.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</refentry>

@@ -3,6 +3,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -43,11 +44,11 @@ class FakeProxy(object):
 
 class MyResolverCache():
     def __init__(self, hosts, server=None):
-       self.hostnames = { "blog.balabit" : set(['10.10.40.1']),
-                          "intraweb.balabit" : set(['10.10.40.1']),
-                          "intra.balabit" : set(['10.10.40.1']),
-                          "core.balabit" : set(['10.10.0.1', 'fec0:0:0:b000::ffff']) }
-       self.addresses = { "10.10.0.1" : "core.balabit", "10.10.40.1": "blog.balabit"}
+       self.hostnames = { "blog.domain" : set(['10.10.40.1']),
+                          "intraweb.domain" : set(['10.10.40.1']),
+                          "intra.domain" : set(['10.10.40.1']),
+                          "core.domain" : set(['10.10.0.1', 'fec0:0:0:b000::ffff']) }
+       self.addresses = { "10.10.0.1" : "core.domain", "10.10.40.1": "blog.domain"}
 
     def addHost(self, hostname):
         pass

@@ -1,9 +1,9 @@
-pkglibdir=$(libdir)/zorp
-pkglibexecdir=$(libdir)/zorp
-LIBS=@ZORP_LIBS@
+AM_CXXFLAGS=@ZORP_CXXFLAGS@
+AM_LDFLAGS=@ZORP_LIBS@
 
 
-pkglibexec_PROGRAMS = zorp
+sysconfdir = ${ZORP_SYSCONFDIR}
+sbin_PROGRAMS = zorp
 
 zorp_SOURCES = main.cc
 

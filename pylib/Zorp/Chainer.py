@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -882,8 +883,8 @@ class SideStackChainer(AbstractChainer):
         <tip>
         <para>
         Proxy sidestacking is useful for example to create one-sided SSL connections.
-        See the tutorials of the BalaBit Documentation Page available at
-        <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.balabit.com/network-security/zorp-gateway/support/documentation/">http://www.balabit.com/network-security/zorp-gateway/support/documentation/</link>
+        See the tutorials of the BalaSys Documentation Page available at
+        <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.balasys.hu/documentation/">http://www.balasys.hu/documentation/</link>
         for details.
         </para>
         </tip>

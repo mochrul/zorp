@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd"
+[
+<!ENTITY % entities SYSTEM "zorp-entities.ent">
+  %entities;
+  ]>
+<refentry xml:id="zorpctl.conf.5">
+  <refmeta>
+    <refentrytitle>zorpctl.conf</refentrytitle>
+    <manvolnum>5</manvolnum>
+    <refmiscinfo class="version">&version;</refmiscinfo>
+    <refmiscinfo class="source">&product;</refmiscinfo>
+    <refmiscinfo class='manual'>&product;</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>zorpctl.conf</refname>
+    <refpurpose>
+      <link linkend="zorpctl.8">zorpctl(8)</link> configuration file.</refpurpose>
+  </refnamediv>
+  <refsection>
+    <title>Description</title>
+    <para>The <filename>zorpctl.conf</filename> file describes various global options ifluencing the
+      behavior of <command>
+        <link linkend="zorpctl.8">zorpctl(8)</link>
+      </command>. <link linkend="zorpctl.8">
+        <command>zorpctl(8)</command>
+      </link> processes the file line by line, each line having the structure described below. Empty
+      lines and lines beginning with '#' are comments and are ignored.</para>
+  </refsection>
+  <refsection>
+    <title>Structure</title>
+    <para>
+      <command>variable name = variable value</command>
+    </para>
+    <para>Each non-empty line specifies a variable name and its value separated by the equal sign
+      ('='). The following variables are available:</para>
+    <variablelist termlength="6cm">
+      <varlistentry>
+        <term>
+          <command>AUTO_RESTART</command>
+        </term>
+        <listitem>
+          <para>Enable the automatic restart feature of <command>zorpctl</command>. Instances in
+            auto-restart mode are restarted automatically when they exit. Default value: 1
+          (TRUE).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>AUTO_RESTART_TIME_THRESHOLD</command>
+        </term>
+        <listitem>
+          <para>If a restarted instance exits within this interval (specified in seconds), the
+            restart attempt is considered a failure. Default value: 60 seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>AUTO_RESTART_MAX_COUNT</command>
+        </term>
+        <listitem>
+          <para>Maximum number of restart attempts. If the instance is not successfully restarted
+            from <emphasis>AUTO_RESTART_MAX_COUNT</emphasis> attempts, the event is logged. Default
+            value: 3.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>AUTO_RESTART_DELAY</command>
+        </term>
+        <listitem>
+          <para>Wait <emphasis>AUTO_RESTART_DELAY</emphasis> seconds before attempting to restart
+            the Zorp instance.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>STOP_CHECK_DELAY</command>
+        </term>
+        <listitem>
+          <para>The rate (delay in seconds) to check a stopping Zorp instance at. Default value:
+          1.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>STOP_CHECK_TIMEOUT</command>
+        </term>
+        <listitem>
+          <para>The number of seconds to wait for a stopping Zorp instance. Default value: 3.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>START_CHECK_TIMEOUT</command>
+        </term>
+        <listitem>
+          <para>In <emphasis>auto-restart</emphasis> mode there is no real way to detect whether
+            Zorp failed to load or not. Zorpctl waits <emphasis>START_CHECK_TIMEOUT</emphasis>
+            seconds and assumes that Zorp loaded successfully if it did not exit within this
+            interval. Default value: 5 seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>START_WAIT_TIMEOUT</command>
+        </term>
+        <listitem>
+          <para>In <emphasis>no-auto-restart</emphasis> mode the successful loading of a Zorp
+            instance can be verified by instructing Zorp to daemonize itself and waiting for the
+            parent to exit. This parameter specifies the number of seconds to wait for Zorp to
+            daemonize itself. Default value: 60 seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>FD_LIMIT_THRESHOLD</command>
+        </term>
+        <listitem>
+          <para>The expected maximal number of file descriptors openened by the threads. The global
+            fd limit is <emphasis>FD_LIMIT_THRESHOLD</emphasis> multiplied by the thread limit.
+            Default value: 64.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>FD_LIMIT_MIN</command>
+        </term>
+        <listitem>
+          <para>The minimum fd limit (<emphasis>ulimit -n</emphasis>) used by Zorp in the case when
+            the process limit (calculated from the <emphasis>--threads</emphasis> and
+              <emphasis>FD_LIMIT_THRESHOLD</emphasis> parameters) would result a lower value.
+            Default value: 1024.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>ZORP_APPEND_ARGS</command>
+        </term>
+        <listitem>
+          <para>Zorp-specific arguments to be appended to the command line of each Zorp instance.
+            Also recognised as <emphasis>APPEND_ARGS</emphasis> (deprecated). Default value:
+              <emphasis>""</emphasis>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>ZORPCTL_APPEND_ARGS</command>
+        </term>
+        <listitem>
+          <para>Zorpctl-specific arguments to be appended to the command line of each instance.
+            Default value: <emphasis>""</emphasis>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>CHECK_PERMS</command>
+        </term>
+        <listitem>
+          <para>Specifies whether to check the permissions of the Zorp configuration directory. If
+            set, Zorp refuses to run if the <filename>/etc/zorp</filename> directory can be written
+            by user other then <parameter>zorp</parameter> Default value: 1 (TRUE).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>CONFIG_DIR</command>
+        </term>
+        <listitem>
+          <para>The path to the Zorp configuration directory to check if CHECK_PERMS is enabled.
+            NOTE: it does not change the Zorp policy file argument, this parameter is only used by
+            the permission validating code. Default value: <filename>${prefix}/etc/zorp</filename>
+          .</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>CONFIG_DIR_OWNER, CONFIG_DIR_GROUP, CONFIG_DIR_MODE</command>
+        </term>
+        <listitem>
+          <para>The owner/group/permissions values considered valid for the configuration directory.
+              <command>zorpctl</command> fails if the actual owner/group/permissions values conflict
+            the ones set here. Default values: <emphasis>root.zorp, 0750</emphasis> .</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>PIDFILE_DIR</command>
+        </term>
+        <listitem>
+          <para>The path to the Zorp pid file directory. The directory is created automatically
+            prior to starting Zorp if it does not already exist.It is created if it does not exist,
+            before NOTE: No <emphasis>--pidfile</emphasis> argument is passed to Zorp, only
+            texistance of the directory is verified. Default value:
+            <filename>/var/run/zorp</filename>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>PIDFILE_DIR_OWNER, PIDFILE_DIR_GROUP, PIDFILE_DIR_MODE</command>
+        </term>
+        <listitem>
+          <para>The owner/group/permission values the pidfile directory is created with if it does
+            not exist. Default values: <emphasis>root.root, 0700</emphasis>.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsection>
+  <refsection>
+    <title>Files</title>
+    <para/>
+    <para>The default location for <filename>zorpctl.conf</filename> is
+        <filename>/etc/zorp/zorpctl.conf</filename>.</para>
+  </refsection>
+  <xi:include href="manpage_authors.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="manpage_copyright.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</refentry>

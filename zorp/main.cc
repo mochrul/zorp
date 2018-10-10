@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,27 +20,27 @@
  ***************************************************************************/
 
 #include <zorp/zorp.h>
-#include <zorp/io.h>
-#include <zorp/stream.h>
+#include <zorpll/io.h>
+#include <zorpll/stream.h>
 #include <zorp/policy.h>
-#include <zorp/registry.h>
-#include <zorp/thread.h>
-#include <zorp/log.h>
-#include <zorp/cap.h>
-#include <zorp/ssl.h>
+#include <zorpll/registry.h>
+#include <zorpll/thread.h>
+#include <zorpll/log.h>
+#include <zorpll/cap.h>
+#include <zorpll/ssl.h>
 #include <zorp/dgram.h>
 #include <zorp/tpsocket.h>
-#include <zorp/poll.h>
+#include <zorpll/poll.h>
 #include <zorp/szig.h>
 #include <zorp/tpsocket.h>
 #include <zorp/dispatch.h>
-#include <zorp/process.h>
-#include <zorp/blob.h>
+#include <zorpll/process.h>
+#include <zorpll/blob.h>
 #ifdef HAVE_LINUX_NETLINK_H
 #include <zorp/ifmonitor.h>
 #endif
 
-#include <zorp/stackdump.h>
+#include <zorpll/stackdump.h>
 
 
 #include <zorp/proxy.h>
@@ -207,20 +208,14 @@ void
 z_version(void)
 {
   printf("Zorp %s (%s)\n"
-         "Revision: %s\n"
-         "Compile-Date: %s %s\n"
          "Config-Date: %s\n"
          "Trace: %s\n"
-         "Debug: %s\n"
          "IPOptions: %s\n\n"
          "%s\n"
          ,
          BROCHURE_VERSION, VERSION,
-         ZORP_SOURCE_REVISION,
-         __DATE__, __TIME__,
          ZORP_CONFIG_DATE,
          ON_OFF_STR(ENABLE_TRACE),
-         ON_OFF_STR(ENABLE_DEBUG),
          ON_OFF_STR(ENABLE_IPOPTIONS),
          z_libzorpll_version_info()
          );
@@ -477,7 +472,7 @@ main(int argc, char *argv[])
   z_thread_set_max_threads(1000);       /* set our own default value for max_threads in ZThread */
 
   z_process_set_argv_space((gint) argc, (gchar **) argv);
-  z_process_set_caps("cap_net_admin,cap_net_bind_service,cap_net_raw=p");
+  z_process_set_caps("cap_net_bind_service=p cap_net_admin,cap_net_raw=ip");
 
   ctx = g_option_context_new("zorp");
   z_libzorpll_add_option_groups(ctx, 0);
@@ -598,7 +593,6 @@ main(int argc, char *argv[])
 
   z_setup_signals();
 
-
 #ifdef PREDICTABLE_RANDOM_ENABLED
   RAND_set_rand_method(RAND_stdlib());
   unsigned int seed = 0x12345;
@@ -633,7 +627,6 @@ main(int argc, char *argv[])
   /* avoid second dump of dmalloc */
   rename("logfile", "logfile.dm");
 #endif
-
 
   if (exit_code != 0)
     z_process_startup_failed(exit_code, TRUE);

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,15 +23,15 @@
 #include "ftp.h"
 
 #include <zorp/zorp.h>
-#include <zorp/registry.h>
-#include <zorp/sockaddr.h>
+#include <zorpll/registry.h>
+#include <zorpll/sockaddr.h>
 #include <zorp/pysockaddr.h>
 #include <zorp/policy.h>
-#include <zorp/log.h>
-#include <zorp/thread.h>
-#include <zorp/io.h>
-#include <zorp/streamfd.h>
-#include <zorp/streamssl.h>
+#include <zorpll/log.h>
+#include <zorpll/thread.h>
+#include <zorpll/io.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/streamssl.h>
 #include <zorp/proxysslhostiface.h>
 #include <zorp/pystream.h>
 #include <zorp/pyproxy.h>
@@ -346,7 +347,7 @@ ftp_data_prepare_listen(FtpProxy *self, ZEndpoint side)
       /*LOG
         This message indicates that the previous data connection was not
         completely teared down and a new one is about to accept.
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 3, "Internal error, previous dispatcher not unregistered; side='%s', mode='L'", SIDE_TO_STRING(side));
       z_dispatch_unregister(self->data_listen[side]);
@@ -376,7 +377,7 @@ ftp_data_prepare_listen(FtpProxy *self, ZEndpoint side)
         This message indicates that the previous data connection was not
         completely teared down while a new connection is being
         established. This message indicates an internal error, please
-        contact the BalaBit QA team.
+        contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 3, "Internal error, previous attach not unregistered; side='%s', mode='L'", SIDE_TO_STRING(side));
       z_attach_cancel(self->data_connect[side]);
@@ -429,7 +430,7 @@ ftp_data_prepare_connect(FtpProxy *self, ZEndpoint side)
       /*LOG
         This message indicates that the previous data connection was not
         completely teared down and a new one is being established.
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 3, "Internal error, previous attach not unregistered; side='%s', mode='C'", SIDE_TO_STRING(side));
       z_attach_cancel(self->data_connect[side]);
@@ -460,7 +461,7 @@ ftp_data_prepare_connect(FtpProxy *self, ZEndpoint side)
       /*LOG
         This message indicates that the previous data connection was not
         completely teared down and a new one is about to accept.
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 3, "Internal error, previous dispatcher not unregistered; side='%s', mode='C'", SIDE_TO_STRING(side));
       z_dispatch_unregister(self->data_listen[side]);
@@ -603,7 +604,7 @@ ftp_data_start(FtpProxy *self)
         This message indicates an internal error that a previous data connection was not
         completed successfully. This condition should not occur, though the
         event is harmless, an explicit data reset clears this state.
-        Please contact the BalaBit QA team.
+        Please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 3, "Internal error, previous data connection is not closed properly; data_state='%lx", self->data_state);
       ftp_data_reset(self);
@@ -680,7 +681,7 @@ ftp_data_create_transfer(FtpProxy *self)
         This message indicates an internal error that the proxy is unable to
         start a stacked data proxy because either the data connection to the
         FTP client or the FTP server is not yet established.
-        Please contact the BalaBit QA team.
+        Please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 2, "Internal error, cannot start data proxy because peers are not yet connected;");
       z_proxy_return(self, FALSE);
@@ -718,7 +719,7 @@ ftp_data_create_transfer(FtpProxy *self)
         This message indicates an internal error that the current command
         descriptor changed while the data connection was being set up, thus
         we are unable to know which direction is permitted during data
-        transfer. Please contact the BalaBit QA team.
+        transfer. Please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 2, "Internal error, current command descriptor does not specify data transfer;");
       z_proxy_leave(self);
@@ -930,7 +931,7 @@ ftp_stream_client_init(FtpProxy *self)
   if (!self->super.endpoints[EP_CLIENT])
     {
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, client side not connected;");
       z_proxy_return(self, FALSE);
@@ -976,7 +977,7 @@ ftp_stream_server_init(FtpProxy *self)
   if (!self->super.endpoints[EP_SERVER])
     {
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, server side not connected;");
       z_proxy_return(self, FALSE);
@@ -1424,7 +1425,7 @@ ftp_stream_write(FtpProxy *self, char side, const guchar *line, guint length)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error in stream write, side is wrong; side='%c'", side);
       assert(0);
@@ -1788,7 +1789,7 @@ ftp_command_process(FtpProxy *self)
           if (!command->parse)
             {
               /*LOG
-                This message indicates an internal error, please contact the BalaBit QA team.
+                This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
                */
               z_proxy_log(self, FTP_ERROR, 1, "Internal error, known command but command parse is unset; req='%s'", self->request_cmd->str);
               assert(0);
@@ -1870,7 +1871,7 @@ ftp_command_process(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_POLICY, 1, "Bad policy type, aborting; line='%s', policy='%d'", self->line, res);
       self->state = FTP_QUIT;

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
  ***************************************************************************/
 
 #include <zorp/coredump.h>
-#include <zorp/log.h>
+#include <zorpll/log.h>
 
 #include <errno.h>
 #include <sys/types.h>

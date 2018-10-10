@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,17 +27,17 @@
 #include "telnettls.h"
 #include "telnetoption.h"
 
-#include <zorp/thread.h>
-#include <zorp/registry.h>
-#include <zorp/log.h>
+#include <zorpll/thread.h>
+#include <zorpll/registry.h>
+#include <zorpll/log.h>
 #include <zorp/policy.h>
-#include <zorp/io.h>
-#include <zorp/stream.h>
-#include <zorp/streambuf.h>
+#include <zorpll/io.h>
+#include <zorpll/stream.h>
+#include <zorpll/streambuf.h>
 #include <zorp/pystruct.h>
-#include <zorp/poll.h>
-#include <zorp/packetbuf.h>
-#include <zorp/source.h>
+#include <zorpll/poll.h>
+#include <zorpll/packetbuf.h>
+#include <zorpll/source.h>
 
 #include <ctype.h>
 #include <netinet/in.h>
@@ -61,7 +62,6 @@ static TelnetOptions telnet_option_negotiation_table[] =
     { TELNET_OPTION_STARTTLS,           telnet_tls_handle_option },
     { 0,                                NULL }
   };
-
 
 /**
  * telnet_set_defaults:
@@ -187,7 +187,6 @@ telnet_register_vars(TelnetProxy *self)
                   &self->server_port);
 
 
-
   z_proxy_return(self);
 }
 
@@ -242,9 +241,7 @@ telnet_write_packet(TelnetProxy *self, ZEndpoint ep, ZPktBuf *pkt)
       z_proxy_return(self, G_IO_STATUS_NORMAL);
     }
 
-    {
-      res = z_stream_write_packet(self->super.endpoints[ep], pkt, NULL);
-    }
+  res = z_stream_write_packet(self->super.endpoints[ep], pkt, NULL);
 
   z_proxy_return(self, res);
 }
@@ -409,7 +406,6 @@ telnet_init_server_stream(TelnetProxy *self)
   telnet_init_stream(self, EP_SERVER, telnet_server_read, self, NULL);
 
   self->server_stream_initialized = TRUE;
-
 
   z_proxy_return(self, ret);
 }
@@ -750,7 +746,6 @@ telnet_proxy_free(ZObject *s)
   TelnetProxy *self = Z_CAST(s, TelnetProxy);
 
   z_enter();
-
 
   telnet_lineedit_destroy(&self->line_editor);
   telnet_protocol_destroy(&self->protocol[EP_CLIENT]);

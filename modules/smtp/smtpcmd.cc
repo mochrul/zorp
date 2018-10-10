@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +22,8 @@
 
 #include "smtp.h"
 
-#include <zorp/log.h>
-#include <zorp/misc.h>
+#include <zorpll/log.h>
+#include <zorpll/misc.h>
 
 #include <string.h>
 
@@ -636,8 +637,8 @@ smtp_response_EHLO(SmtpProxy *self)
                        *  - client: != ACCEPT_STARTTLS / server *: we have to remove 'STARTTLS'
                        *  - client: ACCEPT_STARTTLS / server != FORWARD_STARTTLS: we have to add 'STARTTLS'
                        */
-                      if (self->super.encryption->ssl_opts.security[EP_CLIENT] != ENCRYPTION_SEC_ACCEPT_STARTTLS ||
-                          self->start_tls_ok[EP_CLIENT])
+                      if ((self->super.encryption->ssl_opts.security[EP_CLIENT] != ENCRYPTION_SEC_ACCEPT_STARTTLS ||
+                          self->start_tls_ok[EP_CLIENT]) && !self->tls_passthrough)
                         {
                           self->active_extensions &= ~SMTP_EM_STARTTLS;
                           remove_ext_from_list = TRUE;

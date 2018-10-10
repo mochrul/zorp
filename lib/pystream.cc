@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +23,10 @@
 #include <zorp/pystream.h>
 
 #include <zorp/zorp.h>
-#include <zorp/log.h>
-#include <zorp/stream.h>
-#include <zorp/streamfd.h>
-#include <zorp/streamline.h>
+#include <zorpll/log.h>
+#include <zorpll/stream.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/streamline.h>
 #include <zorp/policy.h>
 
 PyObject *z_policy_stream_new(ZStream *Stream);

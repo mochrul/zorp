@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -147,7 +148,7 @@ Content-Length: 14
       </para>
       <para>
       Several examples and considerations on how to enable virus filtering in the HTTP traffic are discussed in the
-        Technical White Paper and Tutorial <emphasis>Virus filtering in HTTP</emphasis>, available at the BalaBit Documentation Page <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.balabit.com/network-security/zorp-gateway/support/documentation/">http://www.balabit.com/network-security/zorp-gateway/support/documentation/</link>.
+        Technical White Paper and Tutorial <emphasis>Virus filtering in HTTP</emphasis>, available at the BalaSys Documentation Page <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.balasys.hu/documentation/">http://www.balasys.hu/documentation/</link>.
       </para>
       <section>
         <title>Transparent and non-transparent modes</title>
@@ -284,7 +285,7 @@ Proxy-agent: My-Proxy/1.1</synopsis>
         <example>
           <title>URL redirection in HTTP proxy</title>
           <para>
-          This example redirects all HTTP GET requests to the 'http://www.balabit.com/' URL by modifying the value of the requested URL.
+          This example redirects all HTTP GET requests to the 'http://www.example.com/' URL by modifying the value of the requested URL.
           </para>
           <synopsis>class MyHttp(HttpProxy):
         def config(self):
@@ -292,7 +293,7 @@ Proxy-agent: My-Proxy/1.1</synopsis>
                 self.request["GET"] = (HTTP_REQ_POLICY, self.filterURL)
 
         def filterURL(self, method, url, version):
-                self.request_url = "http://www.balabit.com/"
+                self.request_url = "http://www.example.com/"
                 return HTTP_REQ_ACCEPT</synopsis>
         </example>
         <example>
@@ -491,7 +492,7 @@ def instance():
                     <para>To enable url-filtering, set the <parameter>enable_url_filter</parameter> and <parameter>enable_url_filter_dns</parameter> options to <parameter>TRUE</parameter>. The <parameter>enable_url_filter_dns</parameter> option is needed only to ensure that a domain or URL is correctly categorized even when it is listed in the database using its domain name, but the client tries to access it with its IP address (or vice-versa).</para>
                     <note>
                         <para>URL-filtering is handled by the Zorp Http proxy, without the need of using ZCV. The URL-filtering capability of Zorp is available only after purchasing the <parameter>url-filter</parameter> license option.</para>
-                        <para>Updates to the URL database are automatically downloaded daily from the BalaBit website using the <command>zavupdate</command> utility. </para>
+                        <para>Updates to the URL database are automatically downloaded daily from the BalaSys website using the <command>zavupdate</command> utility. </para>
                     </note>
              <para>Access to specific categories can be set using the <parameter>url_category</parameter> option, which is a hash indexed by the name of the category. The following actions are possible:</para>
              <inline type="actiontuple" target="action.http.url"/>
@@ -1088,51 +1089,53 @@ from Plug import PlugProxy
 from Proxy import Proxy, proxyLog
 from Matcher import getMatcher
 
-HTTP_URL_ACCEPT         = 1
-HTTP_URL_REJECT         = 3
-HTTP_URL_REDIRECT       = 106
+HTTP_URL_ACCEPT = 1
+HTTP_URL_REJECT = 3
+HTTP_URL_REDIRECT = 106
 
-HTTP_REQ_ACCEPT         = 1
-HTTP_REQ_DENY           = 2
-HTTP_REQ_REJECT         = 3
-HTTP_REQ_ABORT          = 4
-HTTP_REQ_POLICY         = 6
+HTTP_REQ_ACCEPT = 1
+HTTP_REQ_DENY = 2
+HTTP_REQ_REJECT = 3
+HTTP_REQ_ABORT = 4
+HTTP_REQ_POLICY = 6
 HTTP_REQ_CUSTOM_RESPONSE = 7
 
-HTTP_RSP_ACCEPT         = 1
-HTTP_RSP_DENY           = 2
-HTTP_RSP_REJECT         = 3
-HTTP_RSP_ABORT          = 4
-HTTP_RSP_POLICY         = 6
+HTTP_RSP_ACCEPT = 1
+HTTP_RSP_DENY = 2
+HTTP_RSP_REJECT = 3
+HTTP_RSP_ABORT = 4
+HTTP_RSP_POLICY = 6
 
-HTTP_HDR_ACCEPT         = 1
-HTTP_HDR_ABORT          = 4
-HTTP_HDR_DROP           = 5
-HTTP_HDR_POLICY         = 6
-HTTP_HDR_CHANGE_NAME    = 100
-HTTP_HDR_CHANGE_VALUE   = 101
-HTTP_HDR_CHANGE_BOTH    = 102
-HTTP_HDR_CHANGE_REGEXP  = 103
-HTTP_HDR_INSERT         = 104
-HTTP_HDR_REPLACE        = 105
+HTTP_HDR_ACCEPT = 1
+HTTP_HDR_ABORT = 4
+HTTP_HDR_DROP = 5
+HTTP_HDR_POLICY = 6
+HTTP_HDR_CHANGE_NAME = 100
+HTTP_HDR_CHANGE_VALUE = 101
+HTTP_HDR_CHANGE_BOTH = 102
+HTTP_HDR_CHANGE_REGEXP = 103
+HTTP_HDR_INSERT = 104
+HTTP_HDR_REPLACE = 105
 
-HTTP_CONNECTION_CLOSE           = 0
-HTTP_CONNECTION_KEEPALIVE       = 1
+HTTP_CONNECTION_CLOSE = 0
+HTTP_CONNECTION_KEEPALIVE = 1
 
-HTTP_DEBUG      = "http.debug"
-HTTP_ERROR      = "http.error"
-HTTP_POLICY     = "http.policy"
-HTTP_REQUEST    = "http.request"
-HTTP_RESPONSE   = "http.response"
-HTTP_VIOLATION  = "http.violation"
+HTTP_DEBUG = "http.debug"
+HTTP_ERROR = "http.error"
+HTTP_POLICY = "http.policy"
+HTTP_REQUEST = "http.request"
+HTTP_RESPONSE = "http.response"
+HTTP_VIOLATION = "http.violation"
 HTTP_ACCOUNTING = "http.accounting"
 
-HTTP_STK_NONE   = 1
-HTTP_STK_DATA   = 2
-HTTP_STK_MIME   = 3
+HTTP_STK_NONE = 1
+HTTP_STK_DATA = 2
+HTTP_STK_MIME = 3
 HTTP_STK_POLICY = 4
 
+
 class AbstractHttpProxy(Proxy):
+
     """<class maturity="stable" abstract="yes">
     <summary>
       Class encapsulating the abstract HTTP proxy.
@@ -1899,6 +1902,20 @@ class AbstractHttpProxy(Proxy):
           </description>
         </attribute>
         <attribute>
+          <name>request_version</name>
+          <type>
+            <string/>
+          </type>
+          <default>n/a</default>
+          <conftime/>
+          <runtime>
+            <read/>
+          </runtime>
+          <description>
+            Request version (1.0, 1.1, etc.) used by the client.
+          </description>
+        </attribute>
+        <attribute>
           <name>request_url_scheme</name>
           <type>
             <string/>
@@ -2613,8 +2630,8 @@ class AbstractHttpProxy(Proxy):
             except KeyError:
                 return (HTTP_STK_NONE, None)
 
-        if type(stack_proxy) == type(()):
-            while 1:
+        if isinstance(stack_proxy, type(())):
+            while True:
                 stack_type = stack_proxy[0]
                 if stack_type == HTTP_STK_NONE:
                     return (HTTP_STK_NONE, None)
@@ -2751,7 +2768,9 @@ class AbstractHttpProxy(Proxy):
         """
         return self.__headerManip(1, 1, header, new_value)
 
+
 class HttpProxy(AbstractHttpProxy):
+
     """<class maturity="stable">
     <summary>
       Default HTTP proxy based on AbstractHttpProxy.
@@ -2768,6 +2787,7 @@ class HttpProxy(AbstractHttpProxy):
     </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
           <summary>
@@ -2784,14 +2804,17 @@ class HttpProxy(AbstractHttpProxy):
           </metainfo>
         </method>
         """
-        self.request["GET"]  = (HTTP_REQ_ACCEPT,)
+        self.request["GET"] = (HTTP_REQ_ACCEPT,)
         self.request["POST"] = (HTTP_REQ_ACCEPT,)
         self.request["HEAD"] = (HTTP_REQ_ACCEPT,)
 
 # we are transparent by default
-HttpProxyTransparent = HttpProxy;
+HttpProxyTransparent = HttpProxy
+
+
 
 class HttpProxyNonTransparent(HttpProxy):
+
     """<class maturity="stable">
       <summary>
         HTTP proxy based on HttpProxy, operating in non-transparent mode.
@@ -2817,6 +2840,7 @@ class HttpProxyNonTransparent(HttpProxy):
       </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
         <summary>
@@ -2834,7 +2858,9 @@ class HttpProxyNonTransparent(HttpProxy):
         HttpProxy.config(self)
         self.transparent_mode = FALSE
 
+
 class HttpProxyURIFilter(HttpProxy):
+
     """<class maturity="stable">
       <summary>
          HTTP proxy based on HttpProxy, with URI filtering capability.
@@ -2875,6 +2901,7 @@ class HttpProxyURIFilter(HttpProxy):
       </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
         </method>
@@ -2913,7 +2940,9 @@ class HttpProxyURIFilter(HttpProxy):
                 return HTTP_REQ_REJECT
         return HTTP_REQ_ACCEPT
 
+
 class HttpProxyURIFilterNonTransparent(HttpProxyURIFilter):
+
     """<class maturity="stable">
       <summary>
         HTTP proxy based on HttpProxyURIFilter, with URI filtering capability and permitting non-transparent requests.
@@ -2928,6 +2957,7 @@ class HttpProxyURIFilterNonTransparent(HttpProxyURIFilter):
       </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
         </method>
@@ -2935,7 +2965,9 @@ class HttpProxyURIFilterNonTransparent(HttpProxyURIFilter):
         HttpProxyURIFilter.config(self)
         self.transparent_mode = FALSE
 
+
 class HttpWebdavProxy(HttpProxy):
+
     """<class maturity="stable">
       <summary>
         HTTP proxy based on HttpProxy, allowing WebDAV extensions.
@@ -2952,6 +2984,7 @@ class HttpWebdavProxy(HttpProxy):
       </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
         </method>
@@ -2965,7 +2998,9 @@ class HttpWebdavProxy(HttpProxy):
         self.request["LOCK"] = (HTTP_REQ_ACCEPT)
         self.request["UNLOCK"] = (HTTP_REQ_ACCEPT)
 
+
 class NontransHttpWebdavProxy(HttpProxyNonTransparent):
+
     """<class maturity="stable">
       <summary>
         HTTP proxy based on HttpProxyNonTransparent, allowing WebDAV extension in non-transparent
@@ -2983,6 +3018,7 @@ class NontransHttpWebdavProxy(HttpProxyNonTransparent):
       </metainfo>
     </class>
     """
+
     def config(self):
         """<method internal="yes">
         </method>

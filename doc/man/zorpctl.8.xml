@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd"
+[
+<!ENTITY % entities SYSTEM "zorp-entities.ent">
+  %entities;
+  ]>
+<refentry xml:id="zorpctl.8">
+  <refmeta>
+    <refentrytitle>zorpctl</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo class="version">&version;</refmiscinfo>
+    <refmiscinfo class="source">&product;</refmiscinfo>
+    <refmiscinfo class='manual'>&product;</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>zorpctl</refname>
+    <refpurpose>Start and stop zorp instances.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>zorpctl command</command>
+      <arg>options [instances/@instance-list-file]</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsection>
+    <title>Description</title>
+    <para>
+      <command>zorpctl</command> starts and stops <link linkend="zorp.8">zorp(8)</link> instances
+      based on the contents of the <link linkend="instances.conf.5">
+        <filename>instances.conf(5)</filename>
+      </link> file. Multiple instance names can be specified in the
+      command-line or in a file to start or stop several instances. If an
+      error occurs while stopping or starting an instance, an exclamation
+      mark is appended to the instance name as <command>zorpctl</command>
+      processes the request, and a summary is printed when the program
+      exits. If no instance is specified, the command is executed on all
+      instances. The instances to be controlled can be specified in a file instead
+      of listing them in the command line, e.g.: <command>zorpctl command options
+      instances.txt</command>. The <filename>instances.txt</filename> should contain every instance
+      name in a new line.</para>
+  </refsection>
+  <refsection>
+    <title>Commands</title>
+    <variablelist>
+      <varlistentry>
+        <term>
+          <command>start</command>
+        </term>
+        <listitem>
+          <para>Starts the specified Zorp instance(s).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>force-start</command>
+        </term>
+        <listitem>
+          <para>Starts the specified Zorp instance(s) even if they are disabled.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>stop</command>
+        </term>
+        <listitem>
+          <para>Stops the specified Zorp instance(s).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>force-stop</command>
+        </term>
+        <listitem>
+          <para>Forces the specified Zorp instance(s) to stop using the KILL signal.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>restart</command>
+        </term>
+        <listitem>
+          <para>Restart the specified Zorp instance(s).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>force-restart</command>
+        </term>
+        <listitem>
+          <para>Forces the specified Zorp instance(s) to restart by stopping them using the KILL
+            signal.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>reload</command>
+        </term>
+        <listitem>
+          <para>Reload the specified Zorp instance(s).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>status</command>
+        </term>
+        <listitem>
+          <para>Display the status of the specified Zorp instance(s).</para>
+          <variablelist>
+            <varlistentry>
+              <term>
+                <command>--verbose</command> or <command>-v</command>
+              </term>
+              <listitem>
+                <para>Display detailed status information.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>gui-status</command>
+        </term>
+        <listitem>
+          <para>Display the status of the specified Zorp instance(s) in an internal format easily
+            parsable by ZMC. NOTE: This command is mainly used internally within Zorp, and the
+            structure of its output may change.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>version</command>
+        </term>
+        <listitem>
+          <para>Display version information on Zorp.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>inclog</command>
+        </term>
+        <listitem>
+          <para>Raise the verbosity (log) level of the specified Zorp instance(s) by one.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>declog</command>
+        </term>
+        <listitem>
+          <para>Decrease the verbosity (log) level of the specified Zorp instance(s) by one.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>log</command>
+        </term>
+        <listitem>
+          <para>Change various log related settings in the specified Zorp instance(s) using the
+            following options:</para>
+          <variablelist>
+            <varlistentry>
+              <term>
+                <command>--vinc</command> or <command>-i</command>
+              </term>
+              <listitem>
+                <para>Increase verbosity level by one.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--vdec</command> or <command>-d</command>
+              </term>
+              <listitem>
+                <para>Decrease verbosity level by one.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--vset &lt;verbosity&gt;</command> or <command>-s
+                  &lt;verbosity&gt;</command>
+              </term>
+              <listitem>
+                <para>Set verbosity level to &lt;verbosity&gt;.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--log-spec &lt;spec&gt;</command> or <command>-S
+                  &lt;spec&gt; </command>
+              </term>
+              <listitem>
+                <para>Set verbosity mask on a per category basis. The format of this value is
+                  described in <link linkend="zorp.8">zorp(8)</link>.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--help</command> or <command>-h</command>
+              </term>
+              <listitem>
+                <para>Display this help screen on the options of the <command>log</command>
+                command.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>szig</command>
+        </term>
+        <listitem>
+          <para>Display internal information from the specified Zorp instance(s). The information to
+            be disblayed can be specified with the following options:</para>
+          <variablelist>
+            <varlistentry>
+              <term>
+                <command>--walk</command> or <command>-w</command>
+              </term>
+              <listitem>
+                <para>Walk the specified tree.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--root [node]</command> or <command>-r [node]</command>
+              </term>
+              <listitem>
+                <para>Set the root node of the walk operation to [node].</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>
+                <command>--help</command> or <command>-h</command>
+              </term>
+              <listitem>
+                <para>Display a brief help on the options of the <command>szig</command>
+                command.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>help</command>
+        </term>
+        <listitem>
+          <para>Display a brief help message.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsection>
+  <refsection>
+    <title>Examples</title>
+    <para>
+      <command>zorpctl start zorp_ftp</command>
+    </para>
+    <para>The command above starts the zorp instance named <emphasis>zorp-ftp</emphasis> with
+      parameters described in the <filename>instances.conf</filename> file.</para>
+  </refsection>
+  <refsection>
+    <title>Files</title>
+    <para>The default location for <filename>instances.conf</filename> is
+        <filename>/etc/zorp/instances.conf</filename>.</para>
+  </refsection>
+  <xi:include href="manpage_authors.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="manpage_copyright.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</refentry>

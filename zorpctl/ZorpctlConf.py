@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -116,6 +117,8 @@ class ZorpctlConfig(object):
            return Zorp.Config.config.options.product_name
         if key == 'ZORP_LIBDIR':
             return Zorp.Config.config.dirs.libdir
+        if key == 'ZORP_SBINDIR':
+            return Zorp.Config.config.dirs.sbindir
         if key == 'ZORP_SYSCONFDIR':
             return Zorp.Config.config.dirs.sysconfdir
         if key == 'ZORP_PIDFILEDIR':

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,34 +45,34 @@ BOOST_AUTO_TEST_CASE(test_sanitize_addr)
   dummy = (SmtpProxy *) z_object_new(Z_CLASS(SmtpProxy));
   dummy->append_domain = g_string_sized_new(0);
   /* z_charset_parse(&dummy.local_part, "a-zA-Z0-9\\-=._"); */
-  test_case("<bazsi@balabit.hu>", "bazsi@balabit.hu", TRUE);
+  test_case("<username@domain>", "username@domain", TRUE);
   test_case("<>", "", TRUE);
-  test_case("<@hop1,@hop2,@hop3:bazsi@balabit.hu>", "bazsi@balabit.hu", TRUE);
-  test_case("<@:bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<:bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<@hop1@bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<@hop1\"bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<@hop1:;bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<@hop1,bazsi@balabit.hu>", NULL, FALSE);
-  test_case("<bazsi@balabit.hu", NULL, FALSE);
-  test_case("bazsi@balabit.hu>", NULL, FALSE);
-  test_case("bazsi@balabit.hu", NULL, FALSE);
-  test_case("<bazsibalabit.hu>", NULL, FALSE);
-  test_case("<\"balazs scheidler\"@balabit.hu>", "\"balazs scheidler\"@balabit.hu", TRUE);
-  test_case("<\"balazs scheidler\"@[1.2.3.4]>", "\"balazs scheidler\"@[1.2.3.4]", TRUE);
-  test_case("<@hop1.domain,@hop2.domain:\"balazs scheidler\"@[1.2.3.4]>", "\"balazs scheidler\"@[1.2.3.4]", TRUE);
-  test_case("<@hop1.domain,@hop2.domain:\"balazs scheidler\"@[domain literal]>", "\"balazs scheidler\"@[domain literal]", TRUE);
-  test_case("<@hop1.domain,@hop2.domain:\"balazs scheidler\"@#123456>", "\"balazs scheidler\"@#123456", TRUE);
-  test_case("<@hop1.domain,@hop2.domain:\"balazs scheidler\"@#123456z>", NULL, FALSE);
-  test_case("<bounce-debian-gcc=asd=balabit.hu@lists.debian.org> SIZE=10037", "bounce-debian-gcc=asd=balabit.hu@lists.debian.org", TRUE);
-  test_case("bazsi@balabit.hu", NULL, FALSE);
-  test_case("<bazsi@balabit.hu", NULL, FALSE);
-  test_case("bazsi@balabit.hu>", NULL, FALSE);
+  test_case("<@hop1,@hop2,@hop3:username@domain>", "username@domain", TRUE);
+  test_case("<@:username@domain>", NULL, FALSE);
+  test_case("<:username@domain>", NULL, FALSE);
+  test_case("<@hop1@username@domain>", NULL, FALSE);
+  test_case("<@hop1\"username@domain>", NULL, FALSE);
+  test_case("<@hop1:;username@domain>", NULL, FALSE);
+  test_case("<@hop1,username@domain>", NULL, FALSE);
+  test_case("<username@domain", NULL, FALSE);
+  test_case("username@domain>", NULL, FALSE);
+  test_case("username@domain", NULL, FALSE);
+  test_case("<usernamedomain>", NULL, FALSE);
+  test_case("<\"firstname lastname\"@domain>", "\"firstname lastname\"@domain", TRUE);
+  test_case("<\"firstname lastname\"@[1.2.3.4]>", "\"firstname lastname\"@[1.2.3.4]", TRUE);
+  test_case("<@hop1.domain,@hop2.domain:\"firstname lastname\"@[1.2.3.4]>", "\"firstname lastname\"@[1.2.3.4]", TRUE);
+  test_case("<@hop1.domain,@hop2.domain:\"firstname lastname\"@[domain literal]>", "\"firstname lastname\"@[domain literal]", TRUE);
+  test_case("<@hop1.domain,@hop2.domain:\"firstname lastname\"@#123456>", "\"firstname lastname\"@#123456", TRUE);
+  test_case("<@hop1.domain,@hop2.domain:\"firstname lastname\"@#123456z>", NULL, FALSE);
+  test_case("<bounce-debian-gcc=asd=domain@lists.debian.org> SIZE=10037", "bounce-debian-gcc=asd=domain@lists.debian.org", TRUE);
+  test_case("username@domain", NULL, FALSE);
+  test_case("<username@domain", NULL, FALSE);
+  test_case("username@domain>", NULL, FALSE);
   dummy->permit_omission_of_angle_brackets = TRUE;
   printf("------\n");
-  test_case("bazsi@balabit.hu", "bazsi@balabit.hu", TRUE);
-  test_case("<bazsi@balabit.hu>", "bazsi@balabit.hu", TRUE);
-  test_case("<bazsi@balabit.hu", "bazsi@balabit.hu", FALSE);
-  test_case("bazsi@balabit.hu>", "bazsi@balabit.hu", FALSE);
-  test_case("bounce-debian-gcc=asd=balabit.hu@lists.debian.org SIZE=10037", "bounce-debian-gcc=asd=balabit.hu@lists.debian.org", TRUE);
+  test_case("username@domain", "username@domain", TRUE);
+  test_case("<username@domain>", "username@domain", TRUE);
+  test_case("<username@domain", "username@domain", FALSE);
+  test_case("username@domain>", "username@domain", FALSE);
+  test_case("bounce-debian-gcc=asd=domain@lists.debian.org SIZE=10037", "bounce-debian-gcc=asd=domain@lists.debian.org", TRUE);
 }

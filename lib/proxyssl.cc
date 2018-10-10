@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +24,14 @@
 #include <zorp/proxy.h>
 #include <zorp/pyx509chain.h>
 #include <zorp/pyx509.h>
-#include <zorp/streamssl.h>
+#include <zorpll/streamssl.h>
 #include <zorp/pydict.h>
 #include <zorp/pystruct.h>
 #include <zorp/pysockaddr.h>
 #include <zorp/proxysslhostiface.h>
 #include <zorp/proxygroup.h>
-#include <zorp/source.h>
-#include <zorp/error.h>
+#include <zorpll/source.h>
+#include <zorpll/error.h>
 #include <openssl/err.h>
 #include <memory>
 
@@ -341,11 +342,12 @@ z_proxy_ssl_register_host_iface(ZProxy *self)
       && (self->encryption->ssl_opts.verify_type[EP_SERVER] == ENCRYPTION_VERIFY_OPTIONAL_TRUSTED
           || self->encryption->ssl_opts.verify_type[EP_SERVER] == ENCRYPTION_VERIFY_REQUIRED_TRUSTED))
     {
-      ZProxyIface *iface;
-
-      iface = z_proxy_ssl_host_iface_new(self);
-      z_proxy_add_iface(self, iface);
-      z_object_unref(&iface->super);
+      ZProxyIface *iface = z_proxy_ssl_host_iface_new(self);
+      if (iface)
+        {
+          z_proxy_add_iface(self, iface);
+          z_object_unref(&iface->super);
+        }
     }
 
   z_proxy_leave(self);
@@ -509,8 +511,9 @@ z_proxy_ssl_append_local_cert_chain(ZProxy *self, const ZEndpoint side, SSL *ssl
       for (gsize i = 0; i != chain_len; ++i)
         {
           X509 *cert = z_certificate_chain_get_cert_from_chain(self->tls_opts.local_cert[side], i);
-          CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
-          if (!X509_STORE_add_cert(ssl->ctx->cert_store, cert))
+          if (!X509_up_ref(cert))
+              z_proxy_return(self, FALSE);
+          if (!X509_STORE_add_cert(SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl)), cert))
             {
               X509_free(cert);
               unsigned long error = ERR_peek_last_error();
@@ -571,13 +574,17 @@ z_proxy_ssl_load_local_ca_list(ZProxySSLHandshake *handshake)
   z_proxy_enter(self);
 
   z_policy_lock(self->thread);
-
-  if (!z_proxy_ssl_callback(self, ndx, "setup_ca_list", z_policy_var_build("(i)", ndx), &policy_type) ||
-      policy_type != PROXY_SSL_HS_ACCEPT)
+  if (z_proxy_ssl_callback_exists(self, ndx, "setup_ca_list"))
     {
-      z_policy_unlock(self->thread);
-      z_proxy_log(self, CORE_POLICY, 1, "Error fetching local trusted CA list; side='%s'", EP_STR(ndx));
-      z_proxy_return(self, FALSE);
+      z_proxy_log(self, CORE_DEBUG, 3, "Use of setup_ca_list SSL callback is deprecated.");
+
+      if (!z_proxy_ssl_callback(self, ndx, "setup_ca_list", z_policy_var_build("(i)", ndx), &policy_type) ||
+          policy_type != PROXY_SSL_HS_ACCEPT)
+        {
+          z_policy_unlock(self->thread);
+          z_proxy_log(self, CORE_POLICY, 1, "Error fetching local trusted CA list; side='%s'", EP_STR(ndx));
+          z_proxy_return(self, FALSE);
+        }
     }
   z_policy_unlock(self->thread);
 
@@ -596,7 +603,7 @@ z_proxy_ssl_load_local_ca_list(ZProxySSLHandshake *handshake)
       SSL_set_client_CA_list(session->ssl, sk);
     }
 
-  ctx = session->ssl->ctx->cert_store;
+  ctx = SSL_CTX_get_cert_store(SSL_get_SSL_CTX(session->ssl));
   n = sk_X509_num(self->encryption->ssl_opts.local_ca_list[ndx]);
   for (i = 0; i < n; i++)
     X509_STORE_add_cert(ctx, sk_X509_value(self->encryption->ssl_opts.local_ca_list[ndx], i));
@@ -609,18 +616,24 @@ z_proxy_ssl_load_local_crl_list(ZProxySSLHandshake *handshake, gchar *name)
   ZEndpoint ndx = handshake->side;
   ZSSLSession *session = handshake->session;
   ZProxy *self = handshake->proxy;
-  X509_STORE *ctx = session->ssl->ctx->cert_store;
+  X509_STORE *ctx = SSL_CTX_get_cert_store(SSL_get_SSL_CTX(session->ssl));
   guint policy_type;
   int i;
 
   z_proxy_enter(self);
+
   z_policy_lock(self->thread);
-  if (!z_proxy_ssl_callback(self, ndx, "setup_crl_list", z_policy_var_build("(si)", name, ndx), &policy_type) ||
-      policy_type != PROXY_SSL_HS_ACCEPT)
+  if (z_proxy_ssl_callback_exists(self, ndx, "setup_crl_list"))
     {
-      z_policy_unlock(self->thread);
-      z_proxy_log(self, CORE_POLICY, 1, "Error fetching CRL list for CA; side='%s', ca='%s'", EP_STR(ndx), name);
-      z_proxy_return(self, FALSE);
+      z_proxy_log(self, CORE_DEBUG, 3, "Use of setup_crl_list SSL callback is deprecated.");
+
+      if (!z_proxy_ssl_callback(self, ndx, "setup_crl_list", z_policy_var_build("(si)", name, ndx), &policy_type) ||
+          policy_type != PROXY_SSL_HS_ACCEPT)
+        {
+          z_policy_unlock(self->thread);
+          z_proxy_log(self, CORE_POLICY, 1, "Error fetching CRL list for CA; side='%s', ca='%s'", EP_STR(ndx), name);
+          z_proxy_return(self, FALSE);
+        }
     }
   z_policy_unlock(self->thread);
 
@@ -640,8 +653,9 @@ z_proxy_ssl_load_local_crl_list(ZProxySSLHandshake *handshake, gchar *name)
 int
 z_proxy_ssl_verify_cb_allow_missing_crl(int ok, X509_STORE_CTX *ctx)
 {
-  bool *found_missing_crl = reinterpret_cast<bool *>(X509_STORE_CTX_get_ex_data(ctx, 0));
-  if (!ok && ctx->error == X509_V_ERR_UNABLE_TO_GET_CRL)
+  bool *found_missing_crl =
+    reinterpret_cast<bool *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  if (!ok && X509_STORE_CTX_get_error(ctx) == X509_V_ERR_UNABLE_TO_GET_CRL)
     {
      *found_missing_crl = true;
       return 1;
@@ -650,13 +664,27 @@ z_proxy_ssl_verify_cb_allow_missing_crl(int ok, X509_STORE_CTX *ctx)
   return ok;
 }
 
+/*
+ * These are the verify_errors we use as untrusted errors.
+ */
+bool
+z_proxy_ssl_verify_error_is_untrusted(int verify_error)
+{
+  return (verify_error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+          verify_error == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN ||
+          verify_error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY ||
+          verify_error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
+          verify_error == X509_V_ERR_CERT_UNTRUSTED ||
+          verify_error == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE);
+}
+
 /* this function is called to verify the whole chain as provided by
    the peer. The SSL lib takes care about setting up the context,
    we only need to call X509_verify_cert. */
 int
 z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
 {
-  SSL *ssl = (SSL *) X509_STORE_CTX_get_app_data(ctx);
+  SSL *ssl = (SSL *) X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
   ZProxySSLHandshake *handshake = (ZProxySSLHandshake *) SSL_get_app_data(ssl);
   ZProxy *self = handshake->proxy;
   ZEndpoint side = handshake->side;
@@ -674,10 +702,14 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
   if (self->tls_opts.peer_cert[side])
     X509_free(self->tls_opts.peer_cert[side]);
 
-  self->tls_opts.peer_cert[side] = ctx->cert;
+  self->tls_opts.peer_cert[side] = X509_STORE_CTX_get0_cert(ctx);
   self->tls_opts.certificate_trusted[side] = false;
 
-  CRYPTO_add(&ctx->cert->references, 1, CRYPTO_LOCK_X509);
+  if (!X509_up_ref(X509_STORE_CTX_get0_cert(ctx)))
+    {
+      z_proxy_log(self, CORE_ERROR, 3, "X509_up_ref failed;");
+      z_proxy_return(self, 0);
+    }
 
   verify_type = self->encryption->ssl_opts.verify_type[side];
   new_verify_callback = z_proxy_ssl_callback_exists(self, side, "verify_cert_ext");
@@ -746,19 +778,22 @@ z_proxy_ssl_app_verify_cb(X509_STORE_CTX *ctx, void *user_data G_GNUC_UNUSED)
 
         case ENCRYPTION_VERIFY_REQUIRED_UNTRUSTED:
         case ENCRYPTION_VERIFY_OPTIONAL_UNTRUSTED:
-          if (!verify_valid &&
-              (self->encryption->ssl_opts.permit_invalid_certificates[side] ||
-               (verify_error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
-                verify_error == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN ||
-                verify_error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY ||
-                verify_error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
-                verify_error == X509_V_ERR_CERT_UNTRUSTED ||
-                verify_error == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE)))
+          if (!verify_valid)
             {
-              z_proxy_log(self, CORE_POLICY, 3,
-                          "Accepting untrusted certificate as directed by the policy; verify_error='%s'",
-                          X509_verify_cert_error_string(verify_error));
-              ok = 1;
+              if (self->encryption->ssl_opts.permit_invalid_certificates[side])
+                {
+                  z_proxy_log(self, CORE_POLICY, 3,
+                              "Accepting invalid certificate as directed by the policy; verify_error='%s'",
+                              X509_verify_cert_error_string(verify_error));
+                  ok = 1;
+                }
+              else if (z_proxy_ssl_verify_error_is_untrusted(verify_error))
+                {
+                  z_proxy_log(self, CORE_POLICY, 3,
+                              "Accepting untrusted certificate as directed by the policy; verify_error='%s'",
+                              X509_verify_cert_error_string(verify_error));
+                  ok = 1;
+                }
             }
           else
             {
@@ -796,16 +831,20 @@ exit:
 int
 z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
 {
-  SSL *ssl = (SSL *) X509_STORE_CTX_get_app_data(ctx);
+  SSL *ssl = (SSL *) X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
   ZProxySSLHandshake *handshake = (ZProxySSLHandshake *) SSL_get_app_data(ssl);
   ZProxy *self = handshake->proxy;
   ZEndpoint side = handshake->side;
-  X509_OBJECT obj;
   X509_CRL *crl;
   X509_NAME *subject, *issuer;
   int rc;
   char subject_name[512], issuer_name[512];
   int depth, verify_error;
+
+  std::unique_ptr<X509_OBJECT, decltype(&X509_OBJECT_free)> obj(
+    X509_OBJECT_new(),
+    X509_OBJECT_free
+  );
 
   z_proxy_enter(self);
   /* if self->current_cert is a CA certificate, it should have
@@ -819,9 +858,9 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
   */
   depth = X509_STORE_CTX_get_error_depth(ctx);
   verify_error = X509_STORE_CTX_get_error(ctx);
-  subject = X509_get_subject_name(ctx->current_cert);
+  subject = X509_get_subject_name(X509_STORE_CTX_get_current_cert(ctx));
   X509_NAME_oneline(subject, subject_name, sizeof(subject_name));
-  issuer = X509_get_issuer_name(ctx->current_cert);
+  issuer = X509_get_issuer_name(X509_STORE_CTX_get_current_cert(ctx));
   X509_NAME_oneline(issuer, issuer_name, sizeof(issuer_name));
 
   if (!ok &&
@@ -856,24 +895,24 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
     }
 
   z_proxy_ssl_load_local_crl_list(handshake, subject_name);
-  rc = X509_STORE_get_by_subject(ctx, X509_LU_CRL, subject, &obj);
-  if (rc == 1 && obj.type == X509_LU_CRL)
+  rc = X509_STORE_get_by_subject(ctx, X509_LU_CRL, subject, obj.get());
+  if (rc == 1 && X509_OBJECT_get_type(obj.get()) == X509_LU_CRL)
     {
       EVP_PKEY *pkey;
 
       /* we are checking a CA certificate, and it has an associated CRL */
-      crl = obj.data.crl;
+      crl = X509_OBJECT_get0_X509_CRL(obj.get());
       z_proxy_log(self, CORE_DEBUG, 6, "Verifying CRL integrity; issuer='%s'", subject_name);
-      pkey = X509_get_pubkey(ctx->current_cert);
+      pkey = X509_get_pubkey(X509_STORE_CTX_get_current_cert(ctx));
       if (X509_CRL_verify(crl, pkey) <= 0)
         {
           EVP_PKEY_free(pkey);
           X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
           z_proxy_log(self, CORE_ERROR, 1, "Invalid signature on CRL; issuer='%s'", issuer_name);
-          goto error_free;
+          z_proxy_return(self, 0);
         }
       EVP_PKEY_free(pkey);
-      rc = X509_cmp_current_time(X509_CRL_get_nextUpdate(crl));
+      rc = X509_cmp_current_time(X509_CRL_get0_nextUpdate(crl));
       if (rc == 0)
         {
           /*LOG
@@ -882,7 +921,7 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
            */
           z_proxy_log(self, CORE_ERROR, 1, "CRL has invalid nextUpdate field; issuer='%s'", subject_name);
           X509_STORE_CTX_set_error(ctx, X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
-          goto error_free;
+          z_proxy_return(self, 0);
         }
 
       if (rc <= 0)
@@ -893,9 +932,8 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
            */
           z_proxy_log(self, CORE_ERROR, 1, "CRL is expired; issuer='%s'", subject_name);
           X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_HAS_EXPIRED);
-          goto error_free;
+          z_proxy_return(self, 0);
         }
-      X509_OBJECT_free_contents(&obj);
     }
   else if (depth > 0 && !self->encryption->ssl_opts.permit_missing_crl[side])
     {
@@ -907,28 +945,30 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
       ok = 0;
     }
 
-  /* verify whether the issuer has revoked this certificate */
-  rc = X509_STORE_get_by_subject(ctx, X509_LU_CRL, issuer, &obj);
+  obj.reset(X509_OBJECT_new());
 
-  if (rc == 1 && obj.type == X509_LU_CRL)
+  /* verify whether the issuer has revoked this certificate */
+  rc = X509_STORE_get_by_subject(ctx, X509_LU_CRL, issuer, obj.get());
+
+  if (rc == 1 && X509_OBJECT_get_type(obj.get()) == X509_LU_CRL)
     {
       STACK_OF(X509_REVOKED) *revoked_list;
       X509_REVOKED *revoked;
       ASN1_INTEGER *cert_serial;
       int n, i;
 
-      cert_serial = X509_get_serialNumber(ctx->current_cert);
+      cert_serial = X509_get_serialNumber(X509_STORE_CTX_get_current_cert(ctx));
       z_proxy_log(self, CORE_DEBUG, 6,
                   "Verifying certificate against CRL; cert='%s', serial='%ld', issuer='%s'",
                   subject_name, ASN1_INTEGER_get(cert_serial), issuer_name);
 
-      crl = obj.data.crl;
+      crl = X509_OBJECT_get0_X509_CRL(obj.get());
       revoked_list = X509_CRL_get_REVOKED(crl);
       n = sk_X509_REVOKED_num(revoked_list);
       for (i = 0; i < n; i++)
         {
           revoked = sk_X509_REVOKED_value(revoked_list, i);
-          if (ASN1_INTEGER_cmp(revoked->serialNumber, cert_serial) == 0)
+          if (ASN1_INTEGER_cmp(X509_REVOKED_get0_serialNumber(revoked), cert_serial) == 0)
             {
               BIO *bio;
               char serial_str[128];
@@ -939,7 +979,7 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
               if (bio)
                 {
                   unsigned long len;
-                  i2a_ASN1_INTEGER(bio, revoked->serialNumber);
+                  i2a_ASN1_INTEGER(bio, X509_REVOKED_get0_serialNumber(revoked));
 
                   len = BIO_get_mem_data(bio, &ptr);
                   len = MIN(len, sizeof(serial_str) - 1);
@@ -952,10 +992,9 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
 
                   BIO_free_all(bio);
                 }
-              goto error_free;
+              z_proxy_return(self, 0);
             }
         }
-      X509_OBJECT_free_contents(&obj);
     }
   else if (!self->encryption->ssl_opts.permit_missing_crl[side])
     {
@@ -968,10 +1007,6 @@ z_proxy_ssl_verify_peer_cert_cb(int ok, X509_STORE_CTX *ctx)
     }
 
   z_proxy_return(self, ok);
-
- error_free:
-  X509_OBJECT_free_contents(&obj);
-  z_proxy_return(self, 0);
 }
 
 int
@@ -984,16 +1019,16 @@ z_proxy_ssl_client_cert_cb(SSL *ssl, X509 **cert, EVP_PKEY **pkey)
 
   z_proxy_enter(self);
   /* publish peer's idea of its trusted certificate authorities */
-  if (ssl->s3 && ssl->s3->tmp.ca_names)
+  if (SSL_get_client_CA_list(ssl))
     {
       int i, n;
 
-      n = sk_X509_NAME_num(ssl->s3->tmp.ca_names);
+      n = sk_X509_NAME_num(SSL_get_client_CA_list(ssl));
       for (i = 0; i < n; i++)
         {
           X509_NAME *v;
 
-          v = sk_X509_NAME_value(ssl->s3->tmp.ca_names, i);
+          v = sk_X509_NAME_value(SSL_get_client_CA_list(ssl), i);
           sk_X509_NAME_push(self->tls_opts.server_peer_ca_list, X509_NAME_dup(v));
         }
     }
@@ -1006,8 +1041,16 @@ z_proxy_ssl_client_cert_cb(SSL *ssl, X509 **cert, EVP_PKEY **pkey)
       *cert = z_certificate_chain_get_cert(self->tls_opts.local_cert[side]);
       *pkey = self->tls_opts.local_privkey[side];
 
-      CRYPTO_add(&(*cert)->references, 1, CRYPTO_LOCK_X509);
-      CRYPTO_add(&(*pkey)->references, 1, CRYPTO_LOCK_EVP_PKEY);
+      if (!X509_up_ref(*cert))
+        {
+          z_proxy_log(self, CORE_ERROR, 3, "X509_up_ref failed;");
+          z_proxy_return(self, 0);
+        }
+      if (!EVP_PKEY_up_ref(*pkey))
+        {
+          z_proxy_log(self, CORE_ERROR, 3, "EVP_PKEY_up_ref failed;");
+          z_proxy_return(self, 0);
+        }
       res = 1;
     }
   else
@@ -1690,16 +1733,20 @@ z_proxy_ssl_sni_do_handshake(ZProxy *self, ZPktBuf *buf, gsize bytes_read)
 void
 z_proxy_ssl_get_sni_from_client(ZProxy *self, ZStream *stream)
 {
-  ZPktBuf *buf = z_pktbuf_new();
-  z_pktbuf_resize(buf, 1024);
-  gsize bytes_read = 0;
-
   ZStream *ssl_stream = z_stream_search_stack(stream, G_IO_OUT, Z_CLASS(ZStreamSsl));
   if (!ssl_stream)
     {
       z_proxy_log(self, CORE_ERROR, 1, "Could not find ssl stream on stream stack");
       return;
     }
+
+  std::unique_ptr<ZPktBuf, decltype(&z_pktbuf_unref)> buf(
+    z_pktbuf_new(),
+    &z_pktbuf_unref
+  );
+  z_pktbuf_resize(buf.get(), 1024);
+  gsize bytes_read = 0;
+
   GIOStatus status = z_stream_read(ssl_stream, buf->data, buf->allocated, &bytes_read, NULL);
   if (status == G_IO_STATUS_ERROR || status == G_IO_STATUS_EOF)
     {
@@ -1708,15 +1755,13 @@ z_proxy_ssl_get_sni_from_client(ZProxy *self, ZStream *stream)
     }
   else
     {
-      z_proxy_ssl_sni_do_handshake(self, buf, bytes_read);
+      z_proxy_ssl_sni_do_handshake(self, buf.get(), bytes_read);
 
       z_stream_ref(ssl_stream);
       ZStream *fd_stream = z_stream_pop(ssl_stream);
       z_stream_unget(fd_stream, buf->data, bytes_read, NULL);
       z_stream_push(fd_stream, ssl_stream);
     }
-
-  z_pktbuf_unref(buf);
 }
 
 /**

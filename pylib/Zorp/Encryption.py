@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -35,7 +36,6 @@
     <section xml:id="ssl-parameter-values">
         <title>SSL parameter constants</title>
         <inline type="enum" target="enum.ssl.verify"/>
-        <inline type="enum" target="enum.ssl.method"/>
         <inline type="enum" target="enum.ssl.ciphers"/>
         <inline type="enum" target="enum.ssl.hso"/>
         <inline type="enum" target="enum.ssl.client_connection_security"/>
@@ -73,47 +73,6 @@
         <item>
           <name>SSL_VERIFY_REQUIRED_TRUSTED</name>
           <description>Certificate is required, only valid certificates signed by a trusted CA are accepted.</description>
-        </item>
-      </enum>
-      <enum maturity="stable" id="enum.ssl.method">
-        <description>
-          Constants for SSL/TLS protocol selection
-        </description>
-        <item>
-          <name>SSL_METHOD_SSLV23</name>
-          <description>
-           Permit the use of SSLv2 and v3.
-          </description>
-        </item>
-        <item>
-          <name>SSL_METHOD_SSLV3</name>
-          <description>
-                Permit the use of SSLv3 exclusively.
-          </description>
-        </item>
-        <item>
-          <name>SSL_METHOD_TLSV1</name>
-          <description>
-                Permit the use of TLSv1 exclusively.
-          </description>
-        </item>
-        <item>
-          <name>SSL_METHOD_TLSV1_1</name>
-          <description>
-                Permit the use of TLSv1_1 exclusively.
-          </description>
-        </item>
-        <item>
-          <name>SSL_METHOD_TLSV1_2</name>
-          <description>
-                Permit the use of TLSv1_2 exclusively.
-          </description>
-        </item>
-        <item>
-          <name>SSL_METHOD_ALL</name>
-          <description>
-           Permit the use of all the supported (SSLv2, SSLv3, and TLSv1) protocols.
-          </description>
         </item>
       </enum>
       <enum maturity="stable" id="enum.ssl.ciphers">
@@ -314,12 +273,6 @@ SSL_METHOD_TLSV1_1      = "TLSv1_1"
 SSL_METHOD_TLSV1_2      = "TLSv1_2"
 SSL_METHOD_ALL          = "SSLv23"
 
-ENCRYPTION_METHOD_SSLV23       = 0
-ENCRYPTION_METHOD_SSLV3        = 1
-ENCRYPTION_METHOD_TLSV1        = 2
-ENCRYPTION_METHOD_TLSV1_1      = 3
-ENCRYPTION_METHOD_TLSV1_2      = 4
-
 SSL_CIPHERS_ALL         = "ALL:!aNULL:@STRENGTH"
 
 SSL_CIPHERS_HIGH        = "HIGH:!aNULL:@STRENGTH"
@@ -503,16 +456,6 @@ class SSLOptions(object):
 
         <attributes>
           <attribute>
-            <name>method</name>
-            <type>
-              <link id="enum.ssl.method"/>
-            </type>
-            <default>SSL_METHOD_ALL</default>
-            <description>Specifies the allowed SSL/TLS protocols.
-            For details, see <xref linkend="enum.ssl.method"/>.
-            </description>
-          </attribute>
-          <attribute>
             <name>cipher</name>
             <type>
               <hash>
@@ -526,22 +469,6 @@ class SSLOptions(object):
             </type>
             <description>Specifies the allowed ciphers.
             For details, see <xref linkend="action.ssl.ciphers"/>.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv2</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv2 in the connection.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv3</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv# in the connection.</description>
           </attribute>
           <attribute>
             <name>disable_tlsv1</name>
@@ -580,8 +507,8 @@ class SSLOptions(object):
     </class>
     """
 
-    def __init__(self, method=SSL_METHOD_ALL, cipher=SSL_CIPHERS_HIGH, timeout=300,
-                       disable_sslv2=True, disable_sslv3=True, disable_tlsv1=False, disable_tlsv1_1=False, disable_tlsv1_2=False,
+    def __init__(self, cipher=SSL_CIPHERS_HIGH, timeout=300,
+                       disable_tlsv1=False, disable_tlsv1_1=False, disable_tlsv1_2=False,
                        disable_compression=False):
         """
         <method maturity="stable">
@@ -595,16 +522,6 @@ class SSLOptions(object):
           </description>
           <metainfo>
             <arguments>
-              <argument maturity="stable">
-                <name>method</name>
-                <type>
-                  <link id="enum.ssl.method"/>
-                </type>
-                <default>SSL_METHOD_ALL</default>
-                <description>Specifies the allowed SSL/TLS protocols.
-                For details, see <xref linkend="enum.ssl.method"/>.
-                </description>
-              </argument>
               <argument maturity="stable">
                 <name>cipher</name>
                 <type>
@@ -620,22 +537,6 @@ class SSLOptions(object):
                 </type>
                 <default>300</default>
                 <description>Drop idle connection if the timeout value (in seconds) expires.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv2</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv2 in the connection.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv3</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv# in the connection.</description>
               </argument>
               <argument maturity="stable">
                 <name>disable_tlsv1</name>
@@ -673,25 +574,9 @@ class SSLOptions(object):
           </metainfo>
         </method>
         """
-        if method == SSL_METHOD_SSLV23:
-            self.method = ENCRYPTION_METHOD_SSLV23
-        elif method == SSL_METHOD_SSLV3:
-            self.method = ENCRYPTION_METHOD_SSLV3
-        elif method == SSL_METHOD_TLSV1:
-            self.method = ENCRYPTION_METHOD_TLSV1
-        elif method == SSL_METHOD_TLSV1_1:
-            self.method = ENCRYPTION_METHOD_TLSV1_1
-        elif method == SSL_METHOD_TLSV1_2:
-            self.method = ENCRYPTION_METHOD_TLSV1_2
-        elif method == SSL_METHOD_ALL:
-            self.method = ENCRYPTION_METHOD_SSLV23
-        else:
-            raise ValueError, "Bad method; method=%s" % method
 
         self.cipher = cipher[1] if isinstance(cipher, tuple) else cipher
         self.timeout = timeout
-        self.disable_sslv2 = disable_sslv2
-        self.disable_sslv3 = disable_sslv3
         self.disable_tlsv1 = disable_tlsv1
         self.disable_tlsv1_1 = disable_tlsv1_1
         self.disable_tlsv1_2 = disable_tlsv1_2
@@ -718,16 +603,6 @@ class ClientSSLOptions(SSLOptions):
       <metainfo>
         <attributes>
           <attribute>
-            <name>method</name>
-            <type>
-              <link id="enum.ssl.method"/>
-            </type>
-            <default>SSL_METHOD_ALL</default>
-            <description>Specifies the allowed SSL/TLS protocols.
-            For details, see <xref linkend="enum.ssl.method"/>.
-            </description>
-          </attribute>
-          <attribute>
             <name>cipher</name>
             <type>
               <link id="action.ssl.ciphers"/>
@@ -742,22 +617,6 @@ class ClientSSLOptions(SSLOptions):
             </type>
             <default>FALSE</default>
             <description>Use server and not client preference order when determining which cipher suite, signature algorithm or elliptic curve to use for an incoming connection.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv2</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv2 in the connection.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv3</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv# in the connection.</description>
           </attribute>
           <attribute>
             <name>disable_tlsv1</name>
@@ -822,16 +681,6 @@ class ClientSSLOptions(SSLOptions):
           <metainfo>
             <arguments>
               <argument maturity="stable">
-                <name>method</name>
-                <type>
-                  <link id="enum.ssl.method"/>
-                </type>
-                <default>SSL_METHOD_ALL</default>
-                <description>Specifies the allowed SSL/TLS protocols.
-                For details, see <xref linkend="enum.ssl.method"/>.
-                </description>
-              </argument>
-              <argument maturity="stable">
                 <name>cipher</name>
                 <type>
                   <link id="action.ssl.ciphers"/>
@@ -854,22 +703,6 @@ class ClientSSLOptions(SSLOptions):
                 </type>
                 <default>300</default>
                 <description>Drop idle connection if the timeout value (in seconds) expires.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv2</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv2 in the connection.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv3</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv3 in the connection.</description>
               </argument>
               <argument maturity="stable">
                 <name>disable_tlsv1</name>
@@ -926,8 +759,8 @@ class ClientSSLOptions(SSLOptions):
         </method>
         """
 
-        super(ClientSSLOptions, self).__init__(method, cipher, timeout,
-                                               disable_sslv2, disable_sslv3, disable_tlsv1, disable_tlsv1_1, disable_tlsv1_2,
+        super(ClientSSLOptions, self).__init__(cipher, timeout,
+                                               disable_tlsv1, disable_tlsv1_1, disable_tlsv1_2,
                                                disable_compression)
         self.cipher_server_preference = cipher_server_preference
         if dh_params is None:
@@ -945,8 +778,6 @@ class ClientSSLOptions(SSLOptions):
         <method internal="yes"/>
         """
         super(ClientSSLOptions, self).setup(encryption)
-        encryption.settings.client_disable_proto_sslv2 = self.disable_sslv2
-        encryption.settings.client_disable_proto_sslv3 = self.disable_sslv3
         encryption.settings.client_disable_proto_tlsv1 = self.disable_tlsv1
         encryption.settings.client_disable_proto_tlsv1_1 = self.disable_tlsv1_1
         encryption.settings.client_disable_proto_tlsv1_2 = self.disable_tlsv1_2
@@ -971,38 +802,12 @@ class ServerSSLOptions(SSLOptions):
       <metainfo>
         <attributes>
           <attribute>
-            <name>method</name>
-            <type>
-              <link id="enum.ssl.method"/>
-            </type>
-            <default>SSL_METHOD_ALL</default>
-            <description>Specifies the allowed SSL/TLS protocols.
-            For details, see <xref linkend="enum.ssl.method"/>.
-            </description>
-          </attribute>
-          <attribute>
             <name>cipher</name>
             <type>
               <link id="action.ssl.ciphers"/>
             </type>
             <description>Specifies the allowed ciphers.
             For details, see <xref linkend="action.ssl.ciphers"/>.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv2</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv2 in the connection.</description>
-          </attribute>
-          <attribute>
-            <name>disable_sslv3</name>
-            <type>
-              <boolean/>
-            </type>
-            <default>TRUE</default>
-            <description>Do not allow using SSLv# in the connection.</description>
           </attribute>
           <attribute>
             <name>disable_tlsv1</name>
@@ -1057,16 +862,6 @@ class ServerSSLOptions(SSLOptions):
           <metainfo>
             <arguments>
               <argument maturity="stable">
-                <name>method</name>
-                <type>
-                  <link id="enum.ssl.method"/>
-                </type>
-                <default>SSL_METHOD_ALL</default>
-                <description>Specifies the allowed SSL/TLS protocols.
-                For details, see <xref linkend="enum.ssl.method"/>.
-                </description>
-              </argument>
-              <argument maturity="stable">
                 <name>cipher</name>
                 <type>
                   <link id="action.ssl.ciphers"/>
@@ -1081,22 +876,6 @@ class ServerSSLOptions(SSLOptions):
                 </type>
                 <default>300</default>
                 <description>Drop idle connection if the timeout value (in seconds) expires.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv2</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv2 in the connection.</description>
-              </argument>
-              <argument maturity="stable">
-                <name>disable_sslv3</name>
-                <type>
-                  <boolean/>
-                </type>
-                <default>TRUE</default>
-                <description>Do not allow using SSLv3 in the connection.</description>
               </argument>
               <argument maturity="stable">
                 <name>disable_tlsv1</name>
@@ -1135,8 +914,8 @@ class ServerSSLOptions(SSLOptions):
         </method>
         """
 
-        super(ServerSSLOptions, self).__init__(method, cipher, timeout,
-                                               disable_sslv2, disable_sslv3, disable_tlsv1, disable_tlsv1_1, disable_tlsv1_2,
+        super(ServerSSLOptions, self).__init__(cipher, timeout,
+                                               disable_tlsv1, disable_tlsv1_1, disable_tlsv1_2,
                                                disable_compression)
 
     def setup(self, encryption):
@@ -1144,8 +923,6 @@ class ServerSSLOptions(SSLOptions):
         <method internal="yes"/>
         """
         super(ServerSSLOptions, self).setup(encryption)
-        encryption.settings.server_disable_proto_sslv2 = self.disable_sslv2
-        encryption.settings.server_disable_proto_sslv3 = self.disable_sslv3
         encryption.settings.server_disable_proto_tlsv1 = self.disable_tlsv1
         encryption.settings.server_disable_proto_tlsv1_1 = self.disable_tlsv1_1
         encryption.settings.server_disable_proto_tlsv1_2 = self.disable_tlsv1_2
@@ -1190,6 +967,7 @@ class AbstractVerifier(object):
                   from these CAs.
                   Unless you are authenticating the peers based on their certificates,
                   use the <parameter>verify_ca_directory</parameter> option instead.
+                  Use of <parameter>ca_directory</parameter> option is deprecated.
                 </description>
             </attribute>
             <attribute maturity="stable">
@@ -1212,6 +990,7 @@ class AbstractVerifier(object):
                   require a huge amount of memory.
                   Unless you are authenticating the peers based on their certificates,
                   use the <parameter>verify_crl_directory</parameter> option instead.
+                  Use of <parameter>crl_directory</parameter> option is deprecated.
                 </description>
             </attribute>
             <attribute state="stable">
@@ -1401,6 +1180,7 @@ class AbstractVerifier(object):
                       from these CAs.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_ca_directory</parameter> option instead.
+                      Use of <parameter>ca_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument maturity="stable">
@@ -1416,6 +1196,7 @@ class AbstractVerifier(object):
                       require a huge amount of memory.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_crl_directory</parameter> option instead.
+                      Use of <parameter>crl_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument state="stable">
@@ -1605,6 +1386,7 @@ class ClientCertificateVerifier(AbstractVerifier):
                   from these CAs.
                   Unless you are authenticating the peers based on their certificates,
                   use the <parameter>verify_ca_directory</parameter> option instead.
+                  Use of <parameter>ca_directory</parameter> option is deprecated.
                 </description>
             </attribute>
             <attribute maturity="stable">
@@ -1627,6 +1409,7 @@ class ClientCertificateVerifier(AbstractVerifier):
                   require a huge amount of memory.
                   Unless you are authenticating the peers based on their certificates,
                   use the <parameter>verify_crl_directory</parameter> option instead.
+                  Use of <parameter>crl_directory</parameter> option is deprecated.
                 </description>
             </attribute>
             <attribute state="stable">
@@ -1783,6 +1566,9 @@ class ClientCertificateVerifier(AbstractVerifier):
       </metainfo>
     </class>
     """
+
+    ca_directory_deprecation_warning = True
+    crl_directory_deprecation_warning = True
     def __init__(self, ca_directory=None, crl_directory=None, trusted_certs_directory=None, required=True, trusted=True, verify_depth=4, verify_ca_directory=None, verify_crl_directory=None, permit_invalid_certificates=False, permit_missing_crl=False):
         """
         <method maturity="stable">
@@ -1813,6 +1599,7 @@ class ClientCertificateVerifier(AbstractVerifier):
                       from these CAs.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_ca_directory</parameter> option instead.
+                      Use of <parameter>ca_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument maturity="stable">
@@ -1828,6 +1615,7 @@ class ClientCertificateVerifier(AbstractVerifier):
                       require a huge amount of memory.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_crl_directory</parameter> option instead.
+                      Use of <parameter>crl_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument state="stable">
@@ -1940,8 +1728,14 @@ class ClientCertificateVerifier(AbstractVerifier):
         encryption.settings.client_permit_missing_crl = self.permit_missing_crl
 
         if self.ca_directory:
+            if ClientCertificateVerifier.ca_directory_deprecation_warning:
+                ClientCertificateVerifier.ca_directory_deprecation_warning = False
+                log(None, CORE_DEBUG, 3, "Use of ca_directory option is deprecated, verify_ca_directory should be used instead.")
             self.readHashDir(encryption.settings.client_local_ca_list, self.ca_directory)
         if self.crl_directory:
+            if ClientCertificateVerifier.crl_directory_deprecation_warning:
+                ClientCertificateVerifier.crl_directory_deprecation_warning = False
+                log(None, CORE_DEBUG, 3, "Use of crl_directory option is deprecated, verify_crl_directory should be used instead.")
             self.readHashDir(encryption.settings.client_local_crl_list, self.crl_directory)
 
         if self.verify_ca_directory:
@@ -2172,6 +1966,9 @@ class ServerCertificateVerifier(AbstractVerifier):
       </metainfo>
     </class>
     """
+
+    ca_directory_deprecation_warning = True
+    crl_directory_deprecation_warning = True
     def __init__(self, ca_directory=None, crl_directory=None, trusted_certs_directory=None, trusted=True, verify_depth=4, verify_ca_directory=None, verify_crl_directory=None, permit_invalid_certificates=False, permit_missing_crl=False, check_subject=True):
         """
         <method maturity="stable">
@@ -2202,6 +1999,7 @@ class ServerCertificateVerifier(AbstractVerifier):
                       from these CAs.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_ca_directory</parameter> option instead.
+                      Use of <parameter>ca_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument maturity="stable">
@@ -2217,6 +2015,7 @@ class ServerCertificateVerifier(AbstractVerifier):
                       require a huge amount of memory.
                       Unless you are authenticating the peers based on their certificates,
                       use the <parameter>verify_crl_directory</parameter> option instead.
+                      Use of <parameter>crl_directory</parameter> option is deprecated.
                     </description>
                 </argument>
                 <argument state="stable">
@@ -2341,8 +2140,14 @@ class ServerCertificateVerifier(AbstractVerifier):
         encryption.settings.server_permit_missing_crl = self.permit_missing_crl
 
         if self.ca_directory:
+            if ServerCertificateVerifier.ca_directory_deprecation_warning:
+                ServerCertificateVerifier.ca_directory_deprecation_warning = False
+                log(None, CORE_DEBUG, 3, "Use of ca_directory option is deprecated, verify_ca_directory should be used instead.")
             self.readHashDir(encryption.settings.server_local_ca_list, self.ca_directory)
         if self.crl_directory:
+            if ServerCertificateVerifier.crl_directory_deprecation_warning:
+                ServerCertificateVerifier.crl_directory_deprecation_warning = False
+                log(None, CORE_DEBUG, 3, "Use of crl_directory option is deprecated, verify_crl_directory should be used instead.")
             self.readHashDir(encryption.settings.server_local_crl_list, self.crl_directory)
 
         if self.verify_ca_directory:
@@ -3386,7 +3191,6 @@ class SidedEncryption(Encryption):
         </method>
         """
         super(SidedEncryption, self).__init__(client_security=client_security, server_security=server_security,
-                                              client_method=client_ssl_options.method, server_method=server_ssl_options.method,
                                               client_timeout=client_ssl_options.timeout, server_timeout=server_ssl_options.timeout,
                                              )
 

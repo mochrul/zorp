@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +23,10 @@
 #define ZORP_PYENCRYPTION_H_INCLUDED
 
 #include <zorp/pystruct.h>
-#include <zorp/ssl.h>
+#include <zorpll/ssl.h>
 #include <zorp/certchain.h>
 #include <zorp/proxycommon.h>
-#include <zorp/sockaddr.h>
+#include <zorpll/sockaddr.h>
 #include <openssl/ssl.h>
 #include <chrono>
 #include <array>
@@ -50,15 +51,48 @@ typedef enum
   ENCRYPTION_VERIFY_REQUIRED_TRUSTED    = 4,
 } proxy_ssl_verify_type;
 
-typedef enum
+class SessionTicketKey
 {
-  ENCRYPTION_METHOD_SSLV23  = 0,
-  ENCRYPTION_METHOD_SSLV3   = 1,
-  ENCRYPTION_METHOD_TLSV1   = 2,
-  ENCRYPTION_METHOD_TLSV1_1 = 3,
-  ENCRYPTION_METHOD_TLSV1_2 = 4
-} encryption_method_type;
-
+public:
+  SessionTicketKey() : is_set(false)
+    {};
+  SessionTicketKey(const std::array<unsigned char, 16> &hmac_key, const std::array<unsigned char, 16> &aes_key, const std::array<unsigned char, 16> key_name, int timeout) : hmac_key(hmac_key), aes_key(aes_key), key_name(key_name), is_set(true)
+    {
+      std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+      encrypt_expire_time = now + std::chrono::duration<int>(timeout);
+      decrypt_expire_time = now + std::chrono::duration<int>(timeout) + std::chrono::duration<int>(timeout);
+    };
+  bool can_be_used_to_encrypt()
+    {
+      return (is_set && encrypt_expire_time >= std::chrono::steady_clock::now());
+    }
+  bool can_be_used_to_decrypt()
+    {
+      return (is_set && decrypt_expire_time >= std::chrono::steady_clock::now());
+    }
+  unsigned char *get_key_name()
+    {
+      return key_name.data();
+    }
+  unsigned char *get_aes_key()
+    {
+      return aes_key.data();
+    }
+  unsigned char *get_hmac_key()
+    {
+      return hmac_key.data();
+    }
+  bool find_key(const std::array<unsigned char, 16> &other_key_name)
+    {
+      return key_name == other_key_name;
+    }
+private:
+  std::array<unsigned char, 16> hmac_key;
+  std::array<unsigned char, 16> aes_key;
+  std::array<unsigned char, 16> key_name;
+  std::chrono::steady_clock::time_point encrypt_expire_time, decrypt_expire_time;
+  bool is_set;
+};
 
 typedef struct _ZProxySsl {
   ZPolicyDict *ssl_dict;
@@ -66,7 +100,6 @@ typedef struct _ZProxySsl {
 
   encryption_security_type security[EP_MAX];
 
-  GString *ssl_method[EP_MAX];
   GString *ssl_cipher[EP_MAX];
 
   ZPolicyObj *server_setup_key_cb, *server_setup_ca_list_cb, *server_setup_crl_list_cb, *server_verify_cert_cb;
@@ -84,8 +117,6 @@ typedef struct _ZProxySsl {
 
   proxy_ssl_verify_type verify_type[EP_MAX];
   int verify_depth[EP_MAX];
-  gboolean disable_proto_sslv2[EP_MAX];
-  gboolean disable_proto_sslv3[EP_MAX];
   gboolean disable_proto_tlsv1[EP_MAX];
   gboolean disable_proto_tlsv1_1[EP_MAX];
   gboolean disable_proto_tlsv1_2[EP_MAX];

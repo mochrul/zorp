@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +24,13 @@
  * this module implements the interface with python
  */
 #include <zorp/pycore.h>
-#include <zorp/log.h>
-#include <zorp/io.h>
+#include <zorpll/log.h>
+#include <zorpll/io.h>
 #include <zorp/policy.h>
-#include <zorp/streamfd.h>
-#include <zorp/cap.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/cap.h>
 #include <zorp/szig.h>
-#include <zorp/io.h>
+#include <zorpll/io.h>
 #include <zorp/proxystack.h>
 
 #include <zorp/pystream.h>

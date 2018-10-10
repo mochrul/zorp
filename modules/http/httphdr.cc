@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
 
 #include "http.h"
 
-#include <zorp/log.h>
+#include <zorpll/log.h>
 #include <ctype.h>
 
 /* these headers are not allowed to be duplicated, the first header is
@@ -154,14 +155,6 @@ http_add_header(HttpHeaders *hdrs, const gchar *name, gint name_len, gchar *valu
   return h;
 }
 
-static gboolean
-http_clear_header(gpointer key G_GNUC_UNUSED,
-                  gpointer value G_GNUC_UNUSED,
-                  gpointer user_data G_GNUC_UNUSED)
-{
-  return TRUE;
-}
-
 void
 http_clear_headers(HttpHeaders *hdrs)
 {
@@ -173,7 +166,7 @@ http_clear_headers(HttpHeaders *hdrs)
   g_list_free(hdrs->list);
   hdrs->list = NULL;
   g_string_truncate(hdrs->flat, 0);
-  g_hash_table_foreach_remove(hdrs->hash, http_clear_header, NULL);
+  g_hash_table_remove_all(hdrs->hash);
 }
 
 gboolean
@@ -746,6 +739,7 @@ http_flat_headers(HttpHeaders *hdrs)
 void
 http_init_headers(HttpHeaders *hdrs)
 {
+  hdrs->list = NULL;
   hdrs->hash = g_hash_table_new(http_header_hash, http_header_equal);
   hdrs->flat = g_string_sized_new(256);
 }
@@ -754,118 +748,95 @@ void
 http_destroy_headers(HttpHeaders *hdrs)
 {
   http_clear_headers(hdrs);
+
   g_hash_table_destroy(hdrs->hash);
+  hdrs->hash = NULL;
+
   g_string_free(hdrs->flat, TRUE);
+  hdrs->flat = NULL;
 }
 
-enum HttpCookieState
-  {
-    HTTP_COOKIE_NAME,
-    HTTP_COOKIE_VALUE,
-    HTTP_COOKIE_DOTCOMA
-  };
-
-GHashTable *
+/**
+ * Parse cookie list from HTTP headers.
+ * The order of cookies must be preserved!
+ * Cookie names can be duplicated!
+ *
+ * Also read the following post:
+ * https://stackoverflow.com/questions/4056306/how-to-handle-multiple-cookies-with-the-same-name#answer-24214538
+ *
+ * @param[in] hdrs HttpHeaders instance
+ *
+ * @returns Vector containing pairs of cookie name and value
+ **/
+CookiePairVector
 http_parse_header_cookie(HttpHeaders *hdrs)
 {
-  GHashTable *cookie_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+  CookiePairVector cookie_vector;
   HttpHeader *hdr;
 
   if (http_lookup_header(hdrs, "Cookie", &hdr))
     {
-      gint state = HTTP_COOKIE_NAME;
-      gchar key[256];
-      guint key_pos = 0;
-      gchar value[4096];
-      guint value_pos = 0;
-      gint i = 0;
-      gchar *hdr_str = hdr->value->str;
+      const std::string cookie_hdr_value(const_cast<const char *>(hdr->value->str));
 
-      while (hdr_str[i])
+      for (std::string &cookie_pair_str: string_split(cookie_hdr_value, "; "))
         {
-          switch (state)
-            {
-            case HTTP_COOKIE_NAME:
+          StringVector cookie_pair(string_split(cookie_pair_str, "=", 2));
 
-              if (hdr_str[i] == '=')
-                {
-                  key[key_pos] = 0;
-                  state = HTTP_COOKIE_VALUE;
-                }
-              else
-                {
-                  key[key_pos++] = hdr_str[i];
-                }
-
-              if (key_pos > sizeof(key))
-                {
-                  goto exit_error;
-                }
-
-              break;
-            case HTTP_COOKIE_VALUE:
-
-              if (hdr_str[i] == ';')
-                {
-                  state = HTTP_COOKIE_DOTCOMA;
-                }
-              else
-                {
-                  value[value_pos++] = hdr_str[i];
-                }
-
-              if (value_pos > sizeof(value))
-                {
-                  goto exit_error;
-                }
-
-              break;
-            case HTTP_COOKIE_DOTCOMA:
-
-              if (hdr_str[i] != ' ' &&
-                  hdr_str[i] != '\r' &&
-                  hdr_str[i] != '\n' &&
-                  hdr_str[i] != '\t')
-                {
-                  if (hdr_str[i] == '$' && FALSE)
-                    {
-                      value[value_pos++] = hdr_str[i];
-
-                      if (value_pos > sizeof(value))
-                        {
-                          goto exit_error;
-                        }
-
-                      state = HTTP_COOKIE_VALUE;
-                    }
-                  else
-                    {
-                      value[value_pos] = 0;
-                      g_hash_table_insert(cookie_hash, g_strdup(key), g_strdup(value));
-                      key_pos = value_pos = 0;
-                      key[key_pos++] = hdr_str[i];
-                      state = HTTP_COOKIE_NAME;
-                    }
-                }
-            }
-
-          i++;
+          if (! cookie_pair[0].empty())
+            cookie_vector.push_back(std::make_pair(cookie_pair[0],
+                                                   (cookie_pair.size() > 1 ? cookie_pair[1] : std::string(""))));
         }
-
-      if (key_pos && value_pos)
-        {
-          value[value_pos] = 0;
-          g_hash_table_insert(cookie_hash, g_strdup(key), g_strdup(value));
-          key_pos = value_pos = 0;
-        }
-
-      goto exit;
     }
 
- exit_error:
-  g_hash_table_destroy(cookie_hash);
-  cookie_hash = NULL;
- exit:
+  return cookie_vector;
+}
 
-  return cookie_hash;
+/**
+ * Find a cookie pair in the vector by a given cookie name.
+ *
+ * @param[in] cookie_vector CookiePairVector reference to the cookie store
+ * @param[in] cookie_name string reference that contains the cookie name to be found
+ *
+ * @returns CookiePairVector::iterator to the found element, else it will be cookie_vector.end()
+ **/
+CookiePairVector::iterator
+http_find_cookie_by_name(CookiePairVector &cookie_vector, const std::string &cookie_name)
+{
+  CookiePairVector::iterator cookie_pair;
+
+  for (cookie_pair = cookie_vector.begin();
+       cookie_pair != cookie_vector.end() && cookie_pair->first != cookie_name;
+       ++cookie_pair);
+
+  return cookie_pair;
+}
+
+/**
+ * Writes cookie list into HTTP headers.
+ *
+ * @param[in,out] hdrs HttpHeaders instance, where the Cookie header will be stored
+ * @param[in] cookie_vector CookiePairVector reference, which stores the cookies to be written
+ *
+ **/
+void
+http_write_header_cookie(HttpHeaders *hdrs, const CookiePairVector &cookie_vector)
+{
+  std::string cookie_value;
+
+  for (auto &cookie_pair: cookie_vector)
+    cookie_value.append(cookie_pair.first + "=" + cookie_pair.second + "; ");
+
+  if (cookie_value.length() > 1)
+    cookie_value.erase(cookie_value.length() - 2);
+
+  HttpHeader *hdr;
+
+  if (http_lookup_header(hdrs, "Cookie", &hdr))
+    g_string_assign(hdr->value, cookie_value.c_str());
+  else
+    hdr = http_add_header(hdrs, "Cookie", strlen("Cookie"),
+                          const_cast<char *>(cookie_value.c_str()), cookie_value.length());
+
+  if (cookie_value.empty())
+    hdr->present = FALSE;
 }

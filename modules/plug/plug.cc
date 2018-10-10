@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +21,16 @@
  ***************************************************************************/
 
 #include <zorp/plugsession.h>
-#include <zorp/thread.h>
-#include <zorp/streamfd.h>
+#include <zorpll/thread.h>
+#include <zorpll/streamfd.h>
 #include <zorp/proxy.h>
-#include <zorp/poll.h>
+#include <zorpll/poll.h>
 #include <zorp/policy.h>
-#include <zorp/thread.h>
-#include <zorp/log.h>
-#include <zorp/registry.h>
-#include <zorp/sockaddr.h>
-#include <zorp/io.h>
+#include <zorpll/thread.h>
+#include <zorpll/log.h>
+#include <zorpll/registry.h>
+#include <zorpll/sockaddr.h>
+#include <zorpll/io.h>
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -347,7 +348,6 @@ ZProxyFuncs plug_proxy_funcs =
   /* .nonblocking_init = */ plug_nonblocking_init,
   /* .nonblocking_deinit = */ plug_nonblocking_deinit,
   /* .wakeup = */ NULL,
-
 };
 
 Z_CLASS_DEF(PlugProxy, ZProxy, plug_proxy_funcs);
