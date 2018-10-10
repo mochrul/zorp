@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +23,8 @@
 #define ZORP_DISPATCH_H_INCLUDED
 
 #include <zorp/zorp.h>
-#include <zorp/stream.h>
-#include <zorp/sockaddr.h>
+#include <zorpll/stream.h>
+#include <zorpll/sockaddr.h>
 #include <zorp/connection.h>
 
 class ZDispatchEntry;

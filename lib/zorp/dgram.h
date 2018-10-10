@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +23,9 @@
 #define ZORP_DGRAM_H_INCLUDED
 
 #include <zorp/zorp.h>
-#include <zorp/zobject.h>
-#include <zorp/listen.h>
-#include <zorp/connect.h>
+#include <zorpll/zobject.h>
+#include <zorpll/listen.h>
+#include <zorpll/connect.h>
 
 extern ZClass ZDGramListener__class;
 

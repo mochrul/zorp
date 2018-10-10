@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +22,7 @@
 #ifndef ZORP_TPROXY_H_INCLUDED
 #define ZORP_TPROXY_H_INCLUDED
 
-#include <zorp/socket.h>
+#include <zorpll/socket.h>
 
 gboolean z_tp_socket_init(void);
 

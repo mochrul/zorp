@@ -1,4 +1,4 @@
-/* C++ code produced by gperf version 3.0.4 */
+/* C++ code produced by gperf version 3.1 */
 /* Command-line: /usr/bin/gperf -e , -L C++ -Z LogTagHash -t -N lookup logtags.gperf  */
 /* Computed positions: -k'1-2,6,$' */
 
@@ -26,7 +26,7 @@
       && ('w' == 119) && ('x' == 120) && ('y' == 121) && ('z' == 122) \
       && ('{' == 123) && ('|' == 124) && ('}' == 125) && ('~' == 126))
 /* The character set is not based on ISO-646.  */
-#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
+#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
 #line 4 "logtags.gperf"
@@ -42,13 +42,13 @@ struct tagid { char *name; int id; };
 class LogTagHash
 {
 private:
-  static inline unsigned int hash (const char *str, unsigned int len);
+  static inline unsigned int hash (const char *str, size_t len);
 public:
-  static const struct tagid *lookup (const char *str, unsigned int len);
+  static const struct tagid *lookup (const char *str, size_t len);
 };
 
 inline unsigned int
-LogTagHash::hash (register const char *str, register unsigned int len)
+LogTagHash::hash (const char *str, size_t len)
 {
   static const unsigned short asso_values[] =
     {
@@ -79,11 +79,11 @@ LogTagHash::hash (register const char *str, register unsigned int len)
       319, 319, 319, 319, 319, 319, 319, 319, 319, 319,
       319, 319, 319, 319, 319, 319, 319
     };
-  return len + asso_values[(unsigned char)str[5]] + asso_values[(unsigned char)str[1]+1] + asso_values[(unsigned char)str[0]] + asso_values[(unsigned char)str[len - 1]];
+  return len + asso_values[static_cast<unsigned char>(str[5])] + asso_values[static_cast<unsigned char>(str[1]+1)] + asso_values[static_cast<unsigned char>(str[0])] + asso_values[static_cast<unsigned char>(str[len - 1])];
 }
 
 const struct tagid *
-LogTagHash::lookup (register const char *str, register unsigned int len)
+LogTagHash::lookup (const char *str, size_t len)
 {
   static const struct tagid wordlist[] =
     {
@@ -449,11 +449,11 @@ LogTagHash::lookup (register const char *str, register unsigned int len)
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-      register int key = hash (str, len);
+      unsigned int key = hash (str, len);
 
-      if (key <= MAX_HASH_VALUE && key >= 0)
+      if (key <= MAX_HASH_VALUE)
         {
-          register const char *s = wordlist[key].name;
+          const char *s = wordlist[key].name;
 
           if (*str == *s && !strcmp (str + 1, s + 1))
             return &wordlist[key];

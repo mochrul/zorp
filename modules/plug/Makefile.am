@@ -1,12 +1,8 @@
 pkgdatadir = @ZORP_PYTHON_DIR@
-pkglibdir = @libdir@/zorp
-LIBS = @MODULES_LIBS@
-CPPFLAGS = @MODULES_CPPFLAGS@
-
-pkgdata_DATA = Plug.py
+pkglibdir = ${ZORP_LIBDIR}
+AM_LDFLAGS = @MODULES_LIBS@
+AM_CXXFLAGS = @MODULES_CXXFLAGS@
 
 pkglib_LTLIBRARIES = libplug.la
 
 libplug_la_SOURCES = plug.cc
-
-EXTRA_DIST = $(pkgdata_DATA)

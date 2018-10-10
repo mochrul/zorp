@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -1034,7 +1035,6 @@ class CSZoneDispatcher(Dispatcher):
         self.cache.store(cache_ndx, service)
         return MasterSession(service, client_stream, client_local, client_listen, client_address, client_zone = client_zone, instance_id=getInstanceId(service.name))
 
-
 def purgeDispatches():
     """
     <function internal="yes">
@@ -1045,4 +1045,3 @@ def purgeDispatches():
     del Globals.dispatches
 
 Globals.deinit_callbacks.append(purgeDispatches)
-

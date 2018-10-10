@@ -4,10 +4,11 @@ libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
 datadir=@datadir@
+pidfiledir=@localstatedir@/run
 
 Name: ZorpLib
 Description: Zorp Core Library
-Requires: zorplibll
+Requires: zorpll-@LIBZORP_LT_RELEASE@ python-2.7
 Version: @VERSION@
-Libs: -lzorp -L@libdir@ @PYTHON_LIBS@
-Cflags: -I@includedir@ @PYTHON_CFLAGS@
+Libs: -lzorp -L@libdir@
+Cflags: -I@includedir@

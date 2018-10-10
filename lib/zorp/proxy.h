@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,16 +23,15 @@
 #define ZORP_PROXY_H_INCLUDED
 
 #include <zorp/zorp.h>
-#include <zorp/zobject.h>
-#include <zorp/stream.h>
+#include <zorpll/zobject.h>
+#include <zorpll/stream.h>
 #include <zorp/zpython.h>
 #include <zorp/pydict.h>
 #include <zorp/dispatch.h>
-#include <zorp/poll.h>
-#include <zorp/thread.h>
+#include <zorpll/poll.h>
+#include <zorpll/thread.h>
 #include <zorp/proxyssl.h>
 #include <zorp/pyencryption.h>
-
 
 #include <glib.h>
 
@@ -119,8 +119,6 @@ public:
   void (*wakeup)(ZProxy *self);
 };
 
-#define Z_PROXY_FUNCS_FOR_AUDIT(a, b, c)
-
 #define Z_PROXY_SERVER_SOCKET_MARK 0x40000000
 
 struct ZChannelProps
@@ -147,7 +145,6 @@ public:
 
   int server_socket_mark;
   GString *language;
-  GString *alerting_config;
 
   /* a pointer to the parent proxy */
   ZProxy *parent_proxy;
@@ -156,7 +153,6 @@ public:
 
   GMutex interfaces_lock;
   GList *interfaces;
-
 
   gboolean channel_props_set[EP_MAX];
   ZChannelProps channel_props[EP_MAX];
@@ -291,7 +287,6 @@ z_proxy_clear_stop_request(ZProxy *self)
 
 gboolean z_proxy_loop_iteration(ZProxy *self);
 
-
 /* constructor for ZProxy */
 ZProxy *
 z_proxy_new(ZClass *class_, ZProxyParams *params);
@@ -415,7 +410,6 @@ z_proxy_basic_iface_set_var(ZProxyBasicIface *self, const gchar *var_name, gchar
   return Z_FUNCS(self, ZProxyBasicIface)->set_var(self, var_name, value);
 }
 
-
 ZProxyBasicIface *z_proxy_basic_iface_new(ZClass *class_, ZProxy *proxy);
 #define z_proxy_basic_iface_free_method z_proxy_iface_free_method
 
@@ -480,6 +474,5 @@ gboolean z_proxy_stop_request(const gchar *session_id);
 
 void z_proxy_hash_init(void);
 void z_proxy_hash_destroy(void);
-
 
 #endif

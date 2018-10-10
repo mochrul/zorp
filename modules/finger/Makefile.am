@@ -1,12 +1,8 @@
 pkgdatadir = @ZORP_PYTHON_DIR@
-pkglibdir = @libdir@/zorp
-LIBS = @MODULES_LIBS@
-CPPFLAGS = @MODULES_CPPFLAGS@
-
-pkgdata_DATA = Finger.py
+pkglibdir = ${ZORP_LIBDIR}
+AM_LDFLAGS = @MODULES_LIBS@
+AM_CXXFLAGS = @MODULES_CXXFLAGS@
 
 pkglib_LTLIBRARIES = libfinger.la
 
 libfinger_la_SOURCES = finger.cc
-
-EXTRA_DIST = $(pkgdata_DATA)

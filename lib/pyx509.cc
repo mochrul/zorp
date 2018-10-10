@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +24,10 @@
 #include <zorp/zpython.h>
 #include <zorp/pystruct.h>
 
-#include <zorp/log.h>
+#include <zorpll/log.h>
 
 #include <openssl/pem.h>
+#include <openssl/x509v3.h>
 #include <set>
 #include <string>
 
@@ -74,18 +76,19 @@ z_py_zorp_certificate_new(X509 *cert)
 {
   ZorpCertificate *self;
 
-  if (cert)
-    {
+  if (!cert)
+    return z_policy_none_ref();
 
-      self = PyObject_New(ZorpCertificate, &z_py_zorp_certificate_type);
-      self->cert = cert;
-      CRYPTO_add(&cert->references,1,CRYPTO_LOCK_X509);
-      return (PyObject *) self;
-    }
-  else
+  self = PyObject_New(ZorpCertificate, &z_py_zorp_certificate_type);
+  self->cert = cert;
+
+  if (!X509_up_ref(cert))
     {
+      PyErr_SetString(PyExc_RuntimeError, "X509_up_ref failed.");
       return z_policy_none_ref();
     }
+
+  return (PyObject *) self;
 }
 
 static PyObject *
@@ -142,8 +145,51 @@ z_py_zorp_certificate_free(ZorpCertificate *self)
   PyObject_Del(self);
 }
 
+static void
+zorp_certificate_delete_extensions(X509 *certificate, std::set<std::string> white_list_set)
+{
+  int extension_location = 0;
+  while (extension_location < X509_get_ext_count(certificate))
+    {
+      X509_EXTENSION *ext = X509_get_ext(certificate, extension_location);
+      ASN1_OBJECT *obj = X509_EXTENSION_get_object(ext);
+      std::string extension_name(OBJ_nid2sn(OBJ_obj2nid(obj)));
+
+      if (white_list_set.find(extension_name) == white_list_set.end())
+        {
+          X509_EXTENSION *return_ext = X509_delete_ext(certificate, extension_location);
+          X509_EXTENSION_free(return_ext);
+          extension_location--;
+        }
+      extension_location++;
+    }
+}
+
+static void
+zorp_certificate_fix_key_usage(X509 *certificate)
+{
+  ASN1_BIT_STRING *usage;
+  int usage_crit;
+  if ((usage = (ASN1_BIT_STRING *)X509_get_ext_d2i(certificate, NID_key_usage, &usage_crit, NULL)))
+    {
+      char16_t usage_data = 0;
+      if (usage->length > 0)
+        {
+          usage_data = usage->data[0];
+          if (usage->length > 1)
+          {
+            usage_data |= usage->data[1] << 8;
+          }
+        }
+      usage_data |= KU_KEY_ENCIPHERMENT | KU_DIGITAL_SIGNATURE;
+      unsigned char usage_data_bytes[2] = {(unsigned char)usage_data, (unsigned char)(usage_data >> 8)};
+      ASN1_OCTET_STRING_set(usage, usage_data_bytes, 2);
+      X509_add1_ext_i2d(certificate, NID_key_usage, usage, usage_crit, X509V3_ADD_REPLACE);
+    }
+}
+
 static ZPolicyObj *
-z_py_zorp_certificate_del_extensions(gpointer user_data, ZPolicyObj *args, ZPolicyObj *kw G_GNUC_UNUSED)
+z_py_zorp_certificate_handle_extensions(gpointer user_data, ZPolicyObj *args, ZPolicyObj *kw G_GNUC_UNUSED)
 {
   X509 *certificate = (X509 *) user_data;
   ZPolicyObj *white_list;
@@ -171,23 +217,12 @@ z_py_zorp_certificate_del_extensions(gpointer user_data, ZPolicyObj *args, ZPoli
       white_list_set.emplace(string_element);
     }
 
-  int extension_location = 0;
-  while (extension_location < X509_get_ext_count(certificate))
-    {
-      X509_EXTENSION *ext = X509_get_ext(certificate, extension_location);
-      ASN1_OBJECT *obj = X509_EXTENSION_get_object(ext);
-      std::string extension_name(OBJ_nid2sn(OBJ_obj2nid(obj)));
+  zorp_certificate_delete_extensions(certificate, white_list_set);
 
-      if (white_list_set.find(extension_name) == white_list_set.end())
-        {
-          X509_EXTENSION *return_ext = X509_delete_ext(certificate, extension_location);
-          X509_EXTENSION_free(return_ext);
-          extension_location--;
-        }
-      extension_location++;
-    }
+  zorp_certificate_fix_key_usage(certificate);
+
   // Let OpenSSL know that it needs to re_encode.
-  certificate->cert_info->enc.modified = 1;
+  i2d_re_X509_tbs(certificate, NULL);
 
   BIO *bio = BIO_new(BIO_s_mem());
   PEM_write_bio_X509(bio, certificate);
@@ -220,7 +255,13 @@ z_policy_zorp_certificate_new_instance(PyObject *s G_GNUC_UNUSED, PyObject *args
     }
 
   ZPolicyDict *dict = z_policy_dict_new();
-  z_policy_dict_register(dict, Z_VT_METHOD, "del_extensions", Z_VF_READ, z_py_zorp_certificate_del_extensions, certificate, X509_free);
+  z_policy_dict_register(dict,
+                         Z_VT_METHOD,
+                         "handle_extensions",
+                         Z_VF_READ,
+                         z_py_zorp_certificate_handle_extensions,
+                         certificate,
+                         X509_free);
   return z_policy_struct_new(dict, Z_PST_SHARED);
 }
 
@@ -285,7 +326,12 @@ z_py_zorp_crl_new(X509_CRL *crl)
 
   self = PyObject_New(ZorpCRL, &z_py_zorp_crl_type);
   self->crl = crl;
-  CRYPTO_add(&crl->references,1,CRYPTO_LOCK_X509_CRL);
+  if (!X509_CRL_up_ref(crl))
+    {
+      PyErr_SetString(PyExc_RuntimeError, "X509_up_ref failed.");
+      return nullptr;
+    }
+
   return (PyObject *) self;
 }
 

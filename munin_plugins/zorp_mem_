@@ -1,0 +1,73 @@
+#!/usr/bin/env python2.7
+############################################################################
+##
+## COPYRIGHTHERE
+##
+############################################################################
+#
+# Usage:
+#   Make symbolic links like:
+#     ln -s zorp_mem_ zorp_mem_rss
+#     ln -s zorp_mem_ zorp_mem_vsz
+#   And run the script through links.
+#
+
+from zorpctl import Instances
+
+rss_not_vsz = True
+
+
+def format_label(name):
+    # getting rid of '#0' for backward compatibility
+    if name[-2:] == '#0':
+        name = name[:-2]
+    return name.replace('#', '_') + "_" + ('rss' if rss_not_vsz else 'vsz')
+
+
+def print_config():
+    print 'graph_title Zorp instances ' + ('RSS' if rss_not_vsz else 'VSZ') +\
+          ' memory usage'
+    print 'graph_args --base 1024'
+    print 'graph_vlabel Bytes'
+    print 'graph_category Zorp'
+
+    for process_status in Instances.ZorpHandler.pids():
+        if process_status.pid > 0:
+            print format_label(process_status.name) + ".label " + \
+                  process_status.name
+
+
+def print_values():
+    def compute_vm_value(pid):
+        scale = {'KB': 1000, 'MB': 1000*1000, 'GB': 1000*1000*1000}
+        label = 'Vm' + ('RSS' if rss_not_vsz else 'Size')  # Size = VSZ
+
+        with open('/proc/' + str(pid) + '/status', 'r') as proc_status:
+            for line in proc_status.readlines():
+                if len(line) > 0 and line.startswith(label):
+                    items = line.split()
+                    if len(items) > 2:
+                        return int(items[1]) * scale[items[2].upper()]
+
+        return 0  # not found
+
+    for process_status in Instances.ZorpHandler.pids():
+        if process_status.pid > 0:
+            usage = compute_vm_value(process_status.pid)
+            if usage > 0:
+                print format_label(str(process_status.name)) + ".value " +\
+                      str(usage)
+
+
+if __name__ == '__main__':
+    import sys
+
+    # check if the launched script's name ends in VSZ
+    if __file__ is not None and \
+       __file__.upper()[-3:] == 'VSZ':
+        rss_not_vsz = False
+
+    if len(sys.argv) > 1 and sys.argv[1] == 'config':
+        print_config()
+    else:
+        print_values()

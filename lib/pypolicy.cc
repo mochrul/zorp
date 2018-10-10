@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +27,7 @@
  */
 
 #include <zorp/policy.h>
-#include <zorp/log.h>
+#include <zorpll/log.h>
 #include <zorp/zpython.h>
 
 /* for python initialization functions */
@@ -41,10 +42,10 @@
 #include <zorp/pyencryption.h>
 
 /* for capability management */
-#include <zorp/cap.h>
+#include <zorpll/cap.h>
 
 /* for calling on_reload functions on loaded modules */
-#include <zorp/registry.h>
+#include <zorpll/registry.h>
 
 #include <initializer_list>
 
@@ -917,7 +918,6 @@ z_policy_thread_destroy(ZPolicyThread *self)
   g_free(self);
 }
 
-
 /**
  * z_policy_free:
  * @self: this
@@ -949,7 +949,6 @@ z_policy_want_free(ZPolicy *self)
 {
   g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, (GSourceFunc) z_policy_free, self, NULL);
 }
-
 
 /**
  * z_policy_ref:
@@ -1018,7 +1017,6 @@ z_policy_unref(ZPolicy *self)
       G_UNLOCK(policy_ref_lock);
     }
 }
-
 
 void
 z_policy_module_call_py_init_function(const gchar *name,
@@ -1108,7 +1106,6 @@ z_policy_boot(ZPolicy *self)
 
 
 
-  z_policy_modules_py_init_notify();
 
   z_policy_thread_release(self->main_thread);
 

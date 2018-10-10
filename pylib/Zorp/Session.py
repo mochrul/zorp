@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -355,7 +356,7 @@ class MasterSession(AbstractSession):
             self.service.stopInstance(self)
 
     def logVerdict(self, info=''):
-        rule_id = self.rule_id if self.rule_id is not None else "N/A"
+        rule_id = self.rule_id or "N/A"
         session_start = self.service.start_time
         session_end = int(time.time())
         client_zone_name = self.client_zone.name if self.client_zone is not None else "(NULL)"
@@ -374,6 +375,7 @@ class MasterSession(AbstractSession):
         server_local_ip = self.server_local.ip_s if self.server_local is not None else "(NULL)"
         server_local_port = self.server_local.port if self.server_local is not None else 0
         conn_verdict = self.verdict
+        auth_user = self.auth_user or "(NULL)"
         log(self.session_id, CORE_SUMMARY, 4,
             ("Connection summary; " +
              "rule_id='%s', "
@@ -392,7 +394,8 @@ class MasterSession(AbstractSession):
              "server_local='%s', "
              "server_local_port='%d', "
              "verdict='%s', "
-             "info='%s'"
+             "info='%s', "
+             "auth_user='%s'"
              ) % (
              rule_id,
              session_start,
@@ -410,7 +413,8 @@ class MasterSession(AbstractSession):
              server_local_ip,
              server_local_port,
              conn_verdict,
-             info
+             info,
+             auth_user
             ))
 
 class StackedSession(AbstractSession):

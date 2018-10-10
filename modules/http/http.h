@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,20 +22,24 @@
 #ifndef ZORP_MODULES_HTTP_H_INCLUDED
 #define ZORP_MODULES_HTTP_H_INCLUDED
 
+#include <zorpll/string.h>
+
 #include <zorp/zorp.h>
 #include <zorp/proxy.h>
 #include <zorp/proxystack.h>
-#include <zorp/streamline.h>
+#include <zorpll/streamline.h>
 #include <zorp/authprovider.h>
 #include <zorp/dimhash.h>
-#include <zorp/poll.h>
+#include <zorpll/poll.h>
 #include <zorp/attach.h>
-#include <zorp/blob.h>
+#include <zorpll/blob.h>
 #include <zorp/proxy/transfer2.h>
 #include <zorp/policy.h>
 
-#include "httpcommon.h"
+#include <vector>
+#include <utility> // pair
 
+#include "httpcommon.h"
 
 /* general limits applied to headers, etc. */
 #define HTTP_MAX_LINE           32768
@@ -179,6 +184,8 @@ typedef struct _HttpHeader HttpHeader;
 typedef struct _HttpHeaders HttpHeaders;
 typedef struct _HttpURL HttpURL;
 
+using CookiePairVector = std::vector<std::pair<std::string, std::string>>;
+
 /* this structure represents an HTTP header, it can easily be added to our
  * header structure without having to also include it in the protocol when
  * reconstructing the list of headers by using the 'present' member field.
@@ -235,6 +242,8 @@ typedef struct _HttpElementInfo
 /* This structure represents an HTTP proxy */
 struct _HttpProxy
 {
+  static const std::string zorp_realm_cookie_name;
+
   ZProxy super;
 
   /* poll is used during transfers */
@@ -495,7 +504,6 @@ struct _HttpProxy
   ZPolicyObj *request_categories;
 
   GString *append_cookie;
-
 };
 
 extern ZClass HttpProxy__class;
@@ -510,7 +518,13 @@ gboolean http_data_transfer(HttpProxy *self, gint transfer_type, ZEndpoint from,
 gboolean
 http_lookup_header(HttpHeaders *headers, const gchar *what, HttpHeader **p);
 
-GHashTable *http_parse_header_cookie(HttpHeaders *hdrs);
+CookiePairVector::iterator
+http_find_cookie_by_name(CookiePairVector &cookie_vector, const std::string &cookie_name);
+
+CookiePairVector http_parse_header_cookie(HttpHeaders *hdrs);
+
+void
+http_write_header_cookie(HttpHeaders *hdrs, const CookiePairVector &cookie_hash);
 
 gboolean
 http_fetch_headers(HttpProxy *self, ZEndpoint side);
@@ -609,6 +623,4 @@ http_proto_response_hdr_lookup(const gchar *resp)
 {
   return static_cast<HttpElementInfo *>(g_hash_table_lookup(response_hdr_proto_hash, resp));
 }
-
-
 #endif

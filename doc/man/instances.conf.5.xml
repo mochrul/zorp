@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd"
+[
+<!ENTITY % entities SYSTEM "zorp-entities.ent">
+  %entities;
+  ]>
+<refentry xml:id="instances.conf.5">
+  <refmeta>
+    <refentrytitle>instances.conf</refentrytitle>
+    <manvolnum>5</manvolnum>
+    <refmiscinfo class="version">&version;</refmiscinfo>
+    <refmiscinfo class="source">&product;</refmiscinfo>
+    <refmiscinfo class='manual'>&product;</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>instances.conf</refname>
+    <refpurpose>
+      <link linkend="zorp.8">zorp(8)</link> instances database</refpurpose>
+  </refnamediv>
+  <refsection>
+    <title>Description</title>
+    <para>The <filename>instances.conf</filename> file describes the <link linkend="zorp.8">
+        <command>zorp(8)</command>
+      </link> instances to be run on the system. It is processed by <link linkend="zorpctl.8">
+        <command>zorpctl(8)</command>
+      </link> line by line, each line having the structure described below. Empty lines and lines
+      beginning with '#' are comments ignored by <command>zorpctl</command>.</para>
+  </refsection>
+  <refsection>
+    <title>Structure</title>
+    <para>
+      <command>instance-name parameters [-- zorpctl-options]</command>
+    </para>
+    <para>
+      <emphasis>instance-name</emphasis> is the name of the Zorp instance to be started; it is
+      passed to <command>zorp</command> with its <command>--as</command> parameter. Instance names
+      may consist of the characters [a-zA-Z0-9_] and must begin with a letter.</para>
+    <para>
+      <emphasis>parameters</emphasis> are space separated parameters entered into the zorp
+      command-line. For details on these command-line parameters see <link linkend="zorp.8"
+      >zorp(8)</link>.</para>
+    <para>
+      <emphasis>zorpctl-options</emphasis> are space separated parameters control startup specific
+      options. They are processed by <command>zorpctl</command> itself. The following
+        <command>zorpctl</command> options are available:</para>
+    <variablelist>
+      <varlistentry>
+        <term>
+          <command>--auto-restart</command> or <command>-A</command>
+        </term>
+        <listitem>
+          <para>Enable the automatic restart feature of <command>zorpctl</command>. When an instance
+            is in auto-restart mode, it is restarted automatically in case the instance
+          exits.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--no-auto-restart</command> or <command>-a</command>
+        </term>
+        <listitem>
+          <para>Disable automatic restart for this instance.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--fd-limit &lt;number&gt;</command> or <command>-f
+          &lt;number&gt;</command>
+        </term>
+        <listitem>
+          <para>Set the file descriptor limit to &lt;number&gt;. The file descriptor limit
+            defaults to the number of threads (specified by the <emphasis>--threads</emphasis>
+            parameter of <link linkend="zorp.8">zorp(8)</link>) multiplied by 4.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--enable-core</command>
+        </term>
+        <listitem>
+          <para>Explicitly enable core dumps for Zorp processes. The core limit is inherited from
+            the local starting environment (e.g.: starting shell) if not specified.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <command>--num-of-processes &lt;number&gt;</command> or <command>-P &lt;number&gt;
+          </command>
+        </term>
+        <listitem>
+          <para>Run &lt;number&gt; of processes for the instance. <command>zorpctl</command>
+          starts exactly one Zorp process in master mode and &lt;number&gt; of slave Zorp
+          processes. This mode of operation is incompatible with old-style dispatchers, you
+          must use the new rule-based policy with this option.</para>
+        </listitem>
+      </varlistentry>
+     </variablelist>
+  </refsection>
+  <refsection>
+    <title>Examples</title>
+    <para/>
+    <para>
+      <command>zorp_ftp --policy /etc/zorp/policy.py --verbose 5 </command>
+    </para>
+    <para>The line above describes a Zorp instance named <emphasis>zorp_ftp</emphasis> using policy
+      file <emphasis>/etc/zorp/policy.py</emphasis>, and having verbosity level 5.</para>
+    <para>
+      <command>zorp_intra -v4 -p /etc/zorp/policy.py --threads 500 --no-auto-restart --fd-limit 1024
+        --process-limit 512</command>
+    </para>
+    <para>This line describes a zorp instance named <emphasis>zorp_intra</emphasis> using the policy
+      file <filename>/etc/zorp/policy.py</filename>, verbosity level 4. The maximum number of
+      threads is set to 500, file descriptor limit to 1024, process limit to 512.</para>
+  </refsection>
+  <refsection>
+    <title>Files</title>
+    <para>The default location of <filename>instances.conf</filename> is
+        <filename>/etc/zorp/instances.conf</filename>. Defaults for zorpctl tunables can be
+      specified in <filename>/etc/zorp/zorpctl</filename>.</para>
+  </refsection>
+  <xi:include href="manpage_authors.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="manpage_copyright.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</refentry>

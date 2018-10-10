@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,9 @@
 #include <zorp/zpython.h>
 #include <zorp/certchain.h>
 
-#include <zorp/log.h>
+#include <zorpll/log.h>
+
+#include <memory>
 
 #include <openssl/pem.h>
 
@@ -187,17 +190,22 @@ z_py_ssl_certificate_chain_set_chain(ZCertificateChain *chain, gchar *input, gsi
   if (next)
     {
       gssize next_len = input_len - (next - input);
-
-      X509 *cert = static_cast<X509 *>(PROXY_SSL_EXTRACT_PEM(next, next_len, PEM_read_bio_X509));
+      std::unique_ptr<X509, decltype(&X509_free)> cert(
+        static_cast<X509 *>(PROXY_SSL_EXTRACT_PEM(next, next_len, PEM_read_bio_X509)),
+        X509_free
+      );
 
       if (!cert)
-      {
-        PyErr_SetString(PyExc_TypeError, "Certificate chains must be specified as strings in PEM format.");
-        return FALSE;
-      }
+        {
+          PyErr_SetString(PyExc_TypeError, "Certificate chains must be specified as strings in PEM format.");
+          return FALSE;
+        }
 
-      z_certificate_chain_add_cert_to_chain(chain, cert);
-      X509_free(cert);
+      if (!z_certificate_chain_add_cert_to_chain(chain, cert.get()))
+        {
+          PyErr_SetString(PyExc_RuntimeError, "X509_up_ref failed.");
+          return FALSE;
+        }
 
       if (next_len > 1)
         return z_py_ssl_certificate_chain_set_chain(chain, next + 1, next_len - 1);
@@ -234,26 +242,31 @@ z_py_ssl_certificate_chain_set(ZProxy *self G_GNUC_UNUSED, gchar *name G_GNUC_UN
 
       if (input_len)
         {
-          X509 *cert = static_cast<X509 *>(PROXY_SSL_EXTRACT_PEM(input, input_len, PEM_read_bio_X509));
+          std::unique_ptr<X509, decltype(&X509_free)> cert(
+            static_cast<X509 *>(PROXY_SSL_EXTRACT_PEM(input, input_len, PEM_read_bio_X509)),
+            X509_free
+          );
 
           if (!cert)
             goto err_msg;
 
           *chain = z_certificate_chain_new();
-          z_certificate_chain_set_cert(*chain, cert);
-          X509_free(cert);
+          if (!z_certificate_chain_set_cert(*chain, cert.get()))
+            {
+              PyErr_SetString(PyExc_RuntimeError, "X509_up_ref failed.");
+              return -1;
+            }
 
           if (!z_py_ssl_certificate_chain_set_chain(*chain, input + 1, input_len - 1))
-            goto err_out;
+            return -1;
         }
     }
 
   return 0;
 
-  err_msg:
-    PyErr_SetString(PyExc_TypeError, "Certificate chains must be specified as strings in PEM format.");
-  err_out:
-    return -1;
+err_msg:
+  PyErr_SetString(PyExc_TypeError, "Certificate chains must be specified as strings in PEM format.");
+  return -1;
 }
 
 void

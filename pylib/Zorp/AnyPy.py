@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -44,16 +45,19 @@
 from Proxy import Proxy
 
 # policy verdicts
-ANYPY_UNSPEC     = 0 # policy doesn't specify it, do something sensible
-ANYPY_ACCEPT     = 1
-ANYPY_DENY       = 2
-ANYPY_REJECT     = 3 # continue and tell the client that we didn't do it
-ANYPY_ABORT      = 4 # abort the connection
-ANYPY_DROP       = 5 # continue and don't do it
-ANYPY_POLICY     = 6 # Policy level will decide what to do
-ANYPY_ERROR      = 7 # Error occurred try to nice fail
+ANYPY_UNSPEC = 0  # policy doesn't specify it, do something sensible
+ANYPY_ACCEPT = 1
+ANYPY_DENY = 2
+ANYPY_REJECT = 3  # continue and tell the client that we didn't do it
+ANYPY_ABORT = 4  # abort the connection
+ANYPY_DROP = 5  # continue and don't do it
+ANYPY_POLICY = 6  # Policy level will decide what to do
+ANYPY_ERROR = 7  # Error occurred try to nice fail
+
+
 
 class AbstractAnyPyProxy(Proxy):
+
     """<class maturity="stable" abstract="yes">
     <summary>
       Class encapsulating an AnyPy proxy.
@@ -119,6 +123,7 @@ class AbstractAnyPyProxy(Proxy):
     </class>
     """
     name = "anypy"
+
     def __init__(self, session):
         """<method maturity="stable">
         <summary>
@@ -166,7 +171,9 @@ class AbstractAnyPyProxy(Proxy):
         """
         raise NotImplementedError
 
+
 class AnyPyProxy(AbstractAnyPyProxy):
+
     """<class maturity="stable">
     <summary>
       Class encapsulating the default AnyPy proxy.

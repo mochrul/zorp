@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -80,7 +81,9 @@ from Proxy import Proxy
 
 PLUG_DEBUG = "plug.debug"
 
+
 class AbstractPlugProxy(Proxy):
+
     """<class maturity="stable" abstract="yes">
       <summary>
         Class encapsulating the abstract Plug proxy.
@@ -206,7 +209,7 @@ class AbstractPlugProxy(Proxy):
             <type>
               <integer/>
             </type>
-            <default>60000</default>
+            <default>600000</default>
             <conftime>
               <write/>
             </conftime>
@@ -288,6 +291,7 @@ class AbstractPlugProxy(Proxy):
     </class>
     """
     name = "plug"
+
     def __init__(self, session):
         """<method internal="yes">
           <summary>
@@ -384,6 +388,7 @@ class AbstractPlugProxy(Proxy):
 
 
 class PlugProxy(AbstractPlugProxy):
+
     """<class maturity="stable">
       <summary>
         Class encapsulating the default Plug proxy.

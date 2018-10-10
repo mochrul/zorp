@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +22,7 @@
  ***************************************************************************/
 
 #include <zorp/proxy/errorloader.h>
-#include <zorp/log.h>
+#include <zorpll/log.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -110,7 +111,7 @@ z_error_loader_format_file(const gchar *filepath, gchar *additional_info, guint3
 
                       src += 5;
                       t = time(NULL);
-                      localtime_r(&t, &tm);
+                      z_localtime_r(&t, &tm);
                       strftime(timebuf, sizeof(timebuf), "%a %b %e %H:%M:%S %Z %Y", &tm);
                       z_error_append_escaped(new_contents, timebuf, flags);
                     }

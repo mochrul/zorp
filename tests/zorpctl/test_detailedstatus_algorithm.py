@@ -3,6 +3,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -21,53 +22,39 @@
 ##
 ############################################################################
 
+import tempfile
+import datetime
 import unittest, os
 from zorpctl.ProcessAlgorithms import DetailedStatusAlgorithm, ProcessStatus
 
 class TestDetailedStatusAlgorithm(unittest.TestCase):
 
     def setUp(self):
+        (self.test_uptime_file_fd, self.test_uptime_file_name) = tempfile.mkstemp(prefix='test_proc_uptime_file')
+        os.write(self.test_uptime_file_fd, '19534.16 66241.85')
+        os.close(self.test_uptime_file_fd)
+
+        (self.test_stat_file_fd, self.test_stat_filename) = tempfile.mkstemp(prefix='test_proc_stat_file')
+        os.write(self.test_stat_file_fd,
+                 "cpu  677042 37221 447831 6575990 23683 4 1743 0 0 0" \
+                 "cpu0 198740 7613 139162 1584199 4778 3 729 0 0 0" \
+                 "cpu1 166518 10310 106719 1651103 6142 0 334 0 0 0" \
+                 "cpu2 157808 9493 102157 1668239 4922 0 347 0 0 0" \
+                 "cpu3 153976 9804 99791 1672447 7840 0 332 0 0 0" \
+                 "intr 97534152 43 11472 0 0 0 0 0 2 1 0 0 0 0 0 0 0 88194 2 304 285 0 0 128079 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 405590 %s" \
+                 "ctxt 194770779" \
+                 "btime 1367748435" \
+                 "processes 32903" \
+                 "procs_running 2" \
+                 "procs_blocked 0" \
+                 "softirq 17765007 0 3342173 3318 444082 127922 0 9080 3165220 1741954 8931258')" % (701 * "0 "))
+        os.close(self.test_stat_file_fd)
+
         self.algorithm = DetailedStatusAlgorithm()
-        proc_info_file_values = ['1572', '(zorp)', 'S', '1571', '1572',
-                                 '1572', '0', '-1', '4202816', '3288',
-                                 '0', '22', '0', '46', '32', '0', '0',
-                                 '20', '0', '4', '0', '2466', '295555072',
-                                 '3120', '18446744073709551615', '1',
-                                 '1', '0', '0', '0', '0', '0',
-                                 '16777216', '89659',
-                                 '18446744073709551615', '0', '0', '17', '3']
-
-        self.test_procinfo_file = open('test_procinfo_file', 'w')
-        self.test_procinfo_file.write(proc_info_file_values[0])
-        for value in proc_info_file_values[1:]:
-            self.test_procinfo_file.write(" " + value)
-        self.test_procinfo_file.close()
-
-        self.test_uptime_filename = 'test_proc_uptime_file'
-        test_uptime_file = open(self.test_uptime_filename, 'w')
-        test_uptime_file.write('19534.16 66241.85')
-        test_uptime_file.close()
-
-        self.test_stat_filename = 'test_proc_stat_file'
-        test_stat_file = open(self.test_stat_filename, 'w')
-        test_stat_file.write("cpu  677042 37221 447831 6575990 23683 4 1743 0 0 0 \
-                              cpu0 198740 7613 139162 1584199 4778 3 729 0 0 0 \
-                              cpu1 166518 10310 106719 1651103 6142 0 334 0 0 0 \
-                              cpu2 157808 9493 102157 1668239 4922 0 347 0 0 0 \
-                              cpu3 153976 9804 99791 1672447 7840 0 332 0 0 0 \
-                              intr 97534152 43 11472 0 0 0 0 0 2 1 0 0 0 0 0 0 0 88194 2 304 285 0 0 128079 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 405590 %s\
-                              ctxt 194770779 \
-                              btime 1367748435 \
-                              processes 32903 \
-                              procs_running 2 \
-                              procs_blocked 0 \
-                              softirq 17765007 0 3342173 3318 444082 127922 0 9080 3165220 1741954 8931258')" % (701 * "0 "))
-        test_stat_file.close()
-
-        self.algorithm.uptime_filename = self.test_uptime_filename
+        self.algorithm.uptime_filename = self.test_uptime_file_name
         self.algorithm.stat_file = open(self.test_stat_filename, 'r')
 
-        self.procinfo = self.proc_info_file_data = {
+        self.procinfo = {
             "majflt": "22",
             "cutime": "0",
             "endcode": "1",
@@ -109,13 +96,11 @@ class TestDetailedStatusAlgorithm(unittest.TestCase):
             "nice": "0"
         }
 
-    def __del__(self):
-        os.remove(self.test_uptime_filename)
+    def tearDown(self):
+        os.remove(self.test_uptime_file_name)
         os.remove(self.test_stat_filename)
-        os.remove('test_procinfo_file')
 
     def test_detailed_status(self):
-        import datetime
         status = ProcessStatus("test")
         status.reload_timestamp = 1367664125
         status.policy_file = "/etc/zorp/policy.py"

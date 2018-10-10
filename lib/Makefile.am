@@ -1,12 +1,12 @@
 SUBDIRS = . zorp
 
-LIBS = @LIBZORP_LIBS@
+AM_CXXFLAGS = @LIBZORP_CXXFLAGS@
 
 lib_LTLIBRARIES = libzorp.la
 
 libzorp_la_LDFLAGS = \
+	@LIBZORP_LIBS@ \
 	-version-info $(LIBZORP_LT_COMPAT_PL) \
-	-release $(LIBZORP_LT_RELEASE) \
 	-export-dynamic
 
 libzorp_la_SOURCES = \

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +21,12 @@
  ***************************************************************************/
 
 #include <zorp/zorp.h>
-#include <zorp/stream.h>
+#include <zorpll/stream.h>
 #include <zorp/proxy.h>
 #include <zorp/policy.h>
-#include <zorp/thread.h>
+#include <zorpll/thread.h>
 #include <zorp/zpython.h>
-#include <zorp/log.h>
+#include <zorpll/log.h>
 #include <zorp/pysockaddr.h>
 
 #include "ftp.h"
@@ -316,7 +317,7 @@ ftp_command_parse_USER(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='USER', state='%s'",
                   ftp_proto_state_name(self->ftp_state));
@@ -359,7 +360,7 @@ ftp_command_answer_USER(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='USER', rsp='%u', state='%s'",
                   self->answer_code, ftp_proto_state_name(self->ftp_state));
@@ -472,7 +473,7 @@ ftp_command_parse_PASS(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='PASS', state='%s'",
                   ftp_proto_state_name(self->ftp_state));
@@ -538,7 +539,7 @@ ftp_command_parse_ACCT(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='ACCT', state='%s'",
                   ftp_proto_state_name(self->ftp_state));
@@ -564,7 +565,7 @@ ftp_command_answer_ACCT(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='ACCT', rsp='%u', state='%s'",
                   self->answer_code, ftp_proto_state_name(self->ftp_state));
@@ -657,7 +658,7 @@ ftp_command_answer_path(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='%s', rsp='%u', state='%s'",
                   self->request_cmd->str, self->answer_code, ftp_proto_state_name(self->ftp_state));
@@ -716,7 +717,7 @@ ftp_command_parse_QUIT(FtpProxy *self)
 
     default:
       /*LOG
-        This message indicates an internal error, please contact the BalaBit QA team.
+        This message indicates an internal error, please contact the Balasys QA team (devel@balasys.hu).
        */
       z_proxy_log(self, FTP_ERROR, 1, "Internal error, proxy in unknown state; cmd='QUIT', state='%s'",
                   ftp_proto_state_name(self->ftp_state));

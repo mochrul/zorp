@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -381,7 +382,7 @@ class X509KeyBridge(X509KeyManager):
         if self.extension_whitelist:
           # delete extensions not on whitelist
           zorp_certificate = ZorpCertificate(certificate)
-          certificate = zorp_certificate.del_extensions(self.extension_whitelist)
+          certificate = zorp_certificate.handle_extensions(self.extension_whitelist)
 
         new_cert = OpenSSL.crypto.load_certificate(filetype, certificate)
         new_cert.set_serial_number(serial)

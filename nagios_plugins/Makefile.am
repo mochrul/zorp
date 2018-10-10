@@ -10,5 +10,5 @@ sudoconf_DATA = zorp_nagios_plugins
 EXTRA_DIST = ${nagios_SCRIPTS} ${nagiosconf_DATA} ${sudoconf_DATA}
 
 install-data-hook:
-	mkdir -p $(DESTDIR)$(sudoconfdir)
-	$(INSTALL) -c -m 440 $(addprefix $(srcdir)/,$(sudoconf_DATA)) $(DESTDIR)$(sudoconfdir)
+	$(MKDIR_P) $(DESTDIR)/${ZORP_SUDOERSD_CONF_DIR}
+	$(INSTALL) -c -m 440 $(addprefix $(srcdir)/,$(sudoconf_DATA)) $(DESTDIR)/${ZORP_SUDOERSD_CONF_DIR}

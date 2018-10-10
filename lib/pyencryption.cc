@@ -1,25 +1,6 @@
-/***************************************************************************
- *
- * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- ***************************************************************************/
-
 #include <zorp/pyencryption.h>
-#include <zorp/log.h>
+#include <zorpll/log.h>
+
 #include <zorp/pyx509.h>
 #include <zorp/pyx509chain.h>
 #include <zorp/proxyssl.h>
@@ -90,7 +71,6 @@ z_policy_encryption_tlsext_servername_cb(SSL *ssl, int *_ad G_GNUC_UNUSED, void 
 
 static bool
 z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
-                                             const encryption_method_type &client_method, const encryption_method_type &server_method,
                                              const encryption_security_type &client_security, const encryption_security_type &server_security
                                             )
 {
@@ -100,33 +80,9 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
 
   if (client_security != ENCRYPTION_SEC_NONE)
     {
-      switch (client_method)
-        {
-          case ENCRYPTION_METHOD_SSLV23:
-            self->ssl_client_context = SSL_CTX_new(SSLv23_server_method());
-            break;
-          case ENCRYPTION_METHOD_SSLV3:
-            self->ssl_client_context = SSL_CTX_new(SSLv3_server_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1:
-            self->ssl_client_context = SSL_CTX_new(TLSv1_server_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1_1:
-            self->ssl_client_context = SSL_CTX_new(TLSv1_1_server_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1_2:
-            self->ssl_client_context = SSL_CTX_new(TLSv1_2_server_method());
-            break;
-          default:
-            z_log(NULL, CORE_POLICY, 1, "Bad SSL method; method='%d'", client_method);
-            return false;
-        };
+      self->ssl_client_context = SSL_CTX_new(TLS_server_method());
+      SSL_CTX_set_min_proto_version(self->ssl_client_context, TLS1_VERSION);
 
-      if (!z_ssl_ctx_setup_ecdh(self->ssl_client_context))
-        {
-          z_log(NULL, CORE_ERROR, 1, "Unable to setup ECDH; side='%s'", EP_STR(EP_CLIENT));
-          return false;
-        }
       SSL_CTX_set_options(self->ssl_client_context, SSL_OP_SINGLE_ECDH_USE);
 
       SSL_CTX_set_app_data(self->ssl_client_context, self);
@@ -139,34 +95,11 @@ z_policy_encryption_set_methods_and_security(ZPolicyEncryption *self,
 
   if (server_security != ENCRYPTION_SEC_NONE)
     {
-      switch (server_method)
-        {
-          case ENCRYPTION_METHOD_SSLV23:
-            self->ssl_server_context = SSL_CTX_new(SSLv23_client_method());
-            break;
-          case ENCRYPTION_METHOD_SSLV3:
-            self->ssl_server_context = SSL_CTX_new(SSLv3_client_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1:
-            self->ssl_server_context = SSL_CTX_new(TLSv1_client_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1_1:
-            self->ssl_server_context = SSL_CTX_new(TLSv1_1_client_method());
-            break;
-          case ENCRYPTION_METHOD_TLSV1_2:
-            self->ssl_server_context = SSL_CTX_new(TLSv1_2_client_method());
-            break;
-          default:
-            z_log(NULL, CORE_POLICY, 1, "Bad SSL method; method='%d'", server_method);
-            return false;
-        };
+      self->ssl_server_context = SSL_CTX_new(TLS_client_method());
+      SSL_CTX_set_min_proto_version(self->ssl_server_context, TLS1_VERSION);
+
       SSL_CTX_set_app_data(self->ssl_server_context, self);
 
-      if (!z_ssl_ctx_setup_ecdh(self->ssl_server_context))
-        {
-          z_log(NULL, CORE_ERROR, 1, "Unable to setup ECDH; side='%s'", EP_STR(EP_SERVER));
-          return false;
-        }
       SSL_CTX_set_options(self->ssl_server_context, SSL_OP_SINGLE_ECDH_USE);
 
 
@@ -232,13 +165,6 @@ z_policy_encryption_register_vars(ZPolicyEncryption *self)
   z_policy_dict_register(dict, Z_VT_INT, "client_permit_missing_crl", Z_VF_RW,
                          &self->ssl_opts.permit_missing_crl[EP_CLIENT]);
 
-  z_policy_dict_register(dict, Z_VT_STRING, "client_ssl_method",
-                         Z_VF_READ | Z_VF_CFG_WRITE | Z_VF_CONSUME,
-                         self->ssl_opts.ssl_method[EP_CLIENT]);
-  z_policy_dict_register(dict, Z_VT_INT, "client_disable_proto_sslv2", Z_VF_RW,
-                         &self->ssl_opts.disable_proto_sslv2[EP_CLIENT]);
-  z_policy_dict_register(dict, Z_VT_INT, "client_disable_proto_sslv3", Z_VF_RW,
-                         &self->ssl_opts.disable_proto_sslv3[EP_CLIENT]);
   z_policy_dict_register(dict, Z_VT_INT, "client_disable_proto_tlsv1", Z_VF_RW,
                          &self->ssl_opts.disable_proto_tlsv1[EP_CLIENT]);
   z_policy_dict_register(dict, Z_VT_INT, "client_disable_proto_tlsv1_1", Z_VF_RW,
@@ -292,13 +218,6 @@ z_policy_encryption_register_vars(ZPolicyEncryption *self)
   z_policy_dict_register(dict, Z_VT_INT, "server_permit_missing_crl", Z_VF_RW,
                          &self->ssl_opts.permit_missing_crl[EP_SERVER]);
 
-  z_policy_dict_register(dict, Z_VT_STRING, "server_ssl_method",
-                         Z_VF_RW | Z_VF_CONSUME,
-                         self->ssl_opts.ssl_method[EP_SERVER]);
-  z_policy_dict_register(dict, Z_VT_INT, "server_disable_proto_sslv2", Z_VF_RW,
-                         &self->ssl_opts.disable_proto_sslv2[EP_SERVER]);
-  z_policy_dict_register(dict, Z_VT_INT, "server_disable_proto_sslv3", Z_VF_RW,
-                         &self->ssl_opts.disable_proto_sslv3[EP_SERVER]);
   z_policy_dict_register(dict, Z_VT_INT, "server_disable_proto_tlsv1", Z_VF_RW,
                          &self->ssl_opts.disable_proto_tlsv1[EP_SERVER]);
   z_policy_dict_register(dict, Z_VT_INT, "server_disable_proto_tlsv1_1", Z_VF_RW,
@@ -349,11 +268,8 @@ z_policy_encryption_set_config_defaults(ZPolicyEncryption *self)
       self->ssl_opts.permit_invalid_certificates[side] = FALSE;
       self->ssl_opts.permit_missing_crl[side] = TRUE;
       self->ssl_opts.handshake_hash[side] = g_hash_table_new(g_str_hash, g_str_equal);
-      self->ssl_opts.ssl_method[side] = g_string_new("SSLv23");
       //self->ssl_opts.ssl_cipher[side] = g_string_new("ALL:!aNULL:@STRENGTH");
       self->ssl_opts.ssl_cipher[side] = g_string_new("HIGH:!aNULL:@STRENGTH");
-      self->ssl_opts.disable_proto_sslv2[side] = TRUE;
-      self->ssl_opts.disable_proto_sslv3[side] = TRUE;
       self->ssl_opts.disable_proto_tlsv1[side] = FALSE;
       self->ssl_opts.disable_proto_tlsv1_1[side] = FALSE;
       self->ssl_opts.disable_proto_tlsv1_2[side] = FALSE;
@@ -387,8 +303,6 @@ z_policy_encryption_set_config_defaults(ZPolicyEncryption *self)
 static int
 z_policy_encryption_init_instance(ZPolicyEncryption *self, PyObject *args, PyObject *kw_args)
 {
-  encryption_method_type client_method = ENCRYPTION_METHOD_TLSV1_2;
-  encryption_method_type server_method = ENCRYPTION_METHOD_TLSV1_2;
   encryption_security_type client_security = ENCRYPTION_SEC_NONE;
   encryption_security_type server_security = ENCRYPTION_SEC_NONE;
 
@@ -396,15 +310,13 @@ z_policy_encryption_init_instance(ZPolicyEncryption *self, PyObject *args, PyObj
   self->ssl_server_context_timeout = 300;
 
   gchar *keywords[] = {
-                        "client_method", "server_method",
                         "client_security", "server_security",
                         "client_timeout", "server_timeout",
                         NULL
                       };
 
   if (!PyArg_ParseTupleAndKeywords(args, kw_args,
-                                   "|iiiiii", keywords,
-                                   &client_method, &server_method,
+                                   "|iiii", keywords,
                                    &client_security, &server_security,
                                    &self->ssl_client_context_timeout, &self->ssl_server_context_timeout
                                   ))
@@ -416,7 +328,7 @@ z_policy_encryption_init_instance(ZPolicyEncryption *self, PyObject *args, PyObj
   z_policy_encryption_set_config_defaults(self);
   z_policy_encryption_register_vars(self);
 
-  if (!z_policy_encryption_set_methods_and_security(self, client_method, server_method, client_security, server_security
+  if (!z_policy_encryption_set_methods_and_security(self, client_security, server_security
                                                    ))
     {
       return -1;
@@ -434,7 +346,7 @@ z_policy_encryption_setup_verify_directories(ZPolicyEncryption *self, SSL_CTX *c
   if (self->ssl_opts.verify_ca_directory[side]->len > 0 ||
       self->ssl_opts.verify_crl_directory[side]->len > 0)
     {
-      X509_LOOKUP *lookup = X509_STORE_add_lookup(ctx->cert_store, X509_LOOKUP_hash_dir());
+      X509_LOOKUP *lookup = X509_STORE_add_lookup(SSL_CTX_get_cert_store(ctx), X509_LOOKUP_hash_dir());
 
       if (self->ssl_opts.verify_ca_directory[side]->len > 0)
         X509_LOOKUP_add_dir(lookup, self->ssl_opts.verify_ca_directory[side]->str, X509_FILETYPE_PEM);
@@ -442,7 +354,7 @@ z_policy_encryption_setup_verify_directories(ZPolicyEncryption *self, SSL_CTX *c
       if (self->ssl_opts.verify_crl_directory[side]->len > 0)
         {
           X509_LOOKUP_add_dir(lookup, self->ssl_opts.verify_crl_directory[side]->str, X509_FILETYPE_PEM);
-          X509_STORE_set_flags(ctx->cert_store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+          X509_STORE_set_flags(SSL_CTX_get_cert_store(ctx), X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         }
     }
 }
@@ -451,8 +363,6 @@ static void
 z_policy_encryption_setup_ctx_options(ZPolicyEncryption *self, SSL_CTX *ctx, ZEndpoint side)
 {
   long options = SSL_OP_ALL |
-                      (self->ssl_opts.disable_proto_sslv2[side] ? SSL_OP_NO_SSLv2 : 0) |
-                      (self->ssl_opts.disable_proto_sslv3[side] ? SSL_OP_NO_SSLv3 : 0) |
                       (self->ssl_opts.disable_proto_tlsv1[side] ? SSL_OP_NO_TLSv1 : 0) |
                       (self->ssl_opts.disable_proto_tlsv1_1[side] ? SSL_OP_NO_TLSv1_1 : 0) |
                       (self->ssl_opts.disable_proto_tlsv1_2[side] ? SSL_OP_NO_TLSv1_2 : 0) |

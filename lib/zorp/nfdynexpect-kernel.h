@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,11 +34,16 @@ struct ip_ct_dynexpect_map
         u_int32_t mapping_id;
         u_int32_t orig_ip;
         u_int32_t new_ip;
+        u_int32_t client_master_ip;
+        u_int32_t server_master_ip;
+        u_int16_t client_master_port;
+        u_int16_t server_master_port;
         u_int16_t orig_port;
         u_int16_t n_ports;
         u_int16_t new_port;
         u_int8_t proto;
-        u_int8_t _res1;
+        u_int8_t master_l4proto;
+//        u_int8_t _res1;
         u_int32_t n_active;
 } __attribute__((packed));
 

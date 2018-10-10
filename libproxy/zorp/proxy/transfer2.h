@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +23,10 @@
 #define ZORP_PROXY_TRANSFER2_H_INCLUDED
 
 #include <zorp/zorp.h>
-#include <zorp/zobject.h>
+#include <zorpll/zobject.h>
 #include <zorp/proxystack.h>
-#include <zorp/poll.h>
-#include <zorp/log.h>
+#include <zorpll/poll.h>
+#include <zorpll/log.h>
 
 typedef enum
 {

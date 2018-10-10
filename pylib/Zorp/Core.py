@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -41,7 +42,7 @@ from Service import Service, PFService, DenyService, DenyIPv4, DenyIPv6
 from SockAddr import SockAddrInet, SockAddrInetHostname, SockAddrInetRange, SockAddrInet6, SockAddrUnix
 from Router import TransparentRouter, DirectedRouter, InbandRouter
 from Chainer import ConnectChainer, MultiTargetChainer, StateBasedChainer, RoundRobinChainer, FailoverChainer, SideStackChainer
-from Subnet import InetSubnet, InetDomain, Inet6Subnet
+from Subnet import InetSubnet, Inet6Subnet
 from Listener import Listener, ZoneListener, CSZoneListener
 from Dispatch import Dispatcher, ZoneDispatcher, CSZoneDispatcher, RuleDispatcher
 from Rule import PortRange, Rule

@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +22,13 @@
 
 #include "smtp.h"
 
-#include <zorp/thread.h>
-#include <zorp/registry.h>
-#include <zorp/log.h>
+#include <zorpll/thread.h>
+#include <zorpll/registry.h>
+#include <zorpll/log.h>
 #include <zorp/policy.h>
 #include <zorp/proxycommon.h>
 #include <zorp/proxygroup.h>
-#include <zorp/streamssl.h>
+#include <zorpll/streamssl.h>
 
 #define SMTP_DEBUG   "smtp.debug"
 #define SMTP_REQUEST "smtp.request"
@@ -1086,7 +1087,8 @@ smtp_process_transfer(SmtpProxy *self)
 		rejects it.
 	       */
               z_proxy_log(self, SMTP_POLICY, 3, "Invalid contents; stack_info='%s'", z_transfer2_get_stack_info(self->transfer));
-
+              g_string_assign(self->error_code, "550");
+              g_string_assign(self->error_info, "Error storing message");
               smtp_format_stack_info(self, "Error storing message", z_transfer2_get_stack_info(self->transfer));
             }
           else if (z_transfer2_get_stack_decision(self->transfer) == ZV_DROP)

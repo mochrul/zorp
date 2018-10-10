@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +21,8 @@
  ***************************************************************************/
 
 #include <zorp/proxy.h>
-#include <zorp/registry.h>
-#include <zorp/streambuf.h>
+#include <zorpll/registry.h>
+#include <zorpll/streambuf.h>
 
 #define APR_DUMP "apr.dump"
 #define APR_DEBUG "apr.debug"
@@ -193,23 +194,28 @@ apr_read(ZStream *stream, ZPktBuf *packet, gsize length)
 static void
 apr_detect(APRProxy *self, gint side)
 {
-  gboolean called;
-  ZPolicyObj *pyres;
   ZPktBuf *buf = self->data_buffer[side];
 
   z_proxy_log_data_dump(self, APR_DUMP, 8, (gchar*) buf->data, buf->length);
   z_policy_lock(self->super.thread);
   PyObject *data = PyString_FromStringAndSize(reinterpret_cast<char *>(buf->data), buf->length);
-  pyres = z_policy_call(self->super.handler, "detect", z_policy_var_build("(iO)", side, data), &called, self->super.session_id);
-  Py_XDECREF(data);
-  if (pyres && pyres != z_policy_none)
+  if (data)
     {
-      self->quit = TRUE;
-      self->service = pyres;
-    }
-  else
-    {
-      z_policy_var_unref(pyres);
+      ZPolicyObj *pyres = z_policy_call(self->super.handler, "detect", z_policy_var_build("(iO)", side, data),
+                                        nullptr, self->super.session_id);
+      Py_XDECREF(data);
+      if (pyres)
+        {
+          if (pyres != z_policy_none)
+            {
+              self->quit = TRUE;
+              self->service = pyres;
+            }
+          else
+            {
+              z_policy_var_unref(pyres);
+            }
+        }
     }
   z_policy_unlock(self->super.thread);
 }

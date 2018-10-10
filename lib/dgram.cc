@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +23,11 @@
  ***************************************************************************/
 
 #include <zorp/dgram.h>
-#include <zorp/streamfd.h>
-#include <zorp/log.h>
-#include <zorp/io.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/log.h>
+#include <zorpll/io.h>
 #include <zorp/tpsocket.h>
-#include <zorp/cap.h>
+#include <zorpll/cap.h>
 
 enum ZorpDgramFlags
 {
@@ -439,7 +440,7 @@ z_dgram_listener_accept_connection(ZListener *self, ZStream **fdstream, ZSockAdd
   GIOStatus res;
   ZSockAddr *from = NULL, *to = NULL;
   gint tos;
-  ZPktBuf *packet;
+  ZPktBuf *packet = NULL;
   static gboolean udp_accept_available = TRUE;
   cap_t saved_caps;
 
@@ -520,9 +521,12 @@ z_dgram_listener_accept_connection(ZListener *self, ZStream **fdstream, ZSockAdd
       *client = NULL;
       *dest = NULL;
       res = z_dgram_socket_recv(self->fd, &packet, &from, &to, &tos, FALSE, NULL);
+      if (res == G_IO_STATUS_AGAIN)
+        {
+        }
       /* FIXME: fetch all packets in the receive buffer to be able to stuff
        * all to the newly created socket */
-      if (res == G_IO_STATUS_ERROR || from == NULL || to == NULL || packet == NULL)
+      else if (res == G_IO_STATUS_ERROR || from == NULL || to == NULL || packet == NULL)
         {
           z_log(self->session_id, CORE_ERROR, 1, "Error receiving datagram on listening stream; fd='%d', error='%s'", self->fd, g_strerror(errno));
         }

@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -376,17 +377,3 @@ class Inet6Subnet(Subnet):
         <method internal="yes"/>
         """
         return socket.AF_INET6
-
-class InetDomain(InetSubnet):
-    """
-    <class internal="yes"/>
-    """
-    deprecated_warning = True
-    def __init__(self, addr):
-        """ <method internal="yes"/> """
-        if (InetDomain.deprecated_warning):
-
-            InetDomain.deprecated_warning = False
-            log(None, CORE_DEBUG, 3, "Use of InetDomain class is deprecated, InetSubnet should be used instead.")
-
-        super(InetDomain, self).__init__(addr)

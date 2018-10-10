@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +22,13 @@
 
 #include <zorp/proxy.h>
 #include <zorp/policy.h>
-#include <zorp/streamfd.h>
-#include <zorp/streamline.h>
-#include <zorp/streambuf.h>
-#include <zorp/streamssl.h>
-#include <zorp/log.h>
-#include <zorp/io.h>
-#include <zorp/thread.h>
+#include <zorpll/streamfd.h>
+#include <zorpll/streamline.h>
+#include <zorpll/streambuf.h>
+#include <zorpll/streamssl.h>
+#include <zorpll/log.h>
+#include <zorpll/io.h>
+#include <zorpll/thread.h>
 #include <zorp/proxygroup.h>
 
 #include <zorp/policy.h>
@@ -1162,7 +1163,6 @@ z_proxy_query_stream(ZProxy *self, gchar *name, gpointer value G_GNUC_UNUSED)
 
 /* methods for the ZProxy class */
 
-
 /**
  * Default config method of ZProxy.
  *
@@ -1191,9 +1191,6 @@ z_proxy_config_method(ZProxy *self)
   z_proxy_var_new(self, "server_stream",
                   Z_VAR_TYPE_CUSTOM | Z_VAR_GET,
                   NULL, z_proxy_query_stream, NULL, NULL);
-  z_proxy_var_new(self, "alerting_config",
-                  Z_VAR_TYPE_STRING | Z_VAR_GET | Z_VAR_SET_CONFIG | Z_VAR_GET_CONFIG,
-                  self->alerting_config);
 
   z_proxy_ssl_register_vars(self);
 
@@ -1494,7 +1491,6 @@ z_proxy_loop_iteration(ZProxy *s)
     }
 }
 
-
 /**
  * Construct a new proxy instance.
  *
@@ -1536,9 +1532,6 @@ z_proxy_new(ZClass *proxy_class, ZProxyParams *params)
   */
   self->server_socket_mark = is_kzorp_enabled ? Z_PROXY_SERVER_SOCKET_MARK : 0;
   self->language = g_string_new("en");
-  self->alerting_config = g_string_new("{}");
-
-
   self->dict = z_policy_dict_new();
 
   g_mutex_init(&self->interfaces_lock);
@@ -1678,7 +1671,6 @@ z_proxy_basic_iface_set_var_method(ZProxyBasicIface *self G_GNUC_UNUSED, const g
 {
   return FALSE;
 }
-
 
 void
 z_proxy_report_policy_abort(ZProxy *self)

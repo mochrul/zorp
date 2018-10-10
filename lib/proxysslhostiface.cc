@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,7 +102,7 @@ z_proxy_ssl_host_iface_check_name_method(ZProxyHostIface *s,
               gen_name = sk_GENERAL_NAME_value(alt_names, i);
               if (gen_name->type == GEN_DNS)
                 {
-                  guchar *dnsname = ASN1_STRING_data(gen_name->d.dNSName);
+                  const unsigned char *dnsname = ASN1_STRING_get0_data(gen_name->d.dNSName);
                   guint dnsname_len = ASN1_STRING_length(gen_name->d.dNSName);
 
                   if (dnsname_len > sizeof(pattern_buf) - 1)
@@ -163,7 +164,12 @@ z_proxy_ssl_host_iface_new(ZProxy *owner)
   self = Z_CAST(z_proxy_iface_new(Z_CLASS(ZProxySslHostIface), owner), ZProxySslHostIface);
   self->server_cert = owner->tls_opts.peer_cert[EP_SERVER];
 
-  CRYPTO_add(&self->server_cert->references, 1, CRYPTO_LOCK_X509);
+  if (!X509_up_ref(self->server_cert))
+    {
+      z_proxy_log(self, CORE_ERROR, 3, "X509_up_ref failed;");
+      return nullptr;
+    }
+
   return &self->super;
 }
 

@@ -2,6 +2,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -310,12 +311,18 @@ class Proxy(object):
 
 """
 
-def main():
+def get_proxy_module_dir():
     # WARNING: hacks ahead
     try:
-        path = os.environ['ZWA_MODULE_WORK_DIR'] + '/modules/ftp'       # running from zwa make check/zwa sel (from build dir)
+        source_dir = os.environ['ZWA_MODULE_WORK_DIR']  # running from zwa make check/zwa sel (from build dir)
     except KeyError:
-        path = '..'                                                     # probably started manually
+        source_dir = '../../../'                        # probably started manually
+    path = source_dir + '/pylib/Zorp'
+
+    return path
+
+def main():
+    path = get_proxy_module_dir()
     ftp_py_file = open(path + '/Ftp.py', 'rU')
     ftp_py_code = stub
     for line in ftp_py_file:

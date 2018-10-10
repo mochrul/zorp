@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +48,9 @@ struct _HttpTransfer
   /* offset within mime_headers if writing blocked */
   guint stacked_preamble_ofs;
   guint stacked_preamble_read_bytes;
+
+  /* determines the data part to be stacked (HTTP_STK_*) */
+  gint stack_type;
 
   /* function used to format the preamble to stacked proxy/peer */
   HttpTransferPreambleFunc format_preamble_func;

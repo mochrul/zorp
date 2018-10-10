@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -173,7 +174,7 @@ z_policy_struct_free(ZPolicyObj *s)
       z_policy_dict_unwrap(self->dict, s);
       z_policy_dict_destroy(self->dict);
     }
-  PyObject_Del(self);
+  self->ob_type->tp_free((PyObject *) self);
 }
 
 void

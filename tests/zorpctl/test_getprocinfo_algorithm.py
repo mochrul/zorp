@@ -3,6 +3,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -21,13 +22,13 @@
 ##
 ############################################################################
 
+import tempfile
 import unittest, os
 from zorpctl.ProcessAlgorithms import GetProcInfoAlgorithm
 
 class TestGetProcInfoAlgorithm(unittest.TestCase):
 
     def setUp(self):
-        self.algorithm = GetProcInfoAlgorithm()
         proc_info_file_values = ['1572', '(zorp)', 'S', '1571', '1572',
                                  '1572', '0', '-1', '4202816', '3288',
                                  '0', '22', '0', '46', '32', '0', '0',
@@ -37,13 +38,13 @@ class TestGetProcInfoAlgorithm(unittest.TestCase):
                                  '16777216', '89659',
                                  '18446744073709551615', '0', '0', '17', '3']
 
-        self.test_procinfo_file = open('test_procinfo_file', 'w')
-        self.test_procinfo_file.write(proc_info_file_values[0])
-        for value in proc_info_file_values[1:]:
-            self.test_procinfo_file.write(" " + value)
-        self.test_procinfo_file.close()
+        (self.test_procinfo_file_fd, self.test_procinfo_file_name) = tempfile.mkstemp(prefix='test_procinfo_file')
+        os.write(self.test_procinfo_file_fd, " ".join(proc_info_file_values))
+        os.close(self.test_procinfo_file_fd)
 
-        self.algorithm.procinfo_file = open('test_procinfo_file', 'r')
+        self.algorithm = GetProcInfoAlgorithm()
+        self.algorithm.procinfo_file = open(self.test_procinfo_file_name, 'r')
+
         self.proc_info_file_data = {
             "majflt": "22",
             "cutime": "0",
@@ -86,13 +87,12 @@ class TestGetProcInfoAlgorithm(unittest.TestCase):
             "nice": "0"
         }
 
-    def __del__(self):
-        pass
-        os.remove('test_procinfo_file')
+    def tearDown(self):
+        os.remove(self.test_procinfo_file_name)
 
     def test_get_proc_info(self):
         self.maxDiff = None
-        self.assertEquals(self.algorithm.getProcInfo(), self.proc_info_file_data)
+        self.assertEqual(self.algorithm.getProcInfo(), self.proc_info_file_data)
 
 
 if __name__ == '__main__':

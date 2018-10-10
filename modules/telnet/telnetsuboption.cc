@@ -1,6 +1,7 @@
 /***************************************************************************
  *
  * Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
 #include "telnetpolicy.h"
 #include "telnetoption.h"
 
-#include <zorp/log.h>
+#include <zorpll/log.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -162,7 +163,6 @@ telnet_subopt_terminal_type(TelnetProxy *self, ZEndpoint ep, guint8 option, ZPkt
       res = telnet_policy_suboption(self, ep, option, subcommand, TELNET_POLICY_TERMTYPE_NAME, self->policy_value->str);
       if (res == ZV_ACCEPT)
         {
-
           /* copy possibly changed value from policy_value back to the buffer */
           update_suboption_value_in_buffer_from_str(suboption_buffer, self->policy_value);
         }
@@ -806,7 +806,6 @@ telnet_subopt_naws(TelnetProxy *self, ZEndpoint ep, guint8 option, ZPktBuf *subo
   g_string_sprintf(self->policy_value, "%hu,%hu", width, height);
 
   res = telnet_policy_suboption(self, ep, option, 0, TELNET_POLICY_NAWS_NAME, self->policy_value->str);
-
 
   z_proxy_return(self, res);
 }

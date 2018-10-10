@@ -1,6 +1,7 @@
 ############################################################################
 ##
 ## Copyright (c) 2000-2015 BalaBit IT Ltd, Budapest, Hungary
+## Copyright (c) 2015-2018 BalaSys IT Ltd, Budapest, Hungary
 ##
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -77,7 +78,7 @@ class DNSResolver(AbstractResolver):
             except dns.resolver.NoAnswer:
                 log(None, CORE_DEBUG, 6, "No records; host='%s', record_type='%s'" % (host, dns.rdatatype.to_text(record_type)))
             except (dns.resolver.Timeout, dns.resolver.NXDOMAIN, dns.resolver.YXDOMAIN, dns.resolver.NoNameservers) as e:
-                log(None, CORE_ERROR, 4, "Error while resolving host; host='%s', record_type='%s', error='%s'" % (host, dns.rdatatype.to_text(record_type), type(e)))
+                log(None, CORE_ERROR, 4, "Error while resolving host; host='%s', record_type='%s', error='%s', message='%s'" % (host, dns.rdatatype.to_text(record_type), type(e), str(e)))
                 raise KeyError
             else:
                 ttl = min(ttl, answer.ttl) if ttl else answer.ttl
