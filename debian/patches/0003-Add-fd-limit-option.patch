@@ -2,16 +2,15 @@ From: SZALAY Attila <sasa@ubainba.hu>
 Date: Fri, 25 Nov 2016 22:13:47 +0100
 Subject: Add fd-limit option
 
-Because the tests run under a normal users
-name, raising the fd limit is not quite
-possible. 1024 is is low enough, that
-theoretically it can work on every host.
+Because the tests are running as non-root, raising the fd limit is not
+permitted.  1024 will be low enough that theoretically it can work on every
+host (will be lower than the hard limit).
 ---
  tests/python/Makefile.am | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tests/python/Makefile.am b/tests/python/Makefile.am
-index aeeb68c..e7076fa 100644
+index 3f47f78..536e9c3 100644
 --- a/tests/python/Makefile.am
 +++ b/tests/python/Makefile.am
 @@ -4,7 +4,7 @@ AM_TESTS_ENVIRONMENT = G_DEBUG='fatal_warnings gc-friendly'; G_SLICE='always-mal
