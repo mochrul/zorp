@@ -1,0 +1,140 @@
+From: SZALAY Attila <sasa@ubainba.hu>
+Date: Sun, 14 Oct 2018 14:40:36 +0200
+Subject: Added autoconf capabilities to the munin plugins
+
+---
+ munin_plugins/zorp_mem_   | 48 +++++++++++++++++++++++++++++++++++------------
+ munin_plugins/zorp_thread | 39 +++++++++++++++++++++++++++++++++-----
+ 2 files changed, 70 insertions(+), 17 deletions(-)
+
+diff --git a/munin_plugins/zorp_mem_ b/munin_plugins/zorp_mem_
+index c1f6d9b..e2609ae 100755
+--- a/munin_plugins/zorp_mem_
++++ b/munin_plugins/zorp_mem_
+@@ -5,14 +5,17 @@
+ ##
+ ############################################################################
+ #
+-# Usage:
+-#   Make symbolic links like:
+-#     ln -s zorp_mem_ zorp_mem_rss
+-#     ln -s zorp_mem_ zorp_mem_vsz
+-#   And run the script through links.
+-#
++#%# family=auto
++#%# capabilities=autoconf suggest
++
++try:
++    from zorpctl import Instances
++    have_zorpctl = True
++except ImportError:
++    have_zorpctl = False
+ 
+-from zorpctl import Instances
++import subprocess
++import sys
+ 
+ rss_not_vsz = True
+ 
+@@ -58,16 +61,37 @@ def print_values():
+                 print format_label(str(process_status.name)) + ".value " +\
+                       str(usage)
+ 
++def detect_zorp():
++    if not have_zorpctl:
++        return "No zorpctl library found"
++    try:
++        zorpctl_status = subprocess.call("zorpctl --status")
++        if zorpctl_status != 0:
++            return "zorpctl return with an error"
++    except OSError:
++            return "No zorpctl found"
++    return ""
+ 
+ if __name__ == '__main__':
+-    import sys
+-
+     # check if the launched script's name ends in VSZ
+     if __file__ is not None and \
+        __file__.upper()[-3:] == 'VSZ':
+         rss_not_vsz = False
+ 
+-    if len(sys.argv) > 1 and sys.argv[1] == 'config':
+-        print_config()
++    if len(sys.argv) > 1 and sys.argv[1] == 'autoconf':
++        excuse = detect_zorp()
++        if excuse == "":
++            print("yes")
++        else:
++            print("no ({})".format(excuse))
++    elif len(sys.argv) > 1 and sys.argv[1] == 'suggest':
++        print("rss")
++        print("vsz")
++    elif have_zorpctl:
++        if len(sys.argv) > 1 and sys.argv[1] == 'config':
++            print_config()
++        else:
++            print_values()
+     else:
+-        print_values()
++        print("No zoprctl found, the plugin cannot be run")
++        sys.exit(1)
+diff --git a/munin_plugins/zorp_thread b/munin_plugins/zorp_thread
+index 60cf3ed..59c2acf 100755
+--- a/munin_plugins/zorp_thread
++++ b/munin_plugins/zorp_thread
+@@ -20,9 +20,18 @@
+ ## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ ##
+ ############################################################################
++#
++#%# family=auto
++#%# capabilities=autoconf
+ 
+-from zorpctl import Instances
++try:
++    from zorpctl import Instances
++    have_zorpctl = True
++except ImportError:
++    have_zorpctl = False
+ 
++import subprocess
++import sys
+ 
+ def print_config():
+     print 'graph_title Zorp threads'
+@@ -40,10 +49,30 @@ def print_values():
+         if process_status.threads > 0:
+             print process_status.name + ".value " + str(process_status.threads)
+ 
++def detect_zorp():
++    if not have_zorpctl:
++        return "No zorpctl library found"
++    try:
++        zorpctl_status = subprocess.call("zorpctl --status")
++        if zorpctl_status != 0:
++            return "zorpctl return with an error"
++    except OSError:
++            return "No zorpctl found"
++    return ""
++
+ 
+ if __name__ == '__main__':
+-    import sys
+-    if len(sys.argv) > 1 and sys.argv[1] == 'config':
+-        print_config()
++    if len(sys.argv) > 1 and sys.argv[1] == 'autoconf':
++        excuse = detect_zorp()
++        if excuse == "":
++            print("yes")
++        else:
++            print("no ({})".format(excuse))
++    elif have_zorpctl:
++        if len(sys.argv) > 1 and sys.argv[1] == 'config':
++            print_config()
++        else:
++            print_values()
+     else:
+-        print_values()
++        print("No zoprctl found, the plugin cannot be run")
++        sys.exit(1)

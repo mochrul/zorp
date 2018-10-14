@@ -2,3 +2,4 @@
 0002-Removed-all-variables-related-to-the-profession-rele.patch
 0003-Add-fd-limit-option.patch
 0004-Removed-time-and-date-from-the-binary-file.patch
+0005-Added-autoconf-capabilities-to-the-munin-plugins.patch
