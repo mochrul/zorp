@@ -1,9 +1,12 @@
 #!/usr/bin/make -f
 %:
-	dh $@ --with autoreconf,python2 --parallel --list-missing
+	dh $@ --with autoreconf,python2
 
 override_dh_auto_configure:
 	dh_auto_configure -- --localstatedir=/var/lib/zorp --with-pidfiledir=/var/run/zorp/ --disable-dmalloc --enable-tproxy=netfilter --disable-werror
 
 override_dh_strip:
-	dh_strip dh_strip --dbgsym-migration='zorp-dbg (<< 6.0.8~), zorp-modules-dbg (<< 6.0.8~)'
+	dh_strip --dbgsym-migration='zorp-dbg (<< 6.0.8~), zorp-modules-dbg (<< 6.0.8~)'
+
+override_dh_missing:
+	dh_missing --fail-missing

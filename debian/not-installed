@@ -1,0 +1,12 @@
+usr/lib/*/libzorp.la
+usr/lib/*/libzorpproxy.la
+usr/lib/*/zorp/libanypy.la
+usr/lib/*/zorp/libfinger.la
+usr/lib/*/zorp/libftp.la
+usr/lib/*/zorp/libhttp.la
+usr/lib/*/zorp/libplug.la
+usr/lib/*/zorp/libpop3.la
+usr/lib/*/zorp/libsmtp.la
+usr/lib/*/zorp/libtelnet.la
+usr/lib/*/zorp/libwhois.la
+usr/lib/*/zorp/libapr.la

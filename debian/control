@@ -4,20 +4,21 @@ Priority: optional
 Maintainer: SZALAY Attila <sasa@debian.org>
 Standards-Version: 3.9.2
 Build-Depends: python-dev,
-               libssl1.0-dev | libssl-dev (<< 1.1.0~),
                libglib2.0-dev (>= 2.2.1),
-               libzorpll-6.0-10-dev,
+               libzorpll-7.0-1-dev,
                python-dnspython, gperf,
-               debhelper (>=10),
+               debhelper (>=11),
                automake,
                autoconf,
+               autoconf-archive,
                libtool,
-               dh-autoreconf,
                dh-python,
-               libboost-test1.62-dev,
+               libboost-test-dev,
                python-openssl (>= 0.10),
                python-radix,
-               python-netaddr
+               python-netaddr,
+               xsltproc,
+               docbook-xsl
 
 Package: zorp
 Section: net
@@ -40,7 +41,7 @@ Description: Advanced protocol analyzing firewall
  of the attacks do not cross a Zorp based firewall even if the given service
  is permitted.
 
-Package: libzorp6.0
+Package: libzorp-7.0
 Section: libs
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -57,7 +58,7 @@ Description: Runtime library of Zorp
 Package: libzorp-dev
 Section: libdevel
 Architecture: linux-any
-Depends: python-dev (>=2.6), libzorpll-dev, libzorp6.0 (= ${binary:Version}), ${misc:Depends}
+Depends: python-dev (>=2.6), libzorpll-dev, libzorp-7.0 (= ${binary:Version}), ${misc:Depends}
 Conflicts: zorp-dev, libzorp0-dev
 Breaks: libzorp3.9-0 (<= 3.9.2-4)
 Replaces: libzorp0-dev, zorp-dev
@@ -82,3 +83,27 @@ Description: Default proxy modules for Zorp
  .
  This package includes proxies for the protocols: FINGER, FTP, HTTP,
  SSL, TELNET, WHOIS, and two general modules ANYPY and PLUG.
+
+Package: munin-plugins-zorp
+Architecture: any
+Depends: munin-node, python2.7, python (>= 2.7), ${misc:Depends}
+Suggests: zorp
+Description: Munin plugins to check the state of the zorp firewall
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ This package contains plugins for the Munin monitoring tool.
+
+Package: nagios-plugins-zorp
+Architecture: any
+Depends: python2.7, python (>= 2.7), ${misc:Depends}
+Suggests: zorp
+Description: Nagios plugins to check the state of the zorp firewall
+ Zorp is a new generation firewall. It is essentially a transparent proxy
+ firewall, with strict protocol analyzing proxies, a modular architecture,
+ and fine-grained control over the mediated traffic. Configuration decisions
+ are scriptable with the Python based configuration language.
+ .
+ This package contains plugins for the Nagios monitoring tool.

@@ -9,14 +9,15 @@ if [ "$1" = "configure" ]; then
     adduser --quiet --system --no-create-home --ingroup zorp --home /var/lib/zorp zorp
   fi
 
-  chown -R root:zorp /etc/zorp
+  chown root:zorp /etc/zorp
+  chown root:zorp /etc/zorp/*
   chmod 0750 /etc/zorp
 
   if [ ! -d /var/lib/zorp/keybridge-cache ]; then
     mkdir -p /var/lib/zorp/keybridge-cache
   fi
 
-  chown -R zorp:zorp /var/lib/zorp/keybridge-cache
+  chown zorp:zorp /var/lib/zorp/keybridge-cache
   chmod 0770 /var/lib/zorp/keybridge-cache
 
   ZORP_DHFILE="/etc/zorp/dh.pem"

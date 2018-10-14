@@ -2,7 +2,7 @@ etc/zorp/*
 usr/sbin/zorpctl
 usr/share/man/man5/*
 usr/share/man/man8/*
-usr/lib/zorp/zorp
+usr/sbin/zorp
 usr/lib/python2.7/dist-packages/Zorp/__init__.py
 usr/lib/python2.7/dist-packages/Zorp/NAT.py
 usr/lib/python2.7/dist-packages/Zorp/Base.py
@@ -33,7 +33,6 @@ usr/lib/python2.7/dist-packages/Zorp/ResolverCache.py
 usr/lib/python2.7/dist-packages/Zorp/Subnet.py
 usr/lib/python2.7/dist-packages/Zorp/InstancesConf.py
 usr/lib/python2.7/dist-packages/Zorp/Detector.py
-usr/lib/python2.7/dist-packages/Zorp/LegacyEncryption.py
 usr/lib/python2.7/dist-packages/Zorp/Config.py
 usr/lib/python2.7/dist-packages/Zorp/Zorp.py
 usr/lib/python2.7/dist-packages/Zorp/FileLock.py
