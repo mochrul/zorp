@@ -3,3 +3,4 @@
 0003-Add-fd-limit-option.patch
 0004-Removed-time-and-date-from-the-binary-file.patch
 0005-Added-autoconf-capabilities-to-the-munin-plugins.patch
+0006-Re-add-release-version-info-to-libzorp.patch
