@@ -1,3 +1,15 @@
+zorp (7.0.1~alpha1-1) unstable; urgency=medium
+
+  * [1975792] Adapt gbp.conf to the new gbp version
+  * [5e49de4] New upstream version 7.0.1~alpha1
+  * [70ce851] Added pq options to gbp.conf
+  * [8713dad] Refreshed debian/patches directory
+  * [e686def] Adapt the packaging to the new version
+  * [46dcb92] Added autoconf capabilties to the munin plugins
+  * [3dd28b6] Re-add release version info to libzorp
+
+ -- SZALAY Attila <sasa@debian.org>  Wed, 06 Feb 2019 22:19:58 +0100
+
 zorp (6.0.10-4) unstable; urgency=medium
 
   * [41bb910] Imported upstream patch to fix gcc-7 compile issue
