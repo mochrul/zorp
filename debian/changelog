@@ -1,3 +1,10 @@
+zorp (7.0.1~alpha1-2) unstable; urgency=medium
+
+  * [a491b2c] Drop version-info in favour of release
+  * [64f0835] Adapt to packaging to the library naming change
+
+ -- SZALAY Attila <sasa@debian.org>  Sun, 12 May 2019 16:18:58 +0200
+
 zorp (7.0.1~alpha1-1) unstable; urgency=medium
 
   * [1975792] Adapt gbp.conf to the new gbp version
