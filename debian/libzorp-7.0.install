@@ -1,2 +1,2 @@
-usr/lib/*/libzorp-7.0.so.*
-usr/lib/*/libzorpproxy-7.0.so.*
+usr/lib/*/libzorp-7.0.so
+usr/lib/*/libzorpproxy-7.0.so
