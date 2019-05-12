@@ -3,30 +3,32 @@ Date: Mon, 15 Oct 2018 21:08:55 +0200
 Subject: Re-add release version info to libzorp
 
 ---
- lib/Makefile.am      | 1 +
- libproxy/Makefile.am | 1 +
- 2 files changed, 2 insertions(+)
+ lib/Makefile.am      | 2 +-
+ libproxy/Makefile.am | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/lib/Makefile.am b/lib/Makefile.am
-index afaef07..63bce69 100644
+index afaef07..6d754ba 100644
 --- a/lib/Makefile.am
 +++ b/lib/Makefile.am
-@@ -7,6 +7,7 @@ lib_LTLIBRARIES = libzorp.la
+@@ -6,7 +6,7 @@ lib_LTLIBRARIES = libzorp.la
+ 
  libzorp_la_LDFLAGS = \
  	@LIBZORP_LIBS@ \
- 	-version-info $(LIBZORP_LT_COMPAT_PL) \
+-	-version-info $(LIBZORP_LT_COMPAT_PL) \
 +	-release $(LIBZORP_LT_RELEASE) \
  	-export-dynamic
  
  libzorp_la_SOURCES = \
 diff --git a/libproxy/Makefile.am b/libproxy/Makefile.am
-index 97bf04c..3eb713c 100644
+index 97bf04c..5c76444 100644
 --- a/libproxy/Makefile.am
 +++ b/libproxy/Makefile.am
-@@ -8,6 +8,7 @@ libzorpproxy_la_PRO_SOURCES =
+@@ -7,7 +7,7 @@ libzorpproxy_la_PRO_SOURCES =
+ 
  libzorpproxy_la_LDFLAGS =	\
  	@LIBZORP_LIBS@ \
- 	-version-info $(LIBZORP_LT_COMPAT_PL) \
+-	-version-info $(LIBZORP_LT_COMPAT_PL) \
 +	-release $(LIBZORP_LT_RELEASE) \
  	-export-dynamic
  
