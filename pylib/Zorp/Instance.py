@@ -24,19 +24,23 @@
 """
 import argparse
 
+
+class ZorpInstanceArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise argparse.ArgumentError(None, 'Error parsing Zorp instance arguments: %s' % message)
+
 class ZorpProcess(object):
     """<class internal="yes" />
     """
     def __init__(self, zorp_argv):
         """<method internal="yes" />
         """
-        parser = argparse.ArgumentParser(prog="Zorp specific instance argument parser")
+        parser = ZorpInstanceArgumentParser(prog="Zorp specific instance argument parser")
 
         parser.add_argument('--log-tags', action='store_true')
         parser.add_argument('--log-escape', action='store_true')
         parser.add_argument('--log-spec', type=str)
         parser.add_argument('--threads', type=int)
-        parser.add_argument('--stack-size', type=int)
         parser.add_argument('--process-mode', type=str)
         parser.add_argument('--verbose', type=int)
         parser.add_argument('--uid', type=str)
@@ -61,6 +65,7 @@ class Instance(object):
         """
         self.name = kwargs.pop('name')
         self.process_name = kwargs.pop('process_name', None)
+        self.manually_started = kwargs.pop('manually_started', False)
         self.process_num = kwargs.pop('process_num', None)
 
         self.auto_restart = kwargs.pop('auto_restart', True)
@@ -87,7 +92,10 @@ class Instance(object):
     def process_name(self):
         """<method internal="yes" />
         """
-        self._process_name = self.name + '#' + str(self.process_num)
+        if self.manually_started:
+            self._process_name = self.name
+        else:
+            self._process_name = self.name + '#' + str(self.process_num)
         return self._process_name
 
     @process_name.setter

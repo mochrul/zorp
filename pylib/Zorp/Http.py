@@ -2525,7 +2525,7 @@ class AbstractHttpProxy(Proxy):
           <type>
             <string/>
           </type>
-          <default>en</default>
+          <default>"en"</default>
           <conftime>
             <read/>
             <write/>

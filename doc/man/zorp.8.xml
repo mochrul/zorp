@@ -235,17 +235,6 @@
           support.</para>
         </listitem>
       </varlistentry>
-      <varlistentry>
-        <term>
-          <command>--stack-size &lt;size&gt;</command> or <command>-S
-          &lt;size&gt;</command>
-        </term>
-        <listitem>
-          <para>Set the maximum stack size used by threads. Note that the maximum number of parallel
-            threads is influenced by the size specified here. The default stack size is 512 KB, the
-            maximum you can set is 8192 KB.</para>
-        </listitem>
-      </varlistentry>
     </variablelist>
   </refsection>
   <refsection>

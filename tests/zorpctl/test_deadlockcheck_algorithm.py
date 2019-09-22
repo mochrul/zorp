@@ -40,9 +40,9 @@ class TestDeadLockCheckAlgorithm(unittest.TestCase):
 
     def test_set_deadlock_check(self):
         self.assertTrue(self.algorithm.setDeadlockcheck(True))
-        self.assertEquals(str(self.algorithm.getDeadlockcheck()), "deadlockcheck=True")
+        self.assertEquals(str(self.algorithm.getDeadlockcheck()), "Deadlockcheck=True")
         self.assertTrue(self.algorithm.setDeadlockcheck(False))
-        self.assertEquals(str(self.algorithm.getDeadlockcheck()), "deadlockcheck=False")
+        self.assertEquals(str(self.algorithm.getDeadlockcheck()), "Deadlockcheck=False")
 
 if __name__ == '__main__':
     unittest.main()

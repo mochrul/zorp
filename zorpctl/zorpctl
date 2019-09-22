@@ -1,0 +1,688 @@
+#!/usr/bin/env python2.7
+# vim: ft=python
+
+import sys, os, pwd, grp
+import argparse
+import subprocess
+import json
+
+from Zorp.Instance import Instance
+
+from zorpctl.ZorpctlConf import ZorpctlConfig
+from zorpctl.CommandResults import CommandResultFailure
+import zorpctl.utils as utils
+from zorpctl.UInterface import UInterface
+from zorpctl.Instances import ZorpHandler, InstanceHandler
+from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
+                                LogLevelAlgorithm , DeadlockCheckAlgorithm,
+                                GUIStatusAlgorithm, StatusAlgorithm,
+                                ReloadAlgorithm, SzigWalkAlgorithm,
+                                DetailedStatusAlgorithm, AuthorizeAlgorithm,
+                                StopSessionAlgorithm)
+
+#TODO: Logging
+"""
+Questions:
+- Do we want the @file option for files containing instance name lists?
+- Is it a case when an instance does not have --num-of-processes?
+- how can i determine detailedStatus?
+"""
+
+class Zorpctl(object):
+
+    zorpctlconf = ZorpctlConfig.Instance()
+
+    @staticmethod
+    def runAlgorithmOnProcessOrInstance(instance_name, algorithm):
+        try:
+            name, number = Instance.splitInstanceName(instance_name)
+        except ValueError:
+            return [CommandResultFailure("Instance: {0} not recognized!".format(instance_name))]
+
+        instances = InstanceHandler.searchInstance(name)
+        if len(instances) == 1 and isinstance(instances[0], CommandResultFailure):
+            return instances
+
+        results = []
+        for instance in instances:
+            if number != None:
+                #number can be 0 which is false too
+                instance.process_num = number
+                algorithm.setInstance(instance)
+                result = algorithm.run()
+                result.msg = "%s: %s" % (instance.process_name, result.msg)
+                results.append(result)
+            else:
+                results.extend(InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm))
+        return results
+
+    @staticmethod
+    def runAlgorithmOnList(listofinstances, algorithm):
+        results = []
+        for instance in listofinstances:
+            results.extend(Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm))
+        return results
+
+    @staticmethod
+    def sendSighupToKZorpd():
+        import os
+        import signal
+        try:
+            with open('/var/run/zorp/kzorpd.pid', 'r') as f:
+                kzorpd_pid = int(f.readline().strip())
+        except IOError as e:
+            UInterface.warnUser("Error getting kzorpd PID; error='%s'" % e.strerror)
+            return
+
+        try:
+            os.kill(kzorpd_pid, signal.SIGHUP)
+        except OSError as e:
+            Interface.warnUser("Error sending SIGHUP to kzorpd; error='%s'" % e.strerror)
+
+    @staticmethod
+    def commandExit(results):
+        """
+        Return True if there was no CommandResultFailure in results otherwise False
+        """
+        UInterface.informUser(results)
+        return not any(map((lambda x: isinstance(x, CommandResultFailure)), results))
+
+    @staticmethod
+    def isStartedBySystemd():
+        return os.getenv('ZORPCTL_STARTED_BY_SYSTEMD') == 'true'
+
+    @staticmethod
+    def start(listofinstances):
+        """
+        Starts Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Starting %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        use_systemd = not Zorpctl.isStartedBySystemd()
+
+        if listofinstances:
+            results = Zorpctl.runAlgorithmOnList(listofinstances, StartAlgorithm(use_systemd))
+        else:
+            results = ZorpHandler.start(use_systemd)
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def stop(listofinstances):
+        """
+        Stops Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Stopping %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+
+        results = []
+        if not listofinstances:
+            results = ZorpHandler.stop()
+        else:
+            results = Zorpctl.runAlgorithmOnList(listofinstances, StopAlgorithm())
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def restart(listofinstances):
+        """
+        Restarts Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Restarting %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        ret_stop = Zorpctl.stop(listofinstances)
+        ret_start = Zorpctl.start(listofinstances)
+        return ret_stop and ret_start
+
+    @staticmethod
+    def reload(listofinstances):
+        """
+        Reloads Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Reloading %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        results = []
+        if not listofinstances:
+            results = ZorpHandler.reload()
+        else:
+            results = Zorpctl.runAlgorithmOnList(listofinstances, ReloadAlgorithm())
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def force_start(listofinstances):
+        """
+        Starts Zorp instance(s) by instance name
+        even if no-auto-start is set
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Starting %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        use_systemd = not Zorpctl.isStartedBySystemd()
+
+        if listofinstances:
+            algorithm = StartAlgorithm(use_systemd)
+            algorithm.force = True
+            results = Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
+        else:
+            results = ZorpHandler.force_start(use_systemd)
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def force_stop(listofinstances):
+        """
+        Stops Zorp instance(s) by instance name
+        with SIGKILL
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Stopping %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+
+        results = []
+        if not listofinstances:
+            results = ZorpHandler.force_stop()
+        else:
+            algorithm = StopAlgorithm()
+            algorithm.force = True
+            results = Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def force_restart(listofinstances):
+        """
+        Restarts Zorp instance(s) by instance name
+        with force_stop and force_start
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Restarting %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        ret_stop = Zorpctl.force_stop(listofinstances)
+        ret_start = Zorpctl.force_start(listofinstances)
+        return ret_stop and ret_start
+
+    @staticmethod
+    def _restartWhichNotReloaded(reload_result):
+        for result in reload_result:
+            if result:
+                UInterface.informUser(result)
+            else:
+                process_name = result.value
+                Zorpctl.restart([process_name])
+
+    @staticmethod
+    def reload_or_restart(listofinstances):
+        """
+        Tries to reload Zorp instance(s) by instance name
+        if not succeeded than tries to restart instance(s)
+        expects sequence of name(s)
+        """
+
+        UInterface.informUser("Reloading or Restarting %s:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+        Zorpctl.sendSighupToKZorpd()
+
+        if not listofinstances:
+            reload_result = ZorpHandler.reload()
+            Zorpctl._restartWhichNotReloaded(reload_result)
+        else:
+            for instance_name in listofinstances:
+                reload_result = Zorpctl.runAlgorithmOnProcessOrInstance(instance_name, ReloadAlgorithm())
+                if utils.isSequence(reload_result):
+                    Zorpctl._restartWhichNotReloaded(reload_result)
+                else:
+                    if reload_result:
+                        UInterface.informUser(reload_result)
+                    else:
+                        Zorpctl.restart([instance_name])
+
+    @staticmethod
+    def stop_session(params):
+        """
+        Stops the specified proxy session
+        """
+        stop_session_parse = argparse.ArgumentParser(
+            prog='zorpctl stop-session',
+            description="Stops the specified proxy session")
+        stop_session_parse.add_argument('-i', '--sessionid', required=True)
+        stop_session_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
+        a_args = stop_session_parse.parse_args(params)
+        if a_args.sessionid is None:
+            UInterface.informUser(stop_session_parse.format_usage())
+            return
+
+        if not a_args.listofinstances:
+            UInterface.informUser(ZorpHandler.stop_session(a_args.sessionid))
+        else:
+            algorithm = StopSessionAlgorithm(a_args.sessionid)
+            Zorpctl.runAlgorithmOnList(a_args.listofinstances, algorithm)
+
+    @staticmethod
+    def coredump(listofinstances):
+        """
+        Instructs Zorp instance(s) to dump core by instance_name
+        expects sequence of name(s)
+        """
+
+        deprecation_error = """Creating core dumps using zorpctl is deprecated. To create core dumps, use the gdb utility. For example:
+	root@fw:~# gdb --pid=<instance pid>
+	(gdb) gcore
+        (gdb) quit
+	root@fw:~# kill -s CONT <instance pid>
+
+Be aware that by following the above procedure, the core file will be saved in your current working directory."""
+
+        UInterface.warnUser(deprecation_error)
+
+    @staticmethod
+    def status(params):
+        """
+        Displays status of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        can display more detailed status with -v or --verbose option
+        """
+        s_parse = argparse.ArgumentParser(
+             prog='zorpctl status',
+             description="Displays status of the specified instance(s)." +
+                  "For additional information use status -v or --verbose option")
+        s_parse.add_argument('-v', '--verbose', action='store_true')
+        s_parse.add_argument('listofinstances', nargs='*')
+        s_args = s_parse.parse_args(params)
+
+        results = []
+        if not s_args.listofinstances:
+            results += ZorpHandler.detailedStatus() if s_args.verbose else ZorpHandler.status()
+        else:
+            algorithm = DetailedStatusAlgorithm() if s_args.verbose else StatusAlgorithm()
+            results += Zorpctl.runAlgorithmOnList(s_args.listofinstances, algorithm)
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def authorize(params):
+        """
+        Lists and manages authorizations of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        a_parse = argparse.ArgumentParser(
+             prog='zorpctl authorize',
+             description="Lists and manages authorizations")
+        a_parse.add_argument('-a', '--accept', dest='value', action='store_true', default=None)
+        a_parse.add_argument('-r', '--reject', dest='value', action='store_false', default=None)
+        a_parse.add_argument('-i', '--sessionid', required=True)
+        a_parse.add_argument('-d', '--description', required=True)
+        a_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
+        a_args = a_parse.parse_args(params)
+        if a_args.value == None:
+            UInterface.informUser("usage: zorpctl authorize [-h] [--accept] [--reject] description ...\n" +
+                                  "zorpctl authorize: either the '--accept' or '--reject' option has to be specified")
+            return
+
+        if not a_args.listofinstances:
+            UInterface.informUser(ZorpHandler.authorize(a_args.value,a_args.sessionid, a_args.description))
+        else:
+            behaviour = AuthorizeAlgorithm.ACCEPT if a_args.value else AuthorizeAlgorithm.REJECT
+            algorithm = AuthorizeAlgorithm(behaviour,a_args.sessionid, a_args.description)
+            Zorpctl.runAlgorithmOnList(a_args.listofinstances, algorithm)
+
+    @staticmethod
+    def gui_status(params):
+        """
+        Displays status of Zorp instance(s) by instance name
+        in csv format as expected by the ZMS gui
+        expects sequence of name(s)
+        """
+        s_parse = argparse.ArgumentParser(
+             prog='zorpctl gui-status',
+             description="Displays gui-status of the specified instance(s).")
+        s_parse.add_argument('listofinstances', nargs='*')
+        s_args = s_parse.parse_args(params)
+
+        if not s_args.listofinstances:
+            UInterface.informUser('"process";"processnum";"status";"pid";"running threads"'+
+                                  ';"total threads";"thread1avg";"thread5avg";"thread15avg"')
+            UInterface.informUser(ZorpHandler.gui_status())
+            UInterface.informUser('')
+        else:
+            UInterface.informUser('"process";"processnum";"status";"pid";"running threads"'+
+                                  ';"total threads";"thread1avg";"thread5avg";"thread15avg"')
+            algorithm = GUIStatusAlgorithm()
+            UInterface.informUser(Zorpctl.runAlgorithmOnList(s_args.listofinstances, algorithm))
+            UInterface.informUser('')
+
+    @staticmethod
+    def version(params):
+        subprocess.call([Zorpctl.zorpctlconf['ZORP_SBINDIR'] + '/zorp', "--version"])
+        return True
+
+    @staticmethod
+    def inclog(listofinstances):
+        """
+        Raises log level of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Raising %s loglevel:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+
+        results = []
+        if not listofinstances:
+            results = ZorpHandler.log(LogLevelAlgorithm.INCREMENT)
+        else:
+            results = Zorpctl.runAlgorithmOnList(
+                listofinstances,
+                LogLevelAlgorithm(LogLevelAlgorithm.INCREMENT)
+            )
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def declog(listofinstances):
+        """
+        Lowers log level of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Decreasing %s loglevel:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+
+        results = []
+        if not listofinstances:
+            results = ZorpHandler.log(LogLevelAlgorithm.DECREMENT)
+        else:
+            results = Zorpctl.runAlgorithmOnList(
+                listofinstances,
+                LogLevelAlgorithm(LogLevelAlgorithm.DECREMENT)
+            )
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def log(params):
+        """
+        Change and query log settings of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+
+        log_parse = argparse.ArgumentParser(
+            prog='zorpctl log',
+            description="Change and query Zorp log settings"
+        )
+        log_parse.add_argument('-s', '--vset', type=int)
+        log_parse.add_argument('-d', '--vdec', action='store_true')
+        log_parse.add_argument('-i', '--vinc', action='store_true')
+        log_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
+        log_args = log_parse.parse_args(params)
+
+        mode = LogLevelAlgorithm.GET
+        value = None
+        if log_args.vset != None:
+            mode = LogLevelAlgorithm.SET
+            value = int(log_args.vset)
+        elif log_args.vdec:
+            mode = LogLevelAlgorithm.DECREMENT
+        elif log_args.vinc:
+            mode = LogLevelAlgorithm.INCREMENT
+
+        results = []
+        if not log_args.listofinstances:
+            results = ZorpHandler.log(mode, value)
+        else:
+            results = Zorpctl.runAlgorithmOnList(
+                log_args.listofinstances,
+                LogLevelAlgorithm(mode, value)
+            )
+
+        return Zorpctl.commandExit(results)
+
+    @staticmethod
+    def deadlockcheck(params):
+        d_parse = argparse.ArgumentParser(
+             prog='zorpctl deadlockcheck',
+             description="Change and query deadlock checking settings")
+        d_parse.add_argument('-d', '--disable', dest='value', action='store_false', default=None)
+        d_parse.add_argument('-e', '--enable', dest='value', action='store_true', default=None)
+        d_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
+        d_args = d_parse.parse_args(params)
+
+        if d_args.value != None:
+            UInterface.informUser("Changing %s deadlock checking settings:" % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"])
+            if not d_args.listofinstances:
+                UInterface.informUser(ZorpHandler.deadlockcheck(d_args.value))
+            else:
+                algorithm = DeadlockCheckAlgorithm(d_args.value)
+                UInterface.informUser(Zorpctl.runAlgorithmOnList(d_args.listofinstances, algorithm))
+        else:
+            if not d_args.listofinstances:
+                UInterface.informUser(ZorpHandler.deadlockcheck())
+            else:
+                algorithm = DeadlockCheckAlgorithm()
+                UInterface.informUser(Zorpctl.runAlgorithmOnList(d_args.listofinstances, algorithm))
+
+    @staticmethod
+    def szig(params):
+        def _dumpdict(node, parent='', separator=''):
+            output = []
+            try:
+                keys = node.keys()
+            except AttributeError:
+                output = ['%s: %s' % (parent, node)]
+            else:
+                if parent != '':
+                    output = ['%s: %s' % (parent, None)]
+
+                for key in keys:
+                    output.extend(_dumpdict(node[key], parent='%s%s%s' % (parent, separator, key), separator='.'))
+
+            return output
+
+        def _dumpszigresult(szig_dict):
+            output = []
+            for instance in szig_dict:
+                output.extend(["Process %s: walking" % instance])
+                output.extend(_dumpdict(szig_dict[instance]))
+            return output
+
+        def _displayresults(results):
+            for result in results:
+                if not result:
+                    # Error messages
+                    UInterface.warnUser(result)
+                elif result.value:
+                    UInterface.informUser(_dumpszigresult(result.value))
+
+            return not any(map((lambda x: isinstance(x, CommandResultFailure)), results))
+
+        sz_parser = argparse.ArgumentParser(
+                        prog='zorpctl szig',
+                        description="Display internal information from the instances")
+        sz_parser.add_argument('-w', '--walk', help='Walk the specified tree', nargs='*')
+        sz_parser.add_argument('-r', '--root', help='Set the root node of the walk operation', type=str)
+        sz_parser.add_argument('instances', nargs=argparse.REMAINDER)
+        sz_args = sz_parser.parse_args(params)
+
+        instances = sz_args.walk if sz_args.walk else sz_args.instances
+
+        if not instances:
+            results = ZorpHandler.szig_walk(sz_args.root)
+            return _displayresults(results)
+        else:
+            algorithm = SzigWalkAlgorithm(sz_args.root)
+            ret = True
+            for instance in instances:
+                results = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+                if not _displayresults(results):
+                    ret = False
+            return ret
+
+
+HelpMessage = (
+'start' + '\t\t  Starts the specified instance(s)\n' +
+'stop' + '\t\t  Stops the specified instance(s)\n' +
+'restart' + '\t\t  Restart the specified instance(s)\n' +
+'reload' + '\t\t  Reload the specified instance(s)\n' +
+'force-start' + '\t  Starts the specified instance(s) even if they are disabled\n' +
+'force-stop' + '\t  Forces the specified instance(s) to stop (SIGKILL)\n' +
+'force-restart' + '\t  Forces the specified instance(s) to restart (SIGKILL)\n' +
+'reload-or-restart' + ' Reload or restart the specified instance(s)\n' +
+'stop-session' + '\t  Stops the specified proxy session\n' +
+'coredump' + '\t  Create core dumps of the specified instance(s)\n' +
+'status' + '\t\t  Status of the specified instance(s). '+
+            'For additional information use status -v or --verbose option\n' +
+'authorize' + '\t  Lists and manages authorizations\n' +
+'gui-status' + '\t  Status of the specified instance(s)\n' +
+'version' + '\t\t  Display version information\n' +
+'inclog' + '\t\t  Raise the specified instance(s) log level by one\n' +
+'declog' + '\t\t  Lower the specified instance(s) log level by one\n' +
+'log' + '\t\t  Change and query log settings\n' +
+'deadlockcheck' + '\t  Change and query deadlock checking settings\n' +
+'szig' + '\t\t  Display internal information from the given instance(s)'
+)
+
+Commands = {
+            'start' : Zorpctl.start,
+            'stop' : Zorpctl.stop,
+            'restart' : Zorpctl.restart,
+            'reload' : Zorpctl.reload,
+            'force-start' : Zorpctl.force_start,
+            'force-stop' : Zorpctl.force_stop,
+            'force-restart' : Zorpctl.force_restart,
+            'reload-or-restart' : Zorpctl.reload_or_restart,
+            'stop-session' : Zorpctl.stop_session,
+            'coredump' : Zorpctl.coredump,
+            'status' : Zorpctl.status,
+            'authorize' : Zorpctl.authorize,
+            'gui-status' : Zorpctl.gui_status,
+            'version' : Zorpctl.version,
+            'inclog' : Zorpctl.inclog,
+            'declog' : Zorpctl.declog,
+            'log' : Zorpctl.log,
+            'deadlockcheck' : Zorpctl.deadlockcheck,
+            'szig' : Zorpctl.szig,
+            }
+
+def checkAndCreatePidfiledir():
+    pidfiledir = Zorpctl.zorpctlconf['ZORP_PIDFILEDIR']
+    owner, group, mode_oct = getPermissionsOnPidfiledir()
+
+    owner_uid = pwd.getpwnam(owner).pw_uid
+    group_uid = pwd.getpwnam(group).pw_gid
+
+    if not os.path.exists(pidfiledir):
+        os.makedirs(pidfiledir)
+        os.chown(pidfiledir, owner_uid, group_uid)
+        os.chmod(pidfiledir, mode_oct)
+
+def isPermissionsCorrectOnSysconfdir():
+    return isPermissionsCorrectOn('ZORP_SYSCONFDIR', getPermissionsOnSysconfdir())
+
+def isPermissionsCorrectOnPidfiledir():
+    return isPermissionsCorrectOn('ZORP_PIDFILEDIR', getPermissionsOnPidfiledir())
+
+def isPermissionsCorrectOn(dir_variable, req_perms):
+    dir_stat = os.stat(Zorpctl.zorpctlconf[dir_variable])
+    user = pwd.getpwuid(dir_stat.st_uid).pw_name
+    group = grp.getgrgid(dir_stat.st_gid).gr_name
+    mode = int(oct(dir_stat.st_mode)[2:], base=0)
+    req_owner, req_group, req_mode = req_perms
+
+    if req_owner and req_owner != user:
+        return False
+    if req_group and req_group != group:
+        return False
+    if req_mode and req_mode != mode:
+        return False
+    return True
+
+def getPermissionsOnSysconfdir():
+    return getPermissionsOn('CONFIG')
+
+def getPermissionsOnPidfiledir():
+    return getPermissionsOn('PIDFILE')
+
+def getPermissionsOn(variable_prefix):
+    try:
+        owner = Zorpctl.zorpctlconf['%s_DIR_OWNER' % variable_prefix]
+    except KeyError:
+        owner = ""
+    try:
+        group = Zorpctl.zorpctlconf['%s_DIR_GROUP' % variable_prefix]
+    except KeyError:
+        group = ""
+    try:
+        mode = Zorpctl.zorpctlconf['%s_DIR_MODE' % variable_prefix]
+    except KeyError:
+        mode = ""
+
+    return owner, group, mode
+
+def checkPermissionsOnSysconfdir():
+    try:
+        check_perms = Zorpctl.zorpctlconf['CHECK_PERMS']
+    except KeyError:
+        check_perms = True
+
+    if check_perms and not isPermissionsCorrectOnSysconfdir():
+        UInterface.warnUser(
+            "Permissions not correct on sysconfdir (%s). " %
+            Zorpctl.zorpctlconf['ZORP_SYSCONFDIR']
+            +
+            "Required user=%s group=%s mode=%o." %
+            getPermissionsOnSysconfdir()
+        )
+
+def checkPermissionsOnPidfiledir():
+    try:
+        check_perms = Zorpctl.zorpctlconf['CHECK_PERMS']
+    except KeyError:
+        check_perms = True
+
+    if check_perms and not isPermissionsCorrectOnPidfiledir():
+        UInterface.warnUser(
+            "Permissions not correct on pidfiledir (%s). " %
+            Zorpctl.zorpctlconf['ZORP_PIDFILEDIR']
+            +
+            "Required user=%s group=%s mode=%o." %
+            getPermissionsOnPidfiledir()
+        )
+
+def parseCommandLineArguments():
+    parser = argparse.ArgumentParser(prog='zorpctl',
+        description="%s Control tool." % Zorpctl.zorpctlconf["ZORP_PRODUCT_NAME"],
+        usage='%(prog)s [command [options]] [-h] \n\n' + HelpMessage
+    )
+    parser.add_argument('-c', '--config',
+        help="zorpctl.conf file's access path (use full path)", type=str
+    )
+    parser.add_argument('command', choices=Commands.keys())
+    parser.add_argument('params', nargs=argparse.REMAINDER)
+    return parser.parse_args()
+
+def main():
+    args = parseCommandLineArguments()
+
+    if args.config:
+        Zorpctl.zorpctlconf.path = args.config
+
+    checkAndCreatePidfiledir()
+    checkPermissionsOnSysconfdir()
+    checkPermissionsOnPidfiledir()
+
+    command_function = Commands.get(args.command)
+    command_ret = False
+    try:
+        command_ret = command_function(args.params)
+    except SystemExit:
+        raise
+    except BaseException as e:
+        UInterface.warnUser(repr(e))
+        sys.exit(2)
+
+    if not command_ret:
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

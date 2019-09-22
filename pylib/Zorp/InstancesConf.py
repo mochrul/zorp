@@ -66,10 +66,14 @@ class InstancesConf(object):
     def _read(self):
         """<method internal="yes"/>
         """
-        line = self.instances_conf_file.readline().lstrip()
-        while line.startswith('#') or line == '\n':
+        line = self.instances_conf_file.readline()
+        while line:
+            line = line.strip()
+            if line and not line.startswith('#'):
+                break
             line = self.instances_conf_file.readline()
-        return line[:-1] if line[-1:] == '\n' else line
+
+        return line
 
     def _parseZorpctlArgs(self, zorpctl_argv):
         """<method internal="yes"/>
@@ -78,19 +82,17 @@ class InstancesConf(object):
         parser.add_argument('--num-of-processes', type=int,
                             dest='number_of_processes', default=1
                             )
-        try:
-            autorestart_default = self.ZORPCTLCONF['AUTO_RESTART']
-        except AttributeError:
-            autorestart_default = None
-
         parser.add_argument('--auto-restart', dest='auto_restart',
-                            action='store_true', default=autorestart_default
+                            action='store_true', default=True
                             )
         parser.add_argument('--no-auto-restart', dest='auto_restart',
-                            action='store_false', default=None
+                            action='store_false'
                             )
         parser.add_argument('--no-auto-start', dest='auto_start',
                             action='store_false'
+                            )
+        parser.add_argument('--enable-core', dest='enable_core',
+                            action='store_true'
                             )
 
         return vars(parser.parse_args(zorpctl_argv.split()))
@@ -118,6 +120,8 @@ class InstancesConf(object):
             arg = self.ZORPCTLCONF['ZORPCTL_APPEND_ARGS']
             if arg:
                 zorpctl_argv += " %s" % arg
+            if self.ZORPCTLCONF['AUTO_RESTART'] == 0:
+                zorpctl_argv += " --no-auto-restart"
         except KeyError:
             pass
 

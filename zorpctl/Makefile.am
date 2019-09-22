@@ -1,4 +1,4 @@
-#sbin_SCRIPTS = zorpctl
+sbin_SCRIPTS = zorpctl
 
 sysconf_DATA = instances.conf.http.sample instances.conf.https.sample instances.conf.ssh.sample zorpctl.conf
 

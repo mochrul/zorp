@@ -150,7 +150,7 @@ class Proxy(BuiltinProxy):
             <type>
               <string/>
             </type>
-            <default>en</default>
+            <default>"en"</default>
             <conftime>
               <read/>
               <write/>

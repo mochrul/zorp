@@ -21,6 +21,7 @@ stamp-h1
 /mkinstalldirs
 /test-driver
 /*.pc
+/debian/*.service
 /moduledist.conf
 /lib/zorp/zorpconfig.h.in
 /pylib/Zorp/Config.py
@@ -53,4 +54,3 @@ zorp-config
 zorp/zorp
 zorpblgen/zorpblgen
 zorpconfig.h
-zorpctl/zorpctl

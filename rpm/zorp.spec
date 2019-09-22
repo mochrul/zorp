@@ -1,6 +1,6 @@
 Name:			zorp
-Version:		7.0.1~alpha2
-Release:		0.1%{?dist}
+Version:		6.0.11
+Release:		1
 URL:			https://balasys.github.io/zorp/
 %if 0%{?fedora}
 %else
@@ -8,7 +8,7 @@ Vendor:			BalaSys IT
 Packager:		BalaSys Development Team <devel@balasys.hu>
 %endif
 
-Source:			zorp_%{version}.tar.xz
+Source:			zorp_%{version}.tar.gz
 Summary:		An advanced protocol analyzing firewall
 License:		GPL-2.0
 Group:			System/Daemons
@@ -16,15 +16,9 @@ BuildRequires:		binutils-devel
 BuildRequires:		automake
 BuildRequires:		autoconf
 BuildRequires:		autoconf-archive
-%if 0%{?fedora} || 0%{?rhel} || 0%{?centos}
-BuildRequires:		docbook-style-xsl
-%else
-BuildRequires:		docbook-xsl-stylesheets
-%endif
 BuildRequires:		libtool
 BuildRequires:		gcc-c++
-BuildRequires:		libxslt
-BuildRequires:		libzorpll-7_0-1-devel
+BuildRequires:		libzorpll-6_0-11-devel
 BuildRequires:		boost-devel
 BuildRequires:		python-devel
 BuildRequires:		binutils-devel
@@ -68,7 +62,7 @@ is permitted.
 %package devel
 Summary:                Headers for zorp
 Group:                  System/Daemons
-Requires:               libzorpll-7_0-1-devel
+Requires:               libzorpll-6_0-11-devel
 
 %description devel
 This package provides header files for zorp
@@ -115,8 +109,9 @@ ldconfig
 %{python2_sitelib}/Zorp/Encryption.py
 %{python2_sitelib}/Zorp/Globals.py
 %{python2_sitelib}/Zorp/Keybridge.py
-%{python2_sitelib}/Zorp/Listener.py
 %{python2_sitelib}/Zorp/FileLock.py
+%{python2_sitelib}/Zorp/LegacyEncryption.py
+%{python2_sitelib}/Zorp/Listener.py
 %{python2_sitelib}/Zorp/Matcher.py
 %{python2_sitelib}/Zorp/NAT.py
 %{python2_sitelib}/Zorp/Proxy.py
@@ -151,18 +146,18 @@ ldconfig
 %dir %attr(750,root,zorp) %{_sysconfdir}/zorp
 %config %attr(640,root,zorp) %{_sysconfdir}/zorp/*.sample
 
-%package -n libzorp-7_0-1
+%package -n libzorp-6_0-11
 Summary:                The runtime library of Zorp
 Group:                  System/Daemons
 
-%description -n libzorp-7_0-1
+%description -n libzorp-6_0-11
 Zorp is a new generation firewall. It is essentially a transparent proxy
 firewall, with strict protocol analyzing proxies, a modular architecture,
 and fine-grained control over the mediated traffic. Configuration decisions
 
 The library needed to run zorp.
 
-%files -n libzorp-7_0-1
+%files -n libzorp-6_0-11
 %defattr(-,root,root)
 
 %dir %{_libdir}/zorp
@@ -170,17 +165,17 @@ The library needed to run zorp.
 %{_libdir}/libzorp*.so.*
 %{_libdir}/libzorpproxy*.so.*
 
-%post -n libzorp-7_0-1
+%post -n libzorp-6_0-11
 ldconfig
 
-%postun -n libzorp-7_0-1
+%postun -n libzorp-6_0-11
 ldconfig
 
-%package -n libzorp-7_0-devel
+%package -n libzorp-6_0-devel
 Summary:                Development files needed to compile Zorp modules
 Group:                  System/Daemons
 
-%description -n libzorp-7_0-devel
+%description -n libzorp-6_0-devel
 Zorp is a new generation firewall. It is essentially a transparent proxy
 firewall, with strict protocol analyzing proxies, a modular architecture,
 and fine-grained control over the mediated traffic. Configuration decisions
@@ -188,7 +183,7 @@ are scriptable with the Python based configuration language.
 
 These are the files you need to compile a zorp module.
 
-%files -n libzorp-7_0-devel
+%files -n libzorp-6_0-devel
 %defattr(-,root,root)
 
 %dir %{_libdir}/zorp
@@ -353,12 +348,6 @@ Standalone daemon that handles zones and updates dynamic zones.
 
 
 %changelog
-* Wed Nov 21 2018 Balasys Development Team <devel@balasys.hu> - 7.0.1-0.2
-  - New upstream release 7.0.1~alpha2
-* Thu May 17 2018 Balasys Development Team <devel@balasys.hu> - 7.0.1-0.1
-  - New upstream release 7.0.1~alpha1
-* Thu May 10 2018 Balasys Development Team <devel@balasys.hu> - 6.0.12
-  - New upstream release 6.0.12
 * Wed Sep 13 2017 Balasys Development Team <devel@balasys.hu> - 6.0.11
   - New upstream release 6.0.11
 * Fri Nov 25 2016 Balasys Development Team <devel@balasys.hu> - 6.0.10
