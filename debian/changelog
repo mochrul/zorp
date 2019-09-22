@@ -1,3 +1,10 @@
+zorp (7.0.1~alpha2-1) unstable; urgency=medium
+
+  * [4398091] New upstream version 7.0.1~alpha2
+  * [14a46ca] Rediff patches
+
+ -- SZALAY Attila <sasa@debian.org>  Sun, 22 Sep 2019 09:11:23 +0200
+
 zorp (7.0.1~alpha1-2) unstable; urgency=medium
 
   * [a491b2c] Drop version-info in favour of release
