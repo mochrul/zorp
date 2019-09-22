@@ -10,12 +10,12 @@ time should be removed from the binary.
  2 files changed, 5 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index ba38ef3..001241f 100644
+index b9bc253..8740ea0 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -352,9 +352,6 @@ AC_SUBST(ZORP_PIDFILEDIR)
- AC_SUBST(ZORP_SYSCONFDIR)
+@@ -353,9 +353,6 @@ AC_SUBST(ZORP_SYSCONFDIR)
  AC_SUBST(ZORP_STATEDIR)
+ AC_SUBST(ZORP_SBINDIR)
  
 -date=`date +%Y/%m/%d`
 -AC_DEFINE_UNQUOTED(ZORP_CONFIG_DATE, "$date", [Configuration date])

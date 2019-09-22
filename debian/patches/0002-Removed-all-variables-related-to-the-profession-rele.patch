@@ -7,7 +7,7 @@ Subject: Removed all variables related to the profession release
  1 file changed, 1 insertion(+), 12 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 634d754..ba38ef3 100644
+index 0d6f779..b9bc253 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -3,7 +3,6 @@ dnl
@@ -50,7 +50,7 @@ index 634d754..ba38ef3 100644
  AC_DEFINE_UNQUOTED(ZORP_PRODUCT_NAME, "$ZORP_PRODUCT_NAME", [Required product name in license])
  AC_SUBST(ZORP_PRODUCT_NAME)
  
-@@ -373,7 +365,6 @@ ipoptions: $enable_ip_options
+@@ -374,7 +366,6 @@ ipoptions: $enable_ip_options
  ipv6: $enable_ipv6
  prefork: $enable_prefork
  kzorp: $enable_kzorp
@@ -58,7 +58,7 @@ index 634d754..ba38ef3 100644
  
  
  EOF
-@@ -384,8 +375,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
+@@ -385,8 +376,6 @@ AC_SUBST(LIBZORP_LT_COMPAT_PL)
  
  AC_SUBST(GLIB_MIN_VERSION)
  AC_SUBST(ZORPLL_MIN_VERSION)
