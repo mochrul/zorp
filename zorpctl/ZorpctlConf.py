@@ -78,7 +78,7 @@ class ZorpctlConfig(object):
 
 # The interval (in seconds) to check a stopping Zorp instance at, second
 # fractions are allowed.
-'STOP_CHECK_DELAY' : 0.1,
+'STOP_CHECK_DELAY' : 1,
 
 # The number of seconds to wait for a stopping Zorp instance
 'STOP_CHECK_TIMEOUT' : 5,
@@ -128,6 +128,7 @@ class ZorpctlConfig(object):
             default_value = self.config.get('DEFAULT', key)
             try:
                 config_value = self.config.get('zorpctl', key)
+                config_value = config_value.strip('\"')
 
                 # permissions have to be octal values
                 if key.endswith('_MODE'):

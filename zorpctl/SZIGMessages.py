@@ -120,8 +120,8 @@ class MessageStopSession(Message):
     command = "STOPSESSION"
     param_name = ""
 
-    def __init__(self, param):
-        super(MessageStopSession, self).__init__(param)
+    def __init__(self, session_id):
+        super(MessageStopSession, self).__init__(session_id)
 
 class MessageAuthorizeAbstract(Message):
     command = "AUTHORIZE"

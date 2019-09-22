@@ -36,11 +36,11 @@ class TestLogLevelAlgorithm(unittest.TestCase):
         self.algorithm.szig = szig
 
     def test_get_loglevel(self):
-        self.assertTrue(self.algorithm.getloglevel())
+        self.assertTrue(self.algorithm.getLevel())
 
     def test_set_loglevel(self):
-        self.algorithm.modifyloglevel(6)
-        self.assertEquals(self.algorithm.getloglevel().value, 6)
+        self.algorithm.setLevel(6)
+        self.assertEquals(self.algorithm.getLevel().value, 6)
 
 
 if __name__ == '__main__':

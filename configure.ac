@@ -209,9 +209,9 @@ PKG_CHECK_MODULES(OPENSSL, [openssl >= $OPENSSL_MIN_VERSION openssl < $OPENSSL_M
         AC_MSG_ERROR(Cannot find OpenSSL library $OPENSSL_MIN_VERSION <= version < $OPENSSL_MAX_VERSION: is pkg-config in path?)
 )
 
-PKG_CHECK_MODULES(PYTHON, python-2.7 >= $PYTHON_MIN_VERSION,,
+PKG_CHECK_MODULES(LIBPYTHON, python-2.7 >= $PYTHON_MIN_VERSION,,
 	AC_MSG_ERROR(Cannot find Python library version >= $PYTHON_MIN_VERSION: is pkg-config in path?))
-PKG_CHECK_MODULES(PYTHON, python-2.7 < $PYTHON_MAX_VERSION,,
+PKG_CHECK_MODULES(LIBPYTHON, python-2.7 < $PYTHON_MAX_VERSION,,
 	AC_MSG_ERROR(Cannot find Python library version >= $PYTHON_MAX_VERSION: is pkg-config in path?))
 
 
@@ -259,12 +259,12 @@ ZORP_NAGIOS_DIR="${prefix}/lib/nagios/plugins"
 ZORP_PYTHON_DIR="${pythondir}/Zorp"
 ZORPCTL_PYTHON_DIR="${pythondir}/zorpctl"
 
-ZORP_SYSCONFDIR="$sysconfdir/zorp"
-ZORP_DATADIR="$datadir/zorp"
-ZORP_LIBDIR="$libdir/zorp"
-ZORP_SBINDIR="$sbindir"
-ZORP_STATEDIR="$localstatedir/lib/zorp"
-ZORP_PIDFILEDIR="$localstatedir/run/zorp/"
+ZORP_SYSCONFDIR="${sysconfdir}/zorp"
+ZORP_DATADIR="${datadir}/zorp"
+ZORP_LIBDIR="${libdir}/zorp"
+ZORP_SBINDIR="${sbindir}"
+ZORP_STATEDIR="${localstatedir}/lib/zorp"
+ZORP_PIDFILEDIR="${localstatedir}/run/zorp/"
 
 dnl ***************************************************************************
 dnl Export results
@@ -312,8 +312,8 @@ fi
 GENERAL_CXXFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$top_srcdir/lib $COVERAGE_CXXFLAGS $WARNING_CXXFLAGS $DIRECTORY_CXXFLAGS"
 
 # Dependencies outside the source tree
-DEPS_CXXFLAGS="$ZORPLL_CFLAGS $ZORPLIC_CFLAGS $ZORPMISC_CFLAGS $PYTHON_CFLAGS $OPENSSL_CFLAGS"
-DEPS_LIBS="$ZORPLL_LIBS $ZORPLIC_LIBS $ZORPMISC_LIBS $PYTHON_LIBS $PYTHON_DEPS $COREDUMP_LIBS $OPENSSL_LIBS"
+DEPS_CXXFLAGS="$ZORPLL_CFLAGS $ZORPLIC_CFLAGS $ZORPMISC_CFLAGS $LIBPYTHON_CFLAGS $OPENSSL_CFLAGS"
+DEPS_LIBS="$ZORPLL_LIBS $ZORPLIC_LIBS $ZORPMISC_LIBS $LIBPYTHON_LIBS $PYTHON_DEPS $COREDUMP_LIBS $OPENSSL_LIBS"
 # zorp library libs
 LIBZORP_CXXFLAGS="$GENERAL_CXXFLAGS $DEPS_CXXFLAGS $GLIB_CXXFLAGS $GMODULE_CXXFLAGS $GTHREAD_CXXFLAGS $PYTHON_CXXFLAGS $OPENSSL_CXXFLAGS $PCAP_CXXFLAGS"
 LIBZORP_LIBS="$DEPS_LIBS $GLIB_LIBS $GMODULE_LIBS $GTHREAD_LIBS $PYTHON_LIBS $OPENSSL_LIBS $PCAP_LIBS"
@@ -359,6 +359,7 @@ AC_SUBST(ZORP_LIBDIR)
 AC_SUBST(ZORP_PIDFILEDIR)
 AC_SUBST(ZORP_SYSCONFDIR)
 AC_SUBST(ZORP_STATEDIR)
+AC_SUBST(ZORP_SBINDIR)
 
 date=`date +%Y/%m/%d`
 AC_DEFINE_UNQUOTED(ZORP_CONFIG_DATE, "$date", [Configuration date])
@@ -431,7 +432,7 @@ modules/whois/Makefile
 munin_plugins/Makefile
 nagios_plugins/Makefile
 pylib/Makefile
-pylib/Zorp/Config.py
+pylib/Zorp/Config_.py
 pylib/Zorp/Makefile
 scripts/Makefile
 tests/Makefile
@@ -439,8 +440,7 @@ tests/python/Makefile
 tests/unit/Makefile
 tests/zorpctl/Makefile
 zorp/Makefile
-zorpctl/Makefile
-zorpctl_in_cc/Makefile],
+zorpctl/Makefile],
 [chmod +x debian/rules]
 )
 AC_OUTPUT

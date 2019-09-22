@@ -23,4 +23,12 @@ pkgdata_DATA += \
 	Telnet.py \
 	Whois.py
 
+
+Config.py: Config_.py
+	cp $< $@
+	$(SED) -i "s#ZORP_LIBDIR#@ZORP_LIBDIR@#" $@
+	$(SED) -i "s#ZORP_SBINDIR#@ZORP_SBINDIR@#" $@
+	$(SED) -i "s#ZORP_SYSCONFDIR#@ZORP_SYSCONFDIR@#" $@
+	$(SED) -i "s#ZORP_PIDFILEDIR#@ZORP_PIDFILEDIR@#" $@
+
 EXTRA_DIST = $(pkgdata_DATA)

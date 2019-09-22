@@ -20,6 +20,8 @@
 ##
 ############################################################################
 
+from __future__ import print_function
+import sys
 import zorpctl.utils
 
 class UInterface(object):
@@ -27,9 +29,17 @@ class UInterface(object):
         pass
 
     @staticmethod
-    def informUser(message):
+    def _printMessage(message, file=None):
         if zorpctl.utils.isSequence(message):
             for msg in message:
-                print(str(msg))
+                print(str(msg), file=file)
         else:
-            print(str(message))
+            print(str(message), file=file)
+
+    @staticmethod
+    def informUser(message):
+        UInterface._printMessage(message)
+
+    @staticmethod
+    def warnUser(message):
+        UInterface._printMessage(message, sys.stderr)

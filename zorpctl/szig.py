@@ -224,6 +224,12 @@ class SZIG(object):
             raise SZIGError(response.value)
         return response.value
 
+    def stop_session(self, session_id):
+        response = self.handler.talk(MessageStopSession(session_id))
+        if not response.is_succeeded:
+            raise SZIGError(response.value)
+        return response.value
+
 class SZIGError(Exception):
     """
     Exception Class created for Szig specific errors.

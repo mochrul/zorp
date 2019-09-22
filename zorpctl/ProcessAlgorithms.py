@@ -21,6 +21,7 @@
 ############################################################################
 
 import os, sys, signal, time, subprocess, datetime
+import Zorp.Config
 from zorpctl.szig import SZIG, SZIGError
 from zorpctl.CommandResults import CommandResultSuccess, CommandResultFailure
 from zorpctl.ZorpctlConf import ZorpctlConfig
@@ -58,7 +59,7 @@ class GUIStatus(object):
         self.msg = ""
 
     def __str__(self):
-        status = '"%s";"%s";"%s";"%s";"%s";"%s";"%s";"%s","%s"' % (self.name,
+        status = '"%s";"%s";"%s";"%s";"%s";"%s";"%s";"%s";"%s"' % (self.name,
                  self.processnum, self.running, self.pid,
                  self.threads_running, self.thread_number, self.thread_rate_avg1,
                  self.thread_rate_avg5, self.thread_rate_avg15)
@@ -94,25 +95,44 @@ like ZORP_PIDFILEDIR='/var/run/zorp', put it in to the zorpctl's configuration f
             if pid.value == "Permission denied":
                 return CommandResultFailure(pid.value)
             else:
-                return CommandResultFailure("Process not running")
+                return CommandResultFailure('Process not running')
 
         try:
             open('/proc/' + str(pid) + '/status')
         except IOError:
-            return CommandResultFailure("Invalid pid file no running process with pid %d!" % pid)
+            return CommandResultFailure(
+                'Invalid pid file no running process with pid {}!'.format(pid)
+            )
 
-        return CommandResultSuccess("running")
+        return CommandResultSuccess('Running')
+
+    def _getProcessPidPath(self, process):
+        return self.pidfiledir  + '/zorp-' + process + '.pid'
 
     def getProcessPid(self, process):
         try:
-            file_name = self.pidfiledir  + '/zorp-' + process + '.pid'
-            pid_file = open(file_name)
+            file_path = self._getProcessPidPath(process)
+            pid_file = open(file_path)
             pid = int(pid_file.read())
             pid_file.close()
         except IOError as e:
-            return CommandResultFailure("Can not open %s" % file_name, e.message)
+            return CommandResultFailure(
+                "'Can not open pid file '{}'".format(file_path),
+                e.message
+            )
 
         return pid
+
+    def removeProcessPid(self, process):
+        try:
+            file_path = self._getProcessPidPath(process)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except IOError as e:
+            return CommandResultFailure(
+                "Could not remove pid file '{}'".format(file_path),
+                e.message
+            )
 
     def setInstance(self, instance):
         self.instance = instance
@@ -121,43 +141,69 @@ like ZORP_PIDFILEDIR='/var/run/zorp', put it in to the zorpctl's configuration f
         if self.instance:
             return self.execute()
         else:
-            return CommandResultFailure("No instance added!")
+            return CommandResultFailure('No instance added!')
+
 
 class StartAlgorithm(ProcessAlgorithm):
 
-    def __init__(self):
+    def __init__(self, use_systemd=False):
+        self.use_systemd = use_systemd
         super(StartAlgorithm, self).__init__()
         try:
             self.start_timeout = self.ZORPCTLCONF['START_WAIT_TIMEOUT']
         except KeyError:
             self.start_timeout = 10
 
+    def getSystemdServiceName(self):
+        return 'zorp{}@{}.service'.format(
+            Zorp.Config.config.options.package_suffix,
+            self.instance.name
+        )
+
     def errorHandling(self):
-        running = self.isRunning(self.instance.process_name)
-        if running:
-            return CommandResultSuccess("process is already running")
+        if self.use_systemd:
+            ret = subprocess.call(
+                ['/bin/systemctl', 'is-active', '--quiet', self.getSystemdServiceName()]
+            )
+            if not ret:
+                return CommandResultSuccess('Running')
+        else:
+            running = self.isRunning(self.instance.process_name)
+            if running:
+                return CommandResultSuccess('Process is already running')
+
         valid = self.isValidInstanceForStart()
         if not valid:
             return valid
 
     def isValidInstanceForStart(self):
         if not 0 <= self.instance.process_num < self.instance.number_of_processes:
-            return CommandResultFailure("number %d must be between [0..%d)"
-                                        % (self.instance.process_num, self.instance.number_of_processes))
+            return CommandResultFailure(
+                'Number {} must be between [0..{})'.format(
+                    self.instance.process_num,
+                    self.instance.number_of_processes
+                )
+            )
+
         if not self.instance.auto_start and not self.force:
-            return CommandResultFailure("not started, because no-auto-start is set")
+            return CommandResultFailure('Not started, because no-auto-start is set')
 
         return CommandResultSuccess()
 
     def assembleStartCommand(self):
-        command = [self.sbindir + "/zorp", "--as", self.instance.name]
-        command += self.instance.zorp_argument_list
-        command.append("--slave" if self.instance.process_num else "--master")
+        command = [self.sbindir + '/zorp', '--as', self.instance.name]
+        command.extend(self.instance.zorp_argument_list)
+        command.append('--slave' if self.instance.process_num else '--master')
         command.append(self.instance.process_name)
+
         if self.instance.enable_core:
-            command.append("--enable-core")
-        if self.instance.auto_restart:
-            command += ["--process-mode", "background"]
+            command.append('--enable-core')
+        if not self.instance.auto_restart:
+            command.extend(['--process-mode', 'background'])
+        for arg in command:
+            if arg.startswith(("'", '"')) and (arg[0] == arg[-1]):
+                command[command.index(arg)] = arg[1:-1]
+
         return command
 
     def waitTilTimoutToStart(self):
@@ -170,26 +216,52 @@ class StartAlgorithm(ProcessAlgorithm):
             time.sleep(delay)
             t += 1
 
-    def start(self):
-        args = self.assembleStartCommand()
-        environment = None
+    def start_with_systemd(self):
         try:
-            subprocess.Popen(args, env=environment, stderr=open("/dev/null", 'w'))
-        except OSError:
-            pass
-        self.waitTilTimoutToStart()
+            subprocess.check_call(
+                ['/bin/systemctl', 'start', self.getSystemdServiceName()]
+            )
+        except:
+            return CommandResultFailure(
+                "Error invoking 'systemctl start zorp{}@{}.service'".format(
+                    Zorp.Config.config.options.package_suffix,
+                    self.instance.name
+                )
+            )
+
         running = self.isRunning(self.instance.process_name)
         if running:
             return CommandResultSuccess(running)
         else:
-            return  CommandResultFailure("did not start in time")
+            return CommandResultFailure('Failed to start')
+
+    def start(self):
+        args = self.assembleStartCommand()
+
+        environment = None
+
+        try:
+            subprocess.Popen(args, env=environment)
+        except OSError:
+            pass
+        self.waitTilTimoutToStart()
+
+        running = self.isRunning(self.instance.process_name)
+        if running:
+            return CommandResultSuccess(running)
+        else:
+            return CommandResultFailure('Did not start in time')
 
     def execute(self):
         error = self.errorHandling()
-        if error != None:
+        if error is not None:
             return error
 
-        return self.start()
+        if self.use_systemd:
+            return self.start_with_systemd()
+        else:
+            return self.start()
+
 
 class StopAlgorithm(ProcessAlgorithm):
 
@@ -205,7 +277,8 @@ class StopAlgorithm(ProcessAlgorithm):
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            # Ignore not running process
+            return CommandResultSuccess(running.msg)
 
     def waitTilTimeoutToStop(self):
         t = 1
@@ -219,11 +292,15 @@ class StopAlgorithm(ProcessAlgorithm):
 
     def killProcess(self, sig):
         self.pid = self.getProcessPid(self.instance.process_name)
+
         try:
             os.kill(self.pid, sig)
-            return CommandResultSuccess()
+            if self.force:
+                self.removeProcessPid(self.instance.process_name)
         except OSError as e:
             return CommandResultFailure(e.message)
+
+        return CommandResultSuccess()
 
     def stop(self):
         sig = signal.SIGKILL if self.force else signal.SIGTERM
@@ -234,10 +311,12 @@ class StopAlgorithm(ProcessAlgorithm):
         self.waitTilTimeoutToStop()
         if self.isRunning(self.instance.process_name):
             return CommandResultFailure(
-                    "did not exit in time (pid='%d', signo='%d', timeout='%d')" %
-                    (self.pid, sig, self.stop_timout))
+                "Did not exit in time (pid='{}', signo='{}', timeout='{}')".format(
+                    self.pid, sig, self.stop_timeout
+                )
+            )
         else:
-            return CommandResultSuccess("stopped")
+            return CommandResultSuccess('Stopped')
 
     def execute(self):
         error = self.errorHandling()
@@ -254,7 +333,9 @@ class ReloadAlgorithm(ProcessAlgorithm):
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            # Ignore not running process
+            return CommandResultSuccess(running.msg)
+
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -263,9 +344,9 @@ class ReloadAlgorithm(ProcessAlgorithm):
     def reload(self):
         self.szig.reload()
         if self.szig.reload_result():
-            result = CommandResultSuccess("Reload successful")
+            result = CommandResultSuccess('Reload successful')
         else:
-            result = CommandResultFailure("Reload failed")
+            result = CommandResultFailure('Reload failed')
         return result
 
     def execute(self):
@@ -277,7 +358,7 @@ class ReloadAlgorithm(ProcessAlgorithm):
         try:
             reloaded = self.reload()
         except SZIGError as e:
-            reloaded = CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            reloaded = CommandResultFailure('Error while communicating through szig: ' + e.msg)
         if not reloaded:
             reloaded.value = self.instance.process_name
         return reloaded
@@ -298,11 +379,11 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
             return CommandResultFailure(e.message)
 
     def getDeadlockcheck(self):
-        return CommandResultSuccess("deadlockcheck=%s" % self.szig.deadlockcheck)
+        return CommandResultSuccess('Deadlockcheck={}'.format(self.szig.deadlockcheck))
 
     def setDeadlockcheck(self, value):
         self.szig.deadlockcheck = value
-        return CommandResultSuccess("")
+        return self.getDeadlockcheck()
 
     def execute(self):
         error = self.errorHandling()
@@ -315,14 +396,17 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
             else:
                 return self.getDeadlockcheck()
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
 
 class LogLevelAlgorithm(ProcessAlgorithm):
 
-    INCREMENT = "I"
-    DECREASE = "D"
+    GET = 'G'
+    SET = 'S'
+    DECREMENT = 'D'
+    INCREMENT = 'I'
 
-    def __init__(self, value=None):
+    def __init__(self, mode=GET, value=None):
+        self.mode = mode
         self.value = value
         super(LogLevelAlgorithm, self).__init__()
 
@@ -330,19 +414,21 @@ class LogLevelAlgorithm(ProcessAlgorithm):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return running
+
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
             return CommandResultFailure(e.message)
 
-    def modifyloglevel(self, value):
-        self.szig.loglevel = value
-        return CommandResultSuccess()
+    def getLevel(self):
+        return CommandResultSuccess(
+            "verbose_level={}, logspec='{}'".format(self.szig.loglevel, self.szig.logspec),
+            self.szig.loglevel
+        )
 
-    def getloglevel(self):
-        return CommandResultSuccess("verbose_level=%d, logspec='%s'" %
-                                    (self.szig.loglevel, self.szig.logspec),
-                                    self.szig.loglevel)
+    def setLevel(self, value):
+        self.szig.loglevel = value
+        return CommandResultSuccess('New verbose_level={}'.format(value))
 
     def execute(self):
         error = self.errorHandling()
@@ -350,17 +436,19 @@ class LogLevelAlgorithm(ProcessAlgorithm):
             return error
 
         try:
-            if not self.value:
-                return self.getloglevel()
+            actual_value = self.getLevel().value
+            if self.mode == self.GET:
+                return self.getLevel()
+            elif self.mode == self.SET and self.value >= 0 and self.value <= 10:
+                return self.setLevel(self.value)
+            elif self.mode == self.INCREMENT and actual_value < 10:
+                return self.setLevel(actual_value + 1)
+            elif self.mode == self.DECREMENT and actual_value > 0:
+                return self.setLevel(actual_value - 1)
             else:
-                value = self.getloglevel().value
-                if self.value == "I":
-                    return self.modifyloglevel(value + 1) if value else value
-                if self.value == "D":
-                    return self.modifyloglevel(value - 1) if value else value
-                return self.modifyloglevel(self.value)
+                return CommandResultFailure('Log level is out of range')
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
 
 class GetProcInfoAlgorithm(ProcessAlgorithm):
 
@@ -375,7 +463,7 @@ class GetProcInfoAlgorithm(ProcessAlgorithm):
         try:
             self.procinfo_file = open("/proc/%s/stat" % pid, 'r')
         except IOError:
-            return CommandResultFailure("Can not open /proc/%s/stat" % pid)
+            return CommandResultFailure('Can not open /proc/{}/stat'.format(pid))
 
     def getProcInfo(self):
         values = self.procinfo_file.read().split()
@@ -443,7 +531,7 @@ class StatusAlgorithm(ProcessAlgorithm):
         try:
             return self.status()
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
 
 class GUIStatusAlgorithm(ProcessAlgorithm):
 
@@ -487,7 +575,7 @@ class GUIStatusAlgorithm(ProcessAlgorithm):
         try:
             return self.gui_status()
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
 
 class DetailedStatusAlgorithm(ProcessAlgorithm):
 
@@ -503,12 +591,12 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
         try:
             self.stat_file = open(self.proc_stat_filename, 'r')
         except IOError:
-            return CommandResultFailure("Can not open %s" % self.proc_stat_filename)
+            return CommandResultFailure('Can not open ' + self.proc_stat_filename)
         try:
             uptime_file = open(self.uptime_filename, 'r')
             uptime_file.close()
         except IOError:
-            return CommandResultFailure("Can not open %s" % self.uptime_filename)
+            return CommandResultFailure('Can not open ' + self.uptime_filename)
 
     def _getIdleJiffies(self):
         for buf in self.stat_file:
@@ -605,7 +693,9 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            # Ignore not running process
+            return CommandResultSuccess(running.msg)
+
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -646,9 +736,9 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
             else:
                 szig_dict = _prepend_instance_name(self.walk(self.root))
 
-            return CommandResultSuccess("", szig_dict)
+            return CommandResultSuccess(value=szig_dict)
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
 
 class AuthorizeAlgorithm(ProcessAlgorithm):
 
@@ -696,4 +786,31 @@ class AuthorizeAlgorithm(ProcessAlgorithm):
             else:
                 return self.reject()
         except SZIGError as e:
-            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
+
+class StopSessionAlgorithm(ProcessAlgorithm):
+
+    def __init__(self, session_id):
+        self.session_id = session_id
+        super(StopSessionAlgorithm, self).__init__()
+
+    def errorHandling(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return running
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.message)
+
+    def execute(self):
+        error = self.errorHandling()
+        if error != None:
+            return error
+
+        try:
+            result = self.szig.stop_session(self.session_id)
+            return CommandResultSuccess(result)
+        except SZIGError as e:
+            return CommandResultFailure('Error while communicating through szig: ' + e.msg)
+

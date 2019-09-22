@@ -21,22 +21,24 @@
 ############################################################################
 
 from Zorp.InstancesConf import InstancesConf
+from Zorp.Instance import Instance
 from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 GUIStatusAlgorithm, StatusAlgorithm,
                                 ReloadAlgorithm, PidAlgorithm, SzigWalkAlgorithm,
-                                DetailedStatusAlgorithm, AuthorizeAlgorithm)
+                                DetailedStatusAlgorithm, AuthorizeAlgorithm,
+                                StopSessionAlgorithm)
 from zorpctl.CommandResults import CommandResultFailure
 
 class ZorpHandler(object):
 
     @staticmethod
-    def start():
-        return ZorpHandler.callAlgorithmToAllInstances(StartAlgorithm())
+    def start(use_systemd=False):
+        return ZorpHandler.callAlgorithmToAllInstances(StartAlgorithm(use_systemd))
 
     @staticmethod
-    def force_start():
-        algorithm = StartAlgorithm()
+    def force_start(use_systemd=False):
+        algorithm = StartAlgorithm(use_systemd)
         algorithm.force = True
         return ZorpHandler.callAlgorithmToAllInstances(algorithm)
 
@@ -75,16 +77,8 @@ class ZorpHandler(object):
         return ZorpHandler.callAlgorithmToAllInstances(AuthorizeAlgorithm(behaviour, session_id, description))
 
     @staticmethod
-    def inclog():
-        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.INCREMENT))
-
-    @staticmethod
-    def declog():
-        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.DECREASE))
-
-    @staticmethod
-    def getlog():
-        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm())
+    def log(mode, value=None):
+        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm(mode, value))
 
     @staticmethod
     def deadlockcheck(value=None):
@@ -95,14 +89,37 @@ class ZorpHandler(object):
         return ZorpHandler.callAlgorithmToAllInstances(SzigWalkAlgorithm(root))
 
     @staticmethod
+    def stop_session(session_id):
+        return ZorpHandler.callAlgorithmToAllInstances(StopSessionAlgorithm(session_id))
+
+    @staticmethod
+    def findManullyStartedInstances():
+        import glob, os, re, subprocess
+        paths = glob.glob("/var/run/zorp/zorp-*.pid")
+        instance_names = []
+        for path in paths:
+            path_splitted = re.split('[-\.]', os.path.basename(path))
+            instance_names.append(path_splitted[1])
+        for zorpctl_instances in InstancesConf():
+            regex = re.compile(zorpctl_instances.process_name.split('#')[0] + r'#[0-9]*')
+            instance_names = filter(lambda i: not regex.search(i), instance_names)
+        instances = []
+        for instance_name in instance_names:
+            instances.append(Instance(name = instance_name, process_name = instance_name, number_of_processes = 1, manually_started = True))
+        return instances
+
+    @staticmethod
     def callAlgorithmToAllInstances(algorithm):
         result = []
         try:
+            manually_started_instances = ZorpHandler.findManullyStartedInstances()
+            for manually_started_instance in manually_started_instances:
+                result.extend(InstanceHandler.executeAlgorithmOnInstanceProcesses(manually_started_instance, algorithm))
             for instance in InstancesConf():
-                result += InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
+                result.extend(InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm))
             return result
-        except BaseException as e:
-            return CommandResultFailure(e.message)
+        except Exception as e:
+            return [CommandResultFailure(e.message)]
 
 class InstanceHandler(object):
 
@@ -110,7 +127,10 @@ class InstanceHandler(object):
     def executeAlgorithmOnInstanceProcesses(instance, algorithm):
         results = []
         for i in range(0, instance.number_of_processes):
-            instance.process_num = i
+            if instance.manually_started:
+                instance.process_num = ''
+            else:
+                instance.process_num = i
             algorithm.setInstance(instance)
             result = algorithm.run()
             result.msg = "%s: %s" % (instance.process_name, result.msg)
@@ -120,10 +140,18 @@ class InstanceHandler(object):
 
     @staticmethod
     def searchInstance(instance_name):
+        instances = []
         try:
+            manually_started_instances = ZorpHandler.findManullyStartedInstances()
+            for manually_started_instance in manually_started_instances:
+                if manually_started_instance.name == instance_name:
+                    instances.append(manually_started_instance)
             for instance in InstancesConf():
                 if instance.name == instance_name:
-                    return instance
-            return CommandResultFailure("instance %s not found!" % instance_name)
+                    instances.append(instance)
+            if instances:
+                return instances
+            else:
+                return [CommandResultFailure("Instance {0} not found!".format(instance_name), instance_name)]
         except IOError as e:
-            return CommandResultFailure(e.message)
+            return [CommandResultFailure(e.message)]
