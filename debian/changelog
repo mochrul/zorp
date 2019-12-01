@@ -1,3 +1,12 @@
+zorp (7.0.1~alpha2-2) unstable; urgency=medium
+
+  * [ad2baf5] Fix package version ordering in case of alpha releases
+  * [3f46040] Added some frequently used options to gbp.conf
+  * [74235a9] Prepare for source-only upload
+  * [9b93468] Update standard version
+
+ -- SZALAY Attila <sasa@debian.org>  Sun, 01 Dec 2019 15:11:31 +0100
+
 zorp (7.0.1~alpha2-1) unstable; urgency=medium
 
   * [4398091] New upstream version 7.0.1~alpha2
