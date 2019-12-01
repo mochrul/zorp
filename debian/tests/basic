@@ -19,7 +19,7 @@ CURRENT_DIR=$(pwd)
 #mkdir /var/run/zorp
 
 echo "Starting Zorp"
-/usr/lib/zorp/zorp -p $CURRENT_DIR/debian/tests/policies/basic.py --foreground --no-syslog 2>$ADTTMP/zorp_stderr &
+/usr/sbin/zorp -p $CURRENT_DIR/debian/tests/policies/basic.py --foreground --no-syslog 2>$ADTTMP/zorp_stderr &
 
 ZORP_PID=$!
 
