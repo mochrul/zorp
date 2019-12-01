@@ -1,3 +1,9 @@
+zorp (7.0.1~alpha2-3) unstable; urgency=medium
+
+  * [3d40925] Adapt autopkgtest to the new version
+
+ -- SZALAY Attila <sasa@debian.org>  Sun, 01 Dec 2019 16:47:13 +0100
+
 zorp (7.0.1~alpha2-2) unstable; urgency=medium
 
   * [ad2baf5] Fix package version ordering in case of alpha releases
